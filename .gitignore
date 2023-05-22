@@ -1,0 +1,46 @@
+# ASP.NET Core
+bin/
+obj/
+*.exe
+*.pdb
+*.dll
+*.user
+*.csproj
+*.nuget.targets
+*.xproj
+*.swp
+*.*~
+*.DS_Store
+# Visual Studio Code
+.vscode/
+# build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+build/
+# Visual Studio 2015/2017 cache/options directory
+.vs/
+# MSTest test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+# NUNIT
+*.VisualState.xml
+TestResult.xml
+# Build Results of an ATL Project
+[Dd]ebugPS/
+[Rr]eleasePS/
+dlldata.c
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+**/bin/
+**/obj/
+**/*.[a-z]db*
+*.vs/
+*.bak
+*.cache
+*.ipch
+*.sdf
+*.suo
+*.sln.docstates
