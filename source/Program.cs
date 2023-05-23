@@ -1,6 +1,11 @@
-﻿using System.CommandLine;
+﻿using System;
+using System.Collections.Generic;
+using System.CommandLine;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Markdig;
 using RazorLight;
 using Serilog;
@@ -14,7 +19,7 @@ public class Program
     private const string configFile = "app.yaml";
     private AppConfig? config { get; set; }
 
-    public static int Main(string[] args)
+    static int Main(string[] args)
     {
         var SuCoS = new Program();
         return SuCoS.Run(args);
@@ -28,7 +33,7 @@ public class Program
             .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
             .CreateLogger();
 
-        // Print the name and version of the program.
+        // Print the name and version of the program.git remote add origin git@gitlab.com:brmassa/sucos.git
         var assembly = Assembly.GetEntryAssembly();
         var assemblyName = assembly?.GetName();
         var appName = assemblyName?.Name;
@@ -128,13 +133,12 @@ public class Program
         }
 
         // Use RazorLight to process the Razor page template
-        var templateKey = "default/baseof"; // Key or path to the Razor page template
+        var templateKey = "/default/baseof"; // Key or path to the Razor page template
         var model = new BaseofViewModel
         {
             Content = htmlContent
         };
-        var result = config.RazorEngine?
-            .CompileRenderAsync(templateKey, model).GetAwaiter().GetResult();
+        var result = config.RazorEngine?.CompileRenderAsync(templateKey, model).GetAwaiter().GetResult();
 
         // Save the processed output to the final file
         File.WriteAllText(outputPath, result);

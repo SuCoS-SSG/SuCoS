@@ -5,7 +5,9 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "source", "source", "{1A575294-ABB9-4BCF-8FF7-9981A26A55F9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuCoS", "source\core\SuCoS.csproj", "{2395B57B-24D7-47AB-B400-7AC6C1FCAFA1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuCoS", "source\SuCoS.csproj", "{2395B57B-24D7-47AB-B400-7AC6C1FCAFA1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build_nuke", ".build.Nuke\_build_nuke.csproj", "{26DB04F6-DA88-43D7-8F4B-535D4D68C24E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -16,6 +18,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{26DB04F6-DA88-43D7-8F4B-535D4D68C24E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26DB04F6-DA88-43D7-8F4B-535D4D68C24E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2395B57B-24D7-47AB-B400-7AC6C1FCAFA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2395B57B-24D7-47AB-B400-7AC6C1FCAFA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2395B57B-24D7-47AB-B400-7AC6C1FCAFA1}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace SuCoS;
 
 internal class Frontmatter

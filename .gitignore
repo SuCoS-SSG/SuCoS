@@ -1,23 +1,22 @@
 # ASP.NET Core
+*.*~
+*.dll
+*.DS_Store
+*.exe
+*.nuget.targets
+*.pdb
+*.swp
+*.user
+*.xproj
 bin/
 obj/
-*.exe
-*.pdb
-*.dll
-*.user
-*.csproj
-*.nuget.targets
-*.xproj
-*.swp
-*.*~
-*.DS_Store
 # Visual Studio Code
 .vscode/
 # build results
 [Dd]ebug/
 [Rr]elease/
-x64/
 build/
+x64/
 # Visual Studio 2015/2017 cache/options directory
 .vs/
 # MSTest test Results
@@ -31,16 +30,18 @@ TestResult.xml
 [Rr]eleasePS/
 dlldata.c
 # .NET Core
-project.lock.json
-project.fragment.lock.json
-artifacts/
-**/bin/
-**/obj/
-**/*.[a-z]db*
-*.vs/
+.nuke/temp
 *.bak
 *.cache
 *.ipch
 *.sdf
-*.suo
 *.sln.docstates
+*.suo
+*.vs/
+**/*.[a-z]db*
+**/bin/
+**/obj/
+artifacts/
+project.fragment.lock.json
+project.lock.json
+publish/

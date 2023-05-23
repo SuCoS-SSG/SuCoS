@@ -1,0 +1,45 @@
+
+image: mcr.microsoft.com/dotnet/sdk:7.0
+
+stages:
+  - build
+  - publish
+
+variables:
+  BUILD_CONFIGURATION: "Release"
+  PUBLISH_SELF_CONTAINED: "true"
+  PUBLISH_SINGLE_FILE: "false"
+  PUBLISH_TRIMMED: "false"
+
+.build_job_template: &build_job_definition
+  before_script:
+    - export NUKE_TELEMETRY_OPTOUT=1
+    - dotnet tool install --global Nuke.GlobalTool
+    - export PATH="$PATH:~/.dotnet/tools"
+
+cache:
+  paths:
+    - "**/.nuget/packages"
+
+build:
+  <<: *build_job_definition
+  stage: build
+  script:
+    - nuke Compile --configuration "Debug"
+
+publish:
+  <<: *build_job_definition
+  stage: publish
+  script:
+    - nuke Publish --configuration $BUILD_CONFIGURATION --artifacts-directory "./SuCoS-$RID" --runtime-identifier $RID --publish-self-contained $PUBLISH_SELF_CONTAINED --publish-single-file $PUBLISH_SINGLE_FILE --publish-trimmed $PUBLISH_TRIMMED
+  artifacts:
+    name: SuCoS-$RID
+    paths:
+      - SuCoS-$RID/*
+    expire_in: 1 week
+  parallel:
+    matrix:
+      - RID: "win-x64"
+        tags: ["windows"]
+      - RID: "linux-x64"
+        tags: ["linux"]
