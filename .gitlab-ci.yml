@@ -8,7 +8,7 @@ stages:
 variables:
   BUILD_CONFIGURATION: "Release"
   PUBLISH_SELF_CONTAINED: "true"
-  PUBLISH_SINGLE_FILE: "false"
+  PUBLISH_SINGLE_FILE: "true"
   PUBLISH_TRIMMED: "false"
 
 .build_job_template: &build_job_definition
