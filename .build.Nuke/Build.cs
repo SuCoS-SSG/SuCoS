@@ -22,7 +22,7 @@ class Build : NukeBuild
     readonly string runtimeIdentifier = "linux-x64";
 
     [Parameter("publish-self-contained")]
-    readonly bool publishSelfContained = false;
+    readonly bool publishSelfContained = true;
 
     [Parameter("publish-single-file")]
     readonly bool publishSingleFile = true;

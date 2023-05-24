@@ -14,8 +14,8 @@
           "type": "string",
           "description": "configuration",
           "enum": [
-            "Debug",
-            "Release"
+            "<Debug>k__BackingField",
+            "<Release>k__BackingField"
           ]
         },
         "Continue": {
