@@ -1,25 +1,35 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
+using SuCoS.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace SuCoS;
+namespace SuCoS.Parser;
 
 /// <summary>
 /// Responsible for parsing the content frontmatter using YAML
 /// </summary>
-public class YAMLParser : IFrontmatterParser
+public partial class YAMLParser : IFrontmatterParser
 {
+    [GeneratedRegex(@"^---\s*\n(?<frontmatter>.*?)\n---\s*\n", RegexOptions.Singleline)]
+    private partial Regex _regex();
+
     /// <inheritdoc/>
-    public Frontmatter ParseFrontmatter(ref string fileContent)
+    public Frontmatter? ParseFrontmatter(Site site, string filePath, ref string fileContent, ITaxonomyCreator taxonomyCreator)
     {
-        Frontmatter frontmatter = new();
-        var match = Regex.Match(fileContent, @"^---\s*\n(?<frontmatter>.*?)\n---\s*\n", RegexOptions.Singleline);
+        if (site is null || taxonomyCreator is null)
+        {
+            throw new ArgumentNullException(nameof(site));
+        }
+
+        Frontmatter? frontmatter = null;
+        var match = _regex().Match(fileContent);
         if (match.Success)
         {
             var frontmatterString = match.Groups["frontmatter"].Value;
+
             fileContent = fileContent[match.Length..].TrimStart('\n');
 
             // Parse the front matter string into Frontmatter properties
@@ -28,38 +38,76 @@ public class YAMLParser : IFrontmatterParser
 
             if (yamlObject is Dictionary<object, object> frontmatterDictionary)
             {
-                _ = (frontmatterDictionary.TryGetValue("Title", out var titleValue) && titleValue != null).ToString();
-                _ = (frontmatterDictionary.TryGetValue("URL", out var urlValue) && urlValue != null).ToString();
+                _ = frontmatterDictionary.TryGetValue("Title", out var titleValue);
+                _ = frontmatterDictionary.TryGetValue("URL", out var urlValue);
+                _ = frontmatterDictionary.TryGetValue("Type", out var typeValue);
+                var section = GetSection(site, filePath);
+
                 List<string> tags = new();
-                if (frontmatterDictionary.TryGetValue("Tags", out var tagsValue) && tagsValue is List<object> tagsList)
+                if (frontmatterDictionary.TryGetValue("Tags", out var tagsValue) && tagsValue is List<object> tagsListObj)
                 {
-                    tags = tagsList.Select(tag => tag.ToString()!).ToList();
+                    foreach (var item in tagsListObj)
+                    {
+                        var value = item?.ToString();
+                        if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            tags.Add(value);
+                        }
+                    }
                 }
 
-                frontmatter = new Frontmatter
+                var sourceFileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath) ?? string.Empty;
+                frontmatter = new(
+                    Title: titleValue?.ToString() ?? sourceFileNameWithoutExtension,
+                    Site: site,
+                    SourcePath: filePath,
+                    SourceFileNameWithoutExtension: sourceFileNameWithoutExtension,
+                    SourcePathDirectory: null
+                )
                 {
-                    Title = titleValue?.ToString(),
                     URL = urlValue?.ToString(),
-                    Tags = tags,
-                    ContentRaw = fileContent
+                    Section = section,
+                    Type = typeValue?.ToString() ?? section,
+                    Kind = Kind.single,
                 };
+
+                foreach (var tagName in tags)
+                {
+                    _ = taxonomyCreator.CreateTagFrontmatter(site, tagName: tagName, frontmatter);
+                }
             }
         }
-        else
+        if (frontmatter is not null)
         {
             frontmatter.ContentRaw = fileContent;
+            return frontmatter;
         }
-        return frontmatter;
+
+        return null;
+    }
+
+    private static string GetSection(Site site, string filePath)
+    {
+        var relativePath = Path.GetRelativePath(site.SourceContentPath, filePath);
+
+        // Get the directory name from the path
+        var directoryName = Path.GetDirectoryName(relativePath);
+
+        // Split the path into individual folders
+        var folders = directoryName?.Split(Path.DirectorySeparatorChar);
+
+        // Retrieve the first folder
+        return folders?[0] ?? string.Empty;
     }
 
     /// <inheritdoc/>
-    public AppConfig ParseAppConfig(string configFileContent)
+    public Site ParseAppConfig(string configFileContent)
     {
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(PascalCaseNamingConvention.Instance)
             .IgnoreUnmatchedProperties()
             .Build();
-        var config = deserializer.Deserialize<AppConfig>(configFileContent);
+        var config = deserializer.Deserialize<Site>(configFileContent);
         return config;
     }
 }
