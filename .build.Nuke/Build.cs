@@ -65,7 +65,7 @@ class Build : NukeBuild
         });
 
     public Target Publish => _ => _
-    .DependsOn(Compile)
+    .DependsOn(Restore)
     .Executes(() =>
     {
         Console.WriteLine(RootDirectory);

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using Serilog;
 using SuCoS.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -13,7 +14,7 @@ namespace SuCoS.Parser;
 /// </summary>
 public partial class YAMLParser : IFrontmatterParser
 {
-    [GeneratedRegex(@"^---\s*\n(?<frontmatter>.*?)\n---\s*\n", RegexOptions.Singleline)]
+    [GeneratedRegex(@"^---\s*[\r\n](?<frontmatter>.*?)[\r\n]---\s*", RegexOptions.Singleline)]
     private partial Regex _regex();
 
     /// <inheritdoc/>

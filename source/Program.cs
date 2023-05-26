@@ -63,13 +63,5 @@ public class Program
    \ `\____\ \____/ \ \____/\ \____/\ `\____\
     \/_____/\/___/   \/___/  \/___/  \/_____/
 ");
-
-        //         Log.Information(@"
-        // Static sie generator
-        // using
-        // C
-        // o
-        // Sharp
-        // ");
     }
 }

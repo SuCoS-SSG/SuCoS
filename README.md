@@ -10,15 +10,23 @@
     \/_____/\/___/   \/___/  \/___/  \/_____/
 ```
 
-🎉 Welcome to SuCoS, the most delightfully wacky and laughably unstable Static Site Generator out there! 🎉
+**S**tatic site generator
+**u**sing
+**C**
+**o**
+**S**harp
+
+🎉 Welcome to **SuCoS**, the most delightfully wacky and laughably unstable Static Site Generator out there! 🎉
 
 The vision is to be a close substitute of [Hugo](https://gohugo.io/), but written in **C#**. As a vision, I will dream as much as I can.
 
-> **DISCLAIMER**: SuCoS is in a **SUPER ALPHA version**, and we mean SUPER! Please do not use for ANY real site for now. Prepare to be entertained by unexpected behaviors! 🎢
+> **DISCLAIMER**: **SuCoS** is in a **SUPER ALPHA version**, and we mean SUPER! Please do not use for ANY real site for now. Prepare to be entertained by unexpected behaviors! 🎢
+
+<img src="SuCoS-logo.svg" width="128px" style="display: block;margin-left: auto;margin-right: auto;" />
 
 ## Usage
 
-First, navigate to the SuCoS folder.
+First, navigate to the **SuCoS** folder.
 Chris Kibble
 Then, run the following command:
 ```bash
@@ -27,7 +35,7 @@ SuCoS --source YOUR_SITE_PATH
 
 if `--source` not present, it will default to current folder.
 
-Watch in awe as SuCoS creates a static site from your input files, or as it possibly implodes (with a 50/50 chance).
+Watch in awe as **SuCoS** creates a static site from your input files, or as it possibly implodes (with a 50/50 chance).
 
 If all goes well (fingers crossed 🤞), you'll have a shiny new static website in the `public` folder.
 
@@ -37,7 +45,7 @@ This piece of software is brought to you under the [MIT license](LICENSE), becau
 
 ## Build Requirements
 
-SuCoS is built with **dotnet 7**, the latest and greatest in the C# universe! To join the party, make sure you have it installed on your system.
+**SuCoS** is built with **dotnet 7**, the latest and greatest in the C# universe! To join the party, make sure you have it installed on your system.
 
 ```bash
 git clone https://github.com/brunomassa/sucos.git
@@ -51,7 +59,7 @@ We welcome contributions in the form of bug reports, feature requests, and pull 
 
 ## Final Words
 
-Remember, SuCoS is a work in progress, and it's important to maintain calm while using this software. After all, we're all in this unpredictable journey together. Have fun, and may the 4th be with you! 😄
+Remember, **SuCoS** is a work in progress, and it's important to maintain calm while using this software. After all, we're all in this unpredictable journey together. Have fun, and may the 4th be with you! 😄
 
 ## Author
 
