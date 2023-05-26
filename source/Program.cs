@@ -1,5 +1,6 @@
 ﻿using System.CommandLine;
 using System.Reflection;
+using System.Threading.Tasks;
 using Serilog;
 
 namespace SuCoS;
@@ -27,29 +28,58 @@ public class Program
         var appVersion = assemblyName?.Version;
         Log.Information("{name} v{version}", appName, appVersion);
 
-        var buildSourceOption = new Option<string>(new[] { "--source", "-s" }, () => ".", "Source directory path");
-        var buildOutputOption = new Option<string>(new[] { "--output", "-o" }, () => "./public", "Output directory path");
-        var buildVerboseOption = new Option<bool>(new[] { "--verbose", "-v" }, () => false, "Verbose output");
-        var buildCommand = new RootCommand
-            {
-                buildSourceOption,
-                buildOutputOption,
-                buildVerboseOption
-            };
-        buildCommand.Description = "Build commands";
-        buildCommand.SetHandler((source, output, verbose) =>
-            {
-                var buildOptions = new BuildOptions()
-                {
-                    Source = source,
-                    Output = output,
-                    Verbose = verbose
-                };
-                var build = new BuildCommand(buildOptions);
-            },
-            buildSourceOption, buildOutputOption, buildVerboseOption);
+        // Shared options between the commands
+        var sourceOption = new Option<string>(new[] { "--source", "-s" }, () => ".", "Source directory path");
+        var verboseOption = new Option<bool>(new[] { "--verbose", "-v" }, () => false, "Verbose output");
 
-        return buildCommand.Invoke(args);
+        // BuildCommand setup
+        var buildOutputOption = new Option<string>(new[] { "--output", "-o" }, () => "./public", "Output directory path");
+
+        Command buildCommand = new("build", "Builds the site")
+            {
+                sourceOption,
+                buildOutputOption,
+                verboseOption
+            };
+        buildCommand.SetHandler((source, output, verbose) =>
+        {
+            BuildOptions buildOptions = new()
+            {
+                Source = source,
+                Output = output,
+                Verbose = verbose
+            };
+            _ = new BuildCommand(buildOptions);
+        },
+        sourceOption, buildOutputOption, verboseOption);
+
+        // ServerCommand setup
+        Command serveCommand = new("serve", "Starts the server")
+        {
+            sourceOption,
+            verboseOption
+        };
+        serveCommand.SetHandler(async (source, verbose) =>
+        {
+            ServeOptions serverOptions = new()
+            {
+                Source = source,
+                Verbose = verbose
+            };
+
+            var serveCommand = new ServeCommand(serverOptions);
+            await serveCommand.RunServer();
+            await Task.Delay(-1);  // Wait forever.
+        },
+        sourceOption, verboseOption);
+
+        RootCommand rootCommand = new("SuCoS commands")
+        {
+            buildCommand,
+            serveCommand
+        };
+
+        return rootCommand.Invoke(args);
     }
 
     private static void OutputLogo()

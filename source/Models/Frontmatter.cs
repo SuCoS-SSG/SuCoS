@@ -1,9 +1,6 @@
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
-using Serilog;
 using SuCoS.Models;
 
 namespace SuCoS;
@@ -108,6 +105,6 @@ public class Frontmatter
         this.Site = Site;
         this.SourcePath = SourcePath;
         this.SourceFileNameWithoutExtension = SourceFileNameWithoutExtension ?? Path.GetFileNameWithoutExtension(SourcePath);
-        this.SourcePathDirectory = SourceFileNameWithoutExtension ?? Path.GetDirectoryName(SourcePath) ?? string.Empty;
+        this.SourcePathDirectory = SourcePathDirectory ?? Path.GetDirectoryName(SourcePath) ?? string.Empty;
     }
 }

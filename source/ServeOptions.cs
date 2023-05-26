@@ -1,9 +1,9 @@
 namespace SuCoS;
 
 /// <summary>
-/// Command line options for the build command.
+/// Command line options for the serve command.
 /// </summary>
-public class BuildOptions : IGenerateOptions
+public class ServeOptions : IGenerateOptions
 {
     /// <summary>
     /// The path of the source files.

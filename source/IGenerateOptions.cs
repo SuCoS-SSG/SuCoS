@@ -1,22 +1,22 @@
 namespace SuCoS;
 
 /// <summary>
-/// Command line options for the build command.
+/// Command line options for the build and serve command.
 /// </summary>
-public class BuildOptions : IGenerateOptions
+public interface IGenerateOptions
 {
     /// <summary>
     /// The path of the source files.
     /// </summary>
-    public string Source { get; set; } = ".";
+    string Source { get; set; }
 
     /// <summary>
     /// The path of the output files.
     /// </summary>
-    public string Output { get; set; } = "./public";
+    public string Output { get; set; }
 
     /// <summary>
     /// If true, the program will print more information.
     /// </summary>
-    public bool Verbose { get; set; } = false;
+    bool Verbose { get; set; }
 }
