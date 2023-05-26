@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -26,6 +26,7 @@ public class BuildCommand : ITaxonomyCreator
     private readonly Dictionary<(string, Kind, string), string> baseTemplateCache = new();
     private readonly Dictionary<string, Frontmatter> tagFrontmatterCache = new();
     private readonly object syncLock = new();
+    private readonly TemplateOptions templateOptions = new();
 
     /// <summary>
     /// Entry point of the build command. It will be called by the main program
@@ -69,13 +70,23 @@ public class BuildCommand : ITaxonomyCreator
         // Create a stopwatch to measure the time taken
         var stopwatchParse = Stopwatch.StartNew();
 
+        templateOptions.MemberAccessStrategy.Register<Frontmatter>();
+        templateOptions.MemberAccessStrategy.Register<Site>();
+
         // Process the source files, extracting the frontmatter
         var filesParsed = 0; // counter to keep track of the number of files processed
         _ = Parallel.ForEach(site.RawPages, file =>
         {
-            var frontmatter = ReadSourceFrontmatter(file.filePath, file.content, site, frontmatterParser);
-            site.Pages.Add(frontmatter);
-            site.RegularPages.Add(frontmatter);
+            try
+            {
+                var frontmatter = ReadSourceFrontmatter(file.filePath, file.content, site, frontmatterParser);
+                site.Pages.Add(frontmatter);
+                site.RegularPages.Add(frontmatter);
+            }
+            catch
+            {
+                Log.Error("Error parsing file {file}. Skipped.", file.filePath);
+            }
 
             // Use interlocked to safely increment the counter in a multi-threaded environment
             _ = Interlocked.Increment(ref filesParsed);
@@ -104,6 +115,9 @@ public class BuildCommand : ITaxonomyCreator
 
         // Stop the stopwatch
         stopwatchCreate.Stop();
+
+        // Copy static folder files into the root of the output folder
+        CopyFolder(site.SourceStaticPath, site.OutputPath);
 
         var reportData = new[]
          {
@@ -163,7 +177,7 @@ public class BuildCommand : ITaxonomyCreator
             ?? throw new FormatException($"Error parsing frontmatter for {filePath}");
 
         // Convert the Markdown content to HTML
-        frontmatter.Content = Markdown.ToHtml(frontmatter.ContentRaw);
+        frontmatter.ContentPreRendered = Markdown.ToHtml(frontmatter.ContentRaw);
         frontmatter.Permalink = GetOutputPath(filePath, site, frontmatter);
 
         if (site.HomePage is null && string.IsNullOrEmpty(frontmatter.SourcePath) && frontmatter.SourceFileNameWithoutExtension == "index")
@@ -301,20 +315,18 @@ public class BuildCommand : ITaxonomyCreator
         }
 
         string result;
-        var themePath = Path.Combine(Path.GetFullPath(site.SourcePath), "theme");
 
         // Theme content
         IFluidTemplate? template;
         string? error;
-        var fileContents = GetTemplate(themePath, frontmatter);
+        var fileContents = GetTemplate(site.SourceThemePath, frontmatter);
         if (string.IsNullOrEmpty(value: fileContents))
         {
             frontmatter.ContentPreRendered = frontmatter.Content;
         }
         else if (parser.TryParse(fileContents, out template, out error))
         {
-            var context = new TemplateContext(frontmatter);
-            frontmatter.ContentPreRendered = frontmatter.Content;
+            var context = new TemplateContext(frontmatter, templateOptions);
             frontmatter.Content = template.Render(context);
         }
         else
@@ -324,14 +336,14 @@ public class BuildCommand : ITaxonomyCreator
         }
 
         // Theme base, which wraps the content into common HTML elements, like header, footer, etc.
-        fileContents = GetTemplate(themePath, frontmatter, true);
+        fileContents = GetTemplate(site.SourceThemePath, frontmatter, true);
         if (string.IsNullOrEmpty(fileContents))
         {
             result = frontmatter.Content;
         }
         else if (parser.TryParse(fileContents, out template, out error))
         {
-            var context = new TemplateContext(frontmatter);
+            var context = new TemplateContext(frontmatter, templateOptions);
             result = template.Render(context);
         }
         else
@@ -396,5 +408,26 @@ public class BuildCommand : ITaxonomyCreator
             originalFrontmatter.Tags!.Add(frontmatter);
         }
         return frontmatter;
+    }
+
+    private static void CopyFolder(string source, string output)
+    {
+        // Create the output folder if it doesn't exist
+        Directory.CreateDirectory(output);
+
+        // Get all files in the source folder
+        var files = Directory.GetFiles(source);
+
+        foreach (var file in files)
+        {
+            // Get the filename from the full path
+            var fileName = Path.GetFileName(file);
+
+            // Create the destination path by combining the output folder and the filename
+            var destinationPath = Path.Combine(output, fileName);
+
+            // Copy the file to the output folder
+            File.Copy(file, destinationPath, overwrite: true);
+        }
     }
 }
