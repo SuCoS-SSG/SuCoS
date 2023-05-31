@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="wwwroot/js/reload.js" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="wwwroot\js\reload.js" />
   </ItemGroup>
 
   <ItemGroup>

@@ -88,13 +88,8 @@ public partial class YAMLParser : IFrontmatterParser
 
     private static string GetSection(Site site, string filePath)
     {
-        var relativePath = Path.GetRelativePath(site.SourceContentPath, filePath);
-
-        // Get the directory name from the path
-        var directoryName = Path.GetDirectoryName(relativePath);
-
         // Split the path into individual folders
-        var folders = directoryName?.Split(Path.DirectorySeparatorChar);
+        var folders = filePath?.Split(Path.DirectorySeparatorChar);
 
         // Retrieve the first folder
         return folders?[0] ?? string.Empty;

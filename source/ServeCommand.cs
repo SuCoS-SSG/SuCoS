@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -116,6 +117,8 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         stopwatch.LogReport(site.Title);
 
         pages.Clear();
+        baseTemplateCache.Clear();
+        contentTemplateCache.Clear();
 
         foreach (var Frontmatter in site.Pages)
         {
@@ -294,7 +297,13 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         }
     }
 
-    private string GetContentType(string filePath)
+    /// <summary>
+    /// Retrieves the content type of a file based on its extension.
+    /// If the content type cannot be determined, the default value "application/octet-stream" is returned.
+    /// </summary>
+    /// <param name="filePath">The path of the file.</param>
+    /// <returns>The content type of the file.</returns>
+    private static string GetContentType(string filePath)
     {
         var provider = new FileExtensionContentTypeProvider();
         if (!provider.TryGetContentType(filePath, out var contentType))
@@ -304,16 +313,40 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         return contentType ?? "application/octet-stream";
     }
 
+    /// <summary>
+    /// Injects a reload script into the provided content.
+    /// The script is read from a JavaScript file and injected before the closing "body" tag.
+    /// </summary>
+    /// <param name="content">The content to inject the reload script into.</param>
+    /// <returns>The content with the reload script injected.</returns>
     private static string InjectReloadScript(string content)
     {
-        // Inject a reference to the JavaScript file
-        const string reloadScript = "<script src=\"/js/reload.js\"></script>";
+        // Read the content of the JavaScript file
+        string scriptContent;
+        try
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            using var stream = assembly.GetManifestResourceStream("SuCoS.wwwroot.js.reload.js")
+                ?? throw new FileNotFoundException("Could not find the embedded JavaScript resource.");
+            using var reader = new StreamReader(stream);
+            scriptContent = reader.ReadToEnd();
+        }
+        catch (Exception e)
+        {
+            var ex = new FileNotFoundException("Could not read the JavaScript file.", e);
+            Log.Error(ex, "Could not read the JavaScript file.");
+            throw ex;
+        }
+
+        // Inject the JavaScript content
+        var reloadScript = $"<script>{scriptContent}</script>";
 
         const string bodyClosingTag = "</body>";
         content = content.Replace(bodyClosingTag, $"{reloadScript}{bodyClosingTag}", StringComparison.InvariantCulture);
 
         return content;
     }
+
 
     /// <summary>
     /// Handles the file change event from the file watcher.
