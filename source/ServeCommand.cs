@@ -122,6 +122,11 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
             if (Frontmatter.Permalink != null)
             {
                 pages.TryAdd(Frontmatter.Permalink, Frontmatter);
+                if (Path.GetFileName(Frontmatter.Permalink) == "index.html")
+                {
+                    var path = Path.GetDirectoryName(Frontmatter.Permalink);
+                    pages.TryAdd(path!, Frontmatter);
+                }
             }
         }
     }
@@ -249,7 +254,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         else if (File.Exists(wwwfileAbsolutePath))
         {
             // Set the content type header
-            context.Response.ContentType = GetContentType(wwwfileAbsolutePath);;
+            context.Response.ContentType = GetContentType(wwwfileAbsolutePath); ;
 
             using var fileStream = new FileStream(wwwfileAbsolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             // Copy the file stream to the response body
