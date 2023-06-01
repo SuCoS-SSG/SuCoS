@@ -17,9 +17,9 @@ public partial class YAMLParser : IFrontmatterParser
     private partial Regex _regex();
 
     /// <inheritdoc/>
-    public Frontmatter? ParseFrontmatter(Site site, string filePath, ref string fileContent, ITaxonomyCreator taxonomyCreator)
+    public Frontmatter? ParseFrontmatter(Site site, string filePath, ref string fileContent, BaseGeneratorCommand frontmatterManager)
     {
-        if (site is null || taxonomyCreator is null)
+        if (site is null || frontmatterManager is null)
         {
             throw new ArgumentNullException(nameof(site));
         }
@@ -58,6 +58,7 @@ public partial class YAMLParser : IFrontmatterParser
 
                 var sourceFileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath) ?? string.Empty;
                 frontmatter = new(
+                    BaseGeneratorCommand: frontmatterManager,
                     Title: titleValue?.ToString() ?? sourceFileNameWithoutExtension,
                     Site: site,
                     SourcePath: filePath,
@@ -68,12 +69,12 @@ public partial class YAMLParser : IFrontmatterParser
                     URL = urlValue?.ToString(),
                     Section = section,
                     Type = typeValue?.ToString() ?? section,
-                    Kind = Kind.single,
+                    Kind = Kind.single
                 };
 
                 foreach (var tagName in tags)
                 {
-                    _ = taxonomyCreator.CreateTagFrontmatter(site, tagName: tagName, frontmatter);
+                    _ = frontmatterManager.CreateTagFrontmatter(site, tagName: tagName, frontmatter);
                 }
             }
         }

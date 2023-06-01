@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Fluid;
 using Markdig;
+using Microsoft.Extensions.FileProviders;
 using Serilog;
 using SuCoS.Models;
 using SuCoS.Parser;
@@ -14,7 +15,7 @@ namespace SuCoS;
 /// <summary>
 /// Base class for build and serve commands.
 /// </summary>
-public abstract class BaseGeneratorCommand : ITaxonomyCreator
+public abstract class BaseGeneratorCommand
 {
     /// <summary>
     /// The configuration file name.
@@ -67,6 +68,90 @@ public abstract class BaseGeneratorCommand : ITaxonomyCreator
     protected readonly StopwatchReporter stopwatch = new();
 
     /// <summary>
+    /// The time that the older cache should be ignored.
+    /// </summary>
+    public DateTime IgnoreCacheBefore { get; set; }
+
+    /// <inheritdoc/>
+    public Frontmatter CreateTagFrontmatter(Site site, string tagName, Frontmatter originalFrontmatter)
+    {
+        if (originalFrontmatter is null)
+        {
+            throw new ArgumentNullException(nameof(originalFrontmatter));
+        }
+
+        Frontmatter? frontmatter = null;
+        lock (syncLock)
+        {
+            if (!tagFrontmatterCache.TryGetValue(tagName, out frontmatter))
+            {
+                if (site is null)
+                {
+                    throw new ArgumentNullException(nameof(site));
+                }
+
+                frontmatter = new(
+                    BaseGeneratorCommand: this,
+                    Site: site,
+                    Title: tagName,
+                    SourcePath: "tags",
+                    SourceFileNameWithoutExtension: string.Empty,
+                    SourcePathDirectory: null
+                )
+                {
+                    Section = "tags",
+                    Kind = Kind.list,
+                    Type = "tags",
+                    URL = "tags/" + Urlizer.Urlize(tagName),
+                    ContentRaw = $"# {tagName}",
+                    Pages = new()
+                };
+                frontmatter.Permalink = "/" + GetOutputPath(frontmatter.URL, site, frontmatter);
+                site.Pages.Add(frontmatter);
+                tagFrontmatterCache.Add(tagName, frontmatter);
+            }
+        }
+        lock (frontmatter?.Pages!)
+        {
+            frontmatter.Pages!.Add(originalFrontmatter);
+            originalFrontmatter.Tags ??= new();
+            originalFrontmatter.Tags!.Add(frontmatter);
+        }
+        return frontmatter;
+    }
+
+    /// <inheritdoc/>
+    public string CreateFrontmatterContent(Frontmatter frontmatter)
+    {
+        var fileContents = GetTemplate(site.SourceThemePath, frontmatter);
+        // Theme content
+        if (string.IsNullOrEmpty(value: fileContents))
+        {
+            return frontmatter.Content;
+        }
+        else if (parser.TryParse(fileContents, out var template, out var error))
+        {
+            var context = new TemplateContext(templateOptions)
+                .SetValue("page", frontmatter);
+            try
+            {
+                var rendered = template.Render(context);
+                return rendered;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error rendering theme template: {Error}", error);
+                return string.Empty;
+            }
+        }
+        else
+        {
+            Log.Error("Error parsing theme template: {Error}", error);
+            return string.Empty;
+        }
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="BaseGeneratorCommand"/> class.
     /// </summary>
     /// <param name="options">The generate options.</param>
@@ -78,9 +163,6 @@ public abstract class BaseGeneratorCommand : ITaxonomyCreator
         }
 
         Log.Information("Source path: {source}", propertyValue: options.Source);
-
-        templateOptions.MemberAccessStrategy.Register<Frontmatter>();
-        templateOptions.MemberAccessStrategy.Register<Site>();
 
         try
         {
@@ -94,6 +176,11 @@ public abstract class BaseGeneratorCommand : ITaxonomyCreator
         {
             throw new FormatException("Error reading app config");
         }
+
+        templateOptions.MemberAccessStrategy.Register<Frontmatter>();
+        templateOptions.MemberAccessStrategy.Register<Site>();
+        templateOptions.MemberAccessStrategy.Register<BaseGeneratorCommand>();
+        templateOptions.FileProvider = new PhysicalFileProvider(site.SourceThemePath);
 
         ScanAllMarkdownFiles();
 
@@ -191,7 +278,7 @@ public abstract class BaseGeneratorCommand : ITaxonomyCreator
     /// <param name="site">The site instance.</param>
     /// <param name="relativePath">The relative path of the page.</param>
     /// <returns>The created frontmatter for the index page.</returns>
-    protected static Frontmatter CreateIndexPage(Site site, string relativePath)
+    protected Frontmatter CreateIndexPage(Site site, string relativePath)
     {
         if (site is null)
         {
@@ -199,7 +286,7 @@ public abstract class BaseGeneratorCommand : ITaxonomyCreator
         }
 
         Frontmatter frontmatter = new(
-
+            BaseGeneratorCommand: this,
             Title: site.Title,
             Site: site,
             SourcePath: Path.Combine(relativePath, "index"),
@@ -208,7 +295,7 @@ public abstract class BaseGeneratorCommand : ITaxonomyCreator
         )
         {
             Kind = string.IsNullOrEmpty(relativePath) ? Kind.index : Kind.list,
-            Permalink = "index.html",
+            Permalink = "/index.html",
         };
         return frontmatter;
     }
@@ -263,7 +350,7 @@ public abstract class BaseGeneratorCommand : ITaxonomyCreator
 
         // Convert the Markdown content to HTML
         frontmatter.ContentPreRendered = Markdown.ToHtml(frontmatter.ContentRaw);
-        frontmatter.Permalink = GetOutputPath(filePath, site, frontmatter);
+        frontmatter.Permalink = "/" + GetOutputPath(filePath, site, frontmatter);
 
         if (site.HomePage is null && string.IsNullOrEmpty(frontmatter.SourcePath) && frontmatter.SourceFileNameWithoutExtension == "index")
         {
@@ -319,54 +406,6 @@ public abstract class BaseGeneratorCommand : ITaxonomyCreator
         return outputRelativePath;
     }
 
-    /// <inheritdoc/>
-    public Frontmatter CreateTagFrontmatter(Site site, string tagName, Frontmatter originalFrontmatter)
-    {
-        if (originalFrontmatter is null)
-        {
-            throw new ArgumentNullException(nameof(originalFrontmatter));
-        }
-
-        Frontmatter? frontmatter = null;
-        lock (syncLock)
-        {
-            if (!tagFrontmatterCache.TryGetValue(tagName, out frontmatter))
-            {
-                if (site is null)
-                {
-                    throw new ArgumentNullException(nameof(site));
-                }
-
-                frontmatter = new(
-
-                    Site: site,
-                    Title: tagName,
-                    SourcePath: "tags",
-                    SourceFileNameWithoutExtension: string.Empty,
-                    SourcePathDirectory: null
-                )
-                {
-                    Section = "tags",
-                    Kind = Kind.list,
-                    Type = "tags",
-                    URL = "tags/" + Urlizer.Urlize(tagName),
-                    ContentRaw = $"# {tagName}",
-                    Pages = new()
-                };
-                frontmatter.Permalink = GetOutputPath(frontmatter.URL, site, frontmatter);
-                site.Pages.Add(frontmatter);
-                tagFrontmatterCache.Add(tagName, frontmatter);
-            }
-        }
-        lock (frontmatter?.Pages!)
-        {
-            frontmatter.Pages!.Add(originalFrontmatter);
-            originalFrontmatter.Tags ??= new();
-            originalFrontmatter.Tags!.Add(frontmatter);
-        }
-        return frontmatter;
-    }
-
     /// <summary>
     /// Creates the output file by applying the theme templates to the frontmatter content.
     /// </summary>
@@ -374,40 +413,23 @@ public abstract class BaseGeneratorCommand : ITaxonomyCreator
     /// <returns>The processed output file content.</returns>
     protected string CreateOutputFile(Frontmatter frontmatter)
     {
-        string result;
-
         // Theme content
-        IFluidTemplate? template;
-        string? error;
-        var fileContents = GetTemplate(site.SourceThemePath, frontmatter);
-        if (string.IsNullOrEmpty(value: fileContents))
-        {
-            frontmatter.ContentPreRendered = frontmatter.Content;
-        }
-        else if (parser.TryParse(fileContents, out template, out error))
-        {
-            var context = new TemplateContext(frontmatter, templateOptions);
-            frontmatter.Content = template.Render(context);
-        }
-        else
-        {
-            Log.Error("Error parsing theme template: {Error}", error);
-            return string.Empty;
-        }
+        string result;
 
         // Process the theme base template
         // If the theme base template file is available, parse and render the template using the frontmatter data
         // Otherwise, use the processed content as the final result
         // Any error during parsing is logged, and an empty string is returned
         // The final result is stored in the 'result' variable and returned
-        fileContents = GetTemplate(site.SourceThemePath, frontmatter, true);
+        var fileContents = GetTemplate(site.SourceThemePath, frontmatter, true);
         if (string.IsNullOrEmpty(fileContents))
         {
             result = frontmatter.Content;
         }
-        else if (parser.TryParse(fileContents, out template, out error))
+        else if (parser.TryParse(fileContents, out var template, out var error))
         {
-            var context = new TemplateContext(frontmatter, templateOptions);
+            var context = new TemplateContext(templateOptions);
+            _ = context.SetValue("page", frontmatter);
             result = template.Render(context);
         }
         else
@@ -504,11 +526,22 @@ public abstract class BaseGeneratorCommand : ITaxonomyCreator
             {
                 foreach (var kind in kinds)
                 {
-                    var path = Path.Combine(themePath, section, type, kind) + ".html";
+                    var path = Path.Combine(themePath, section, type, kind) + ".liquid";
                     templatePaths.Add(path);
                 }
             }
         }
         return templatePaths;
+    }
+
+    /// <summary>
+    /// Resets the template cache to force a reload of all templates.
+    /// </summary>
+    protected void ResetCache()
+    {
+        baseTemplateCache.Clear();
+        contentTemplateCache.Clear();
+        tagFrontmatterCache.Clear();
+        IgnoreCacheBefore = DateTime.Now;
     }
 }

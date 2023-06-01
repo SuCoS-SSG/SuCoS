@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -56,9 +57,31 @@ public class Frontmatter
     public string ContentPreRendered { get; set; } = string.Empty;
 
     /// <summary>
+    /// The cached content.
+    /// </summary>
+    public string? ContentCache { get; set; }
+
+    /// <summary>
+    /// The time when the content was cached.
+    /// </summary>
+    public DateTime? ContentCacheTime { get; set; }
+
+    /// <summary>
     /// The processed content.
     /// </summary>
-    public string Content { get; set; } = string.Empty;
+    public string Content
+    // { get; set; }
+    {
+        get
+        {
+            if (true || BaseGeneratorCommand.IgnoreCacheBefore > ContentCacheTime)
+            {
+                ContentCache = BaseGeneratorCommand.CreateFrontmatterContent(this);
+                ContentCacheTime = DateTime.UtcNow;
+            }
+            return ContentCache!;
+        }
+    }
 
     /// <summary>
     /// A list of tags, if any.
@@ -97,10 +120,16 @@ public class Frontmatter
     public string Language { get; set; } = string.Empty;
 
     /// <summary>
+    /// Content generator.
+    /// </summary>
+    public BaseGeneratorCommand BaseGeneratorCommand { get; set; }
+
+    /// <summary>
     /// Required.
     /// </summary>
-    public Frontmatter(string Title, string SourcePath, Site Site, string? SourceFileNameWithoutExtension = null, string? SourcePathDirectory = null)
+    public Frontmatter(BaseGeneratorCommand BaseGeneratorCommand, string Title, string SourcePath, Site Site, string? SourceFileNameWithoutExtension = null, string? SourcePathDirectory = null)
     {
+        this.BaseGeneratorCommand = BaseGeneratorCommand;
         this.Title = Title;
         this.Site = Site;
         this.SourcePath = SourcePath;

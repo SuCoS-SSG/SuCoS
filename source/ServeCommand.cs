@@ -109,6 +109,9 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
             throw new FormatException("Error reading app config");
         }
 
+        pages.Clear();
+        ResetCache();
+
         ScanAllMarkdownFiles();
 
         ParseSourceFiles();
@@ -116,20 +119,20 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         // Generate the build report
         stopwatch.LogReport(site.Title);
 
-        pages.Clear();
-        baseTemplateCache.Clear();
-        contentTemplateCache.Clear();
-
         foreach (var Frontmatter in site.Pages)
         {
             if (Frontmatter.Permalink != null)
             {
-                pages.TryAdd(Frontmatter.Permalink, Frontmatter);
+                _ = pages.TryAdd(Frontmatter.Permalink, Frontmatter);
                 if (Path.GetFileName(Frontmatter.Permalink) == "index.html")
                 {
                     var path = Path.GetDirectoryName(Frontmatter.Permalink);
-                    pages.TryAdd(path!, Frontmatter);
+                    _ = pages.TryAdd(path!, Frontmatter);
                 }
+            }
+            else
+            {
+                Log.Error("No permalink for {Title}", Frontmatter.Title);
             }
         }
     }
@@ -225,7 +228,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         }
         finally
         {
-            restartServerLock.Release();
+            _ = restartServerLock.Release();
         }
     }
 
@@ -235,7 +238,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <param name="context">The HttpContext representing the current request.</param>
     private async Task HandleRequest(HttpContext context)
     {
-        var requestPath = context.Request.Path.Value.TrimStart('/');
+        var requestPath = context.Request.Path.Value;
         var fileAbsolutePath = Path.Combine(options.Source, "static", requestPath);
 
         var wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
@@ -247,7 +250,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         }
 
         // Return the server startup timestamp as the response
-        if (requestPath == "ping")
+        if (requestPath == "/ping")
         {
             var timestamp = serverStartTime.ToString("o");
             await context.Response.WriteAsync(timestamp);

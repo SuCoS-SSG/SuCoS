@@ -49,7 +49,7 @@ public class BuildCommand : BaseGeneratorCommand
             var result = CreateOutputFile(frontmatter);
 
             // Generate the output path
-            var outputAbsolutePath = Path.Combine(site.OutputPath, frontmatter.Permalink!);
+            var outputAbsolutePath = Path.Combine(site.OutputPath, frontmatter.Permalink!.TrimStart('/'));
             var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
             if (!Directory.Exists(outputDirectory))
             {
@@ -73,10 +73,21 @@ public class BuildCommand : BaseGeneratorCommand
         stopwatch.Stop("Create", pagesCreated);
     }
 
+    /// <summary>
+    /// Copy a folder content from source into the output folder.
+    /// </summary> 
+    /// <param name="source">The source folder to copy from.</param>
+    /// <param name="output">The output folder to copy to.</param>
     private static void CopyFolder(string source, string output)
     {
+        // Check if the source folder even exists
+        if (!Directory.Exists(source))
+        {
+            return;
+        }
+
         // Create the output folder if it doesn't exist
-        Directory.CreateDirectory(output);
+        _ = Directory.CreateDirectory(output);
 
         // Get all files in the source folder
         var files = Directory.GetFiles(source);
