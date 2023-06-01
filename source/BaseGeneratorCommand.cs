@@ -180,7 +180,7 @@ public abstract class BaseGeneratorCommand
         templateOptions.MemberAccessStrategy.Register<Frontmatter>();
         templateOptions.MemberAccessStrategy.Register<Site>();
         templateOptions.MemberAccessStrategy.Register<BaseGeneratorCommand>();
-        templateOptions.FileProvider = new PhysicalFileProvider(site.SourceThemePath);
+        templateOptions.FileProvider = new PhysicalFileProvider(Path.GetFullPath(site.SourceThemePath));
 
         ScanAllMarkdownFiles();
 
