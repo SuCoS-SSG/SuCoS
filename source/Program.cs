@@ -21,7 +21,7 @@ public class Program
         // Print the logo of the program.
         OutputLogo();
 
-        // Print the name and version of the program.git remote add origin git@gitlab.com:brmassa/sucos.git
+        // Print the name and version of the program.
         var assembly = Assembly.GetEntryAssembly();
         var assemblyName = assembly?.GetName();
         var appName = assemblyName?.Name;
