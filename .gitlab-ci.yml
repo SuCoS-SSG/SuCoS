@@ -1,45 +1,86 @@
-
 image: mcr.microsoft.com/dotnet/sdk:7.0
 
 stages:
   - build
+  - check-and-create-release
   - publish
 
+.dotnet_nuke_template: &dotnet_nuke_template
+  before_script:
+    - chmod +x ./build.sh
+
 variables:
-  BUILD_CONFIGURATION: "Release"
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  NUKE_TELEMETRY_OPTOUT: "1" # Disable 
+  IGNORE_NORMALISATION_GIT_HEAD_MOVE: "1"
+  # To overwrite them, just set them in the CI/CD settings
   PUBLISH_SELF_CONTAINED: "true"
   PUBLISH_SINGLE_FILE: "true"
   PUBLISH_TRIMMED: "false"
-
-.build_job_template: &build_job_definition
-  before_script:
-    - export NUKE_TELEMETRY_OPTOUT=1
-    - dotnet tool install --global Nuke.GlobalTool
-    - export PATH="$PATH:~/.dotnet/tools"
 
 cache:
   paths:
     - "**/.nuget/packages"
 
-build:
-  <<: *build_job_definition
-  stage: build
-  script:
-    - nuke Compile --configuration "Debug"
+services:
+  - docker:dind
 
-publish:
-  <<: *build_job_definition
-  stage: publish
+# build the project on every commit
+build:
+  <<: *dotnet_nuke_template
+  stage: build
+  except:
+    - tags
+    - schedules
   script:
-    - nuke Publish --configuration $BUILD_CONFIGURATION --artifacts-directory "./SuCoS-$RID" --runtime-identifier $RID --publish-self-contained $PUBLISH_SELF_CONTAINED --publish-single-file $PUBLISH_SINGLE_FILE --publish-trimmed $PUBLISH_TRIMMED
+    - |
+      ./build.sh Compile \
+        --output-directory "./output"
   artifacts:
-    name: SuCoS-$RID
     paths:
-      - SuCoS-$RID/*
-    expire_in: 1 week
+      - output/*
+
+# # check if there is new commits, if so, create a tag and a release
+# # this will trigger the publish stage "publish"
+check-and-create-release:
+  <<: *dotnet_nuke_template
+  stage: check-and-create-release
+  only:
+    - schedules
+    - web
+  script:
+    - |
+      ./build.sh Compile GitLabCreateRelease \
+        --is-scheduled $CI_PIPELINE_SCHEDULED \
+        --gitlab-private-token $GITLAB_PRIVATE_TOKEN
+
+# publish the project on every tag
+# build for multiple runtimes
+publish:
+  <<: *dotnet_nuke_template
+  stage: publish
+  only:
+    - tags
+  except:
+    - branches
+  before_script:
+    - apt-get update -yqq
+    - apt-get install -yqq --no-install-recommends apt-transport-https ca-certificates curl gnupg
+    - apt-get install -yqq docker.io
+    - chmod +x ./build.sh
+  script:
+    - |
+      ./build.sh CreatePackage CreateContainer \
+        --runtime-identifier $RID \
+        --publish-directory "./publish/SuCoS-$RID" \
+        --publish-self-contained $PUBLISH_SELF_CONTAINED \
+        --publish-single-file $PUBLISH_SINGLE_FILE \
+        --publish-trimmed $PUBLISH_TRIMMED \
+        --container-registry-image $CI_REGISTRY_IMAGE \
+        --gitlab-private-token $GITLAB_PRIVATE_TOKEN
   parallel:
     matrix:
       - RID: "win-x64"
-        tags: ["windows"]
       - RID: "linux-x64"
-        tags: ["linux"]
+      # - RID: "alpine-x64"

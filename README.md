@@ -12,9 +12,7 @@
 
 **S**tatic site generator
 **u**sing
-**C**
-**o**
-**S**harp
+**CoS**harp
 
 🎉 Welcome to **SuCoS**, the most delightfully wacky and laughably unstable Static Site Generator out there! 🎉
 
