@@ -239,10 +239,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     private async Task HandleRequest(HttpContext context)
     {
         var requestPath = context.Request.Path.Value;
-        var fileAbsolutePath = Path.Combine(options.Source, "static", requestPath);
-
-        var wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-        var wwwfileAbsolutePath = Path.Combine(wwwrootPath, requestPath);
+        var fileAbsolutePath = Path.Combine(options.Source, "static", requestPath.TrimStart('/'));
 
         if (options.Verbose)
         {
@@ -256,18 +253,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
             await context.Response.WriteAsync(timestamp);
         }
 
-        // Check if the requested file path is not empty
-        else if (File.Exists(wwwfileAbsolutePath))
-        {
-            // Set the content type header
-            context.Response.ContentType = GetContentType(wwwfileAbsolutePath); ;
-
-            using var fileStream = new FileStream(wwwfileAbsolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            // Copy the file stream to the response body
-            await fileStream.CopyToAsync(context.Response.Body);
-        }
-
-        // Check if the requested file path is not empty
+        // Check if it is one of the Static files (serve the actual file)
         else if (File.Exists(fileAbsolutePath))
         {
             // Set the content type header
