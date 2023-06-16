@@ -6,21 +6,29 @@
     "build": {
       "type": "object",
       "properties": {
-        "artifactsDirectory": {
-          "type": "string",
-          "description": "artifacts-directory"
-        },
         "configuration": {
           "type": "string",
-          "description": "configuration",
+          "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)",
           "enum": [
             "<Debug>k__BackingField",
             "<Release>k__BackingField"
           ]
         },
+        "containerDefaultRID": {
+          "type": "string",
+          "description": "GitLab Project Full Address"
+        },
+        "containerRegistryImage": {
+          "type": "string",
+          "description": "GitLab Project CI_REGISTRY_IMAGE"
+        },
         "Continue": {
           "type": "boolean",
           "description": "Indicates to continue a previously failed build attempt"
+        },
+        "gitlabPrivateToken": {
+          "type": "string",
+          "description": "GitLab private token"
         },
         "Help": {
           "type": "boolean",
@@ -47,9 +55,21 @@
             "VSCode"
           ]
         },
+        "isScheduled": {
+          "type": "boolean",
+          "description": "If the pipeline was triggered by a schedule (or manually)"
+        },
         "NoLogo": {
           "type": "boolean",
           "description": "Disables displaying the NUKE logo"
+        },
+        "outputDirectory": {
+          "type": "string",
+          "description": "output-directory (default: ./output)"
+        },
+        "packageName": {
+          "type": "string",
+          "description": "package-name (default: SuCoS)"
         },
         "Partition": {
           "type": "string",
@@ -66,17 +86,21 @@
             "type": "string"
           }
         },
+        "publishDirectory": {
+          "type": "string",
+          "description": "publish-directory (default: ./publish)"
+        },
         "publishSelfContained": {
           "type": "boolean",
-          "description": "publish-self-contained"
+          "description": "publish-self-contained (default: true)"
         },
         "publishSingleFile": {
           "type": "boolean",
-          "description": "publish-single-file"
+          "description": "publish-single-file (default: true)"
         },
         "publishTrimmed": {
           "type": "boolean",
-          "description": "publish-trimmed"
+          "description": "publish-trimmed (default: false)"
         },
         "Root": {
           "type": "string",
@@ -84,7 +108,7 @@
         },
         "runtimeIdentifier": {
           "type": "string",
-          "description": "Runtime identifier for the build (e.g., win-x64, linux-x64, osx-x64)"
+          "description": "Runtime identifier for the build (e.g., win-x64, linux-x64, osx-x64) (default: linux-x64)"
         },
         "Skip": {
           "type": "array",
@@ -92,10 +116,16 @@
           "items": {
             "type": "string",
             "enum": [
+              "CheckNewCommits",
               "Clean",
               "Compile",
+              "CreateContainer",
+              "CreatePackage",
+              "GitLabCreateRelease",
+              "GitLabCreateTag",
               "Publish",
-              "Restore"
+              "Restore",
+              "ShowCurrentVersion"
             ]
           }
         },
@@ -109,10 +139,16 @@
           "items": {
             "type": "string",
             "enum": [
+              "CheckNewCommits",
               "Clean",
               "Compile",
+              "CreateContainer",
+              "CreatePackage",
+              "GitLabCreateRelease",
+              "GitLabCreateTag",
               "Publish",
-              "Restore"
+              "Restore",
+              "ShowCurrentVersion"
             ]
           }
         },
