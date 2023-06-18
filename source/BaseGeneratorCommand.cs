@@ -68,6 +68,12 @@ public abstract class BaseGeneratorCommand
     protected readonly StopwatchReporter stopwatch = new();
 
     /// <summary>
+    /// Markdig 20+ built-in extensions
+    /// </summary>
+    /// https://github.com/xoofx/markdig
+    protected MarkdownPipeline markdownPipeline;
+
+    /// <summary>
     /// The time that the older cache should be ignored.
     /// </summary>
     public DateTime IgnoreCacheBefore { get; set; }
@@ -182,6 +188,11 @@ public abstract class BaseGeneratorCommand
         templateOptions.MemberAccessStrategy.Register<BaseGeneratorCommand>();
         templateOptions.FileProvider = new PhysicalFileProvider(Path.GetFullPath(site.SourceThemePath));
 
+        // Configure Markdig with the Bibliography extension
+        markdownPipeline = new MarkdownPipelineBuilder()
+            .UseAdvancedExtensions()
+            .Build();
+
         ScanAllMarkdownFiles();
 
         ParseSourceFiles();
@@ -222,7 +233,7 @@ public abstract class BaseGeneratorCommand
             }
             catch
             {
-                Log.Error("Error parsing file {file}. Skipped.", file.filePath);
+                Log.Error("Error parsing file {file}", file.filePath);
             }
 
             // Use interlocked to safely increment the counter in a multi-threaded environment
@@ -349,7 +360,7 @@ public abstract class BaseGeneratorCommand
             ?? throw new FormatException($"Error parsing frontmatter for {filePath}");
 
         // Convert the Markdown content to HTML
-        frontmatter.ContentPreRendered = Markdown.ToHtml(frontmatter.ContentRaw);
+        frontmatter.ContentPreRendered = Markdown.ToHtml(frontmatter.ContentRaw, markdownPipeline);
         frontmatter.Permalink = "/" + GetOutputPath(filePath, site, frontmatter);
 
         if (site.HomePage is null && string.IsNullOrEmpty(frontmatter.SourcePath) && frontmatter.SourceFileNameWithoutExtension == "index")
