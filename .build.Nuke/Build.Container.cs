@@ -34,8 +34,6 @@ sealed partial class Build : NukeBuild
                 tags.AddRange(tagsOriginal);
             }
 
-            Log.Debug("PublishDirectory: {tags}", PublishDirectory);
-
             // Build the Container image
             DockerTasks.DockerBuild(_ => _
                 .SetPath(PublishDirectory)

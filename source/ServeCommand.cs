@@ -119,20 +119,23 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         // Generate the build report
         stopwatch.LogReport(site.Title);
 
-        foreach (var Frontmatter in site.Pages)
+        foreach (var frontmatter in site.Pages)
         {
-            if (Frontmatter.Permalink != null)
+            foreach (var url in frontmatter.Urls)
             {
-                _ = pages.TryAdd(Frontmatter.Permalink, Frontmatter);
-                if (Path.GetFileName(Frontmatter.Permalink) == "index.html")
+                if (url != null)
                 {
-                    var path = Path.GetDirectoryName(Frontmatter.Permalink);
-                    _ = pages.TryAdd(path!, Frontmatter);
+                    _ = pages.TryAdd(url, frontmatter);
+                    if (Path.GetFileName(url) == "index.html")
+                    {
+                        var path = Path.GetDirectoryName(url);
+                        _ = pages.TryAdd(path!, frontmatter);
+                    }
                 }
-            }
-            else
-            {
-                Log.Error("No permalink for {Title}", Frontmatter.Title);
+                else
+                {
+                    Log.Error("No permalink for {Title}", frontmatter.Title);
+                }
             }
         }
     }

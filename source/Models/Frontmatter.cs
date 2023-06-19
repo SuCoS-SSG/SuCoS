@@ -62,41 +62,84 @@ public class Frontmatter
     public string? URL { get; set; }
 
     /// <summary>
+    /// Secondary URL patterns to be used to create the url.
+    /// </summary>
+    public List<string>? Aliases { get; set; }
+
+    /// <summary>
     /// The URL for the content.
     /// </summary>
     public string? Permalink { get; set; }
 
     /// <summary>
+    /// Get all URLs related to this content.
+    /// </summary>
+    public List<string> Urls
+    {
+        get
+        {
+            var urls = new List<string>();
+            if (Permalink is not null)
+            {
+                urls.Add(Permalink);
+            }
+            if (Aliases is not null)
+            {
+                foreach (var aliases in Aliases)
+                {
+                    urls.Add(aliases);
+                }
+            }
+            return urls;
+        }
+    }
+
+    /// <summary>
     /// Raw content, from the Markdown file.
     /// </summary>
-    public string ContentRaw { get; set; } = string.Empty;
+    public string RawContent { get; set; } = string.Empty;
 
     /// <summary>
     /// The markdown content.
     /// </summary>
-    public string ContentPreRendered { get; set; } = string.Empty;
+    private string ContentPreRenderedcached { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The markdown content converted to HTML
+    /// </summary>
+    public string ContentPreRendered
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(ContentPreRenderedcached))
+            {
+                ContentPreRenderedcached = BaseGeneratorCommand.CreateContentPreRendered(this);
+            }
+            return ContentPreRenderedcached;
+        }
+    }
+
 
     /// <summary>
     /// The cached content.
     /// </summary>
-    public string? ContentCache { get; set; }
+    private string? ContentCache { get; set; }
 
     /// <summary>
     /// The time when the content was cached.
     /// </summary>
-    public DateTime? ContentCacheTime { get; set; }
+    private DateTime? ContentCacheTime { get; set; }
 
     /// <summary>
     /// The processed content.
     /// </summary>
     public string Content
-    // { get; set; }
     {
         get
         {
-            if (true || BaseGeneratorCommand.IgnoreCacheBefore > ContentCacheTime)
+            if (ContentCacheTime is null || BaseGeneratorCommand.IgnoreCacheBefore >= ContentCacheTime)
             {
-                ContentCache = BaseGeneratorCommand.CreateFrontmatterContent(this);
+                ContentCache = BaseGeneratorCommand.CreateContent(this);
                 ContentCacheTime = DateTime.UtcNow;
             }
             return ContentCache!;
@@ -142,18 +185,24 @@ public class Frontmatter
     /// <summary>
     /// Content generator.
     /// </summary>
-    public BaseGeneratorCommand BaseGeneratorCommand { get; set; }
+    private BaseGeneratorCommand BaseGeneratorCommand { get; set; }
 
     /// <summary>
     /// Required.
     /// </summary>
-    public Frontmatter(BaseGeneratorCommand BaseGeneratorCommand, string Title, string SourcePath, Site Site, string? SourceFileNameWithoutExtension = null, string? SourcePathDirectory = null)
+    public Frontmatter(
+        BaseGeneratorCommand baseGeneratorCommand,
+        string title,
+        string sourcePath,
+        Site site,
+        string? sourceFileNameWithoutExtension = null,
+        string? sourcePathDirectory = null)
     {
-        this.BaseGeneratorCommand = BaseGeneratorCommand;
-        this.Title = Title;
-        this.Site = Site;
-        this.SourcePath = SourcePath;
-        this.SourceFileNameWithoutExtension = SourceFileNameWithoutExtension ?? Path.GetFileNameWithoutExtension(SourcePath);
-        this.SourcePathDirectory = SourcePathDirectory ?? Path.GetDirectoryName(SourcePath) ?? string.Empty;
+        BaseGeneratorCommand = baseGeneratorCommand;
+        Title = title;
+        Site = site;
+        SourcePath = sourcePath;
+        SourceFileNameWithoutExtension = sourceFileNameWithoutExtension ?? Path.GetFileNameWithoutExtension(sourcePath);
+        SourcePathDirectory = sourcePathDirectory ?? Path.GetDirectoryName(sourcePath) ?? string.Empty;
     }
 }

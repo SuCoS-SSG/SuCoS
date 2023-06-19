@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
-using Serilog;
 using SuCoS.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -47,14 +45,14 @@ public partial class YAMLParser : IFrontmatterParser
                 _ = frontmatterDictionary.TryGetValue("LastMod", out var dateLastModValue);
                 _ = frontmatterDictionary.TryGetValue("PublishDate", out var datePublishValue);
                 _ = frontmatterDictionary.TryGetValue("ExpiryDate", out var dateExpiryValue);
-                var section = GetSection(site, filePath);
+                var section = GetSection(filePath);
 
                 List<string> tags = new();
                 if (frontmatterDictionary.TryGetValue("Tags", out var tagsValue) && tagsValue is List<object> tagsListObj)
                 {
                     foreach (var item in tagsListObj)
                     {
-                        var value = item?.ToString();
+                        var value = item.ToString();
                         if (!string.IsNullOrWhiteSpace(value))
                         {
                             tags.Add(value);
@@ -64,12 +62,12 @@ public partial class YAMLParser : IFrontmatterParser
 
                 var sourceFileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath) ?? string.Empty;
                 frontmatter = new(
-                    BaseGeneratorCommand: frontmatterManager,
-                    Title: titleValue?.ToString() ?? sourceFileNameWithoutExtension,
-                    Site: site,
-                    SourcePath: filePath,
-                    SourceFileNameWithoutExtension: sourceFileNameWithoutExtension,
-                    SourcePathDirectory: null
+                    baseGeneratorCommand: frontmatterManager,
+                    title: titleValue?.ToString() ?? sourceFileNameWithoutExtension,
+                    site: site,
+                    sourcePath: filePath,
+                    sourceFileNameWithoutExtension: sourceFileNameWithoutExtension,
+                    sourcePathDirectory: null
                 )
                 {
                     URL = urlValue?.ToString(),
@@ -82,6 +80,19 @@ public partial class YAMLParser : IFrontmatterParser
                     ExpiryDate = DateTime.TryParse(dateExpiryValue?.ToString(), out var parsedExpiryDate) ? parsedExpiryDate : null
                 };
 
+                if (frontmatterDictionary.TryGetValue("Aliases", out var aliasesValue) && aliasesValue is List<object> aliasesValueObj)
+                {
+                    frontmatter.Aliases ??= new List<string>();
+                    foreach (var item in aliasesValueObj)
+                    {
+                        var value = item.ToString();
+                        if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            frontmatter.Aliases.Add(value);
+                        }
+                    }
+                }
+
                 foreach (var tagName in tags)
                 {
                     _ = frontmatterManager.CreateTagFrontmatter(site, tagName: tagName, frontmatter);
@@ -90,14 +101,14 @@ public partial class YAMLParser : IFrontmatterParser
         }
         if (frontmatter is not null)
         {
-            frontmatter.ContentRaw = fileContent;
+            frontmatter.RawContent = fileContent;
             return frontmatter;
         }
 
         return null;
     }
 
-    private static string GetSection(Site site, string filePath)
+    private static string GetSection(string filePath)
     {
         // Split the path into individual folders
         var folders = filePath?.Split(Path.DirectorySeparatorChar);

@@ -102,23 +102,23 @@ public abstract class BaseGeneratorCommand
                 }
 
                 frontmatter = new(
-                    BaseGeneratorCommand: this,
-                    Site: site,
-                    Title: tagName,
-                    SourcePath: "tags",
-                    SourceFileNameWithoutExtension: string.Empty,
-                    SourcePathDirectory: null
+                    baseGeneratorCommand: this,
+                    site: site,
+                    title: tagName,
+                    sourcePath: "tags",
+                    sourceFileNameWithoutExtension: string.Empty,
+                    sourcePathDirectory: null
                 )
                 {
                     Section = "tags",
                     Kind = Kind.list,
                     Type = "tags",
                     URL = "tags/" + Urlizer.Urlize(tagName),
-                    ContentRaw = $"# {tagName}",
+                    RawContent = $"# {tagName}",
                     Pages = new()
                 };
-                frontmatter.Permalink = "/" + GetOutputPath(frontmatter.URL, site, frontmatter);
-                site.Pages.Add(frontmatter);
+                frontmatter.Permalink = "/" + CreatePermalink(frontmatter.URL, site, frontmatter);
+                site.Pages.Add(item: frontmatter);
                 tagFrontmatterCache.Add(tagName, frontmatter);
             }
         }
@@ -131,8 +131,12 @@ public abstract class BaseGeneratorCommand
         return frontmatter;
     }
 
-    /// <inheritdoc/>
-    public string CreateFrontmatterContent(Frontmatter frontmatter)
+    /// <summary>
+    /// Create the page content, with converted Markdown and themed.
+    /// </summary>
+    /// <param name="frontmatter">the page</param>
+    /// <returns></returns>
+    public string CreateContent(Frontmatter frontmatter)
     {
         var fileContents = GetTemplate(site.SourceThemePath, frontmatter);
         // Theme content
@@ -160,6 +164,21 @@ public abstract class BaseGeneratorCommand
             Log.Error("Error parsing theme template: {Error}", error);
             return string.Empty;
         }
+    }
+
+    /// <summary>
+    /// Create the page content, with converted Markdown and but no theme.
+    /// </summary>
+    /// <param name="frontmatter">the page</param>
+    /// <returns></returns>
+    public string CreateContentPreRendered(Frontmatter frontmatter)
+    {
+        if (frontmatter is null)
+        {
+            throw new ArgumentNullException(nameof(frontmatter));
+        }
+
+        return Markdown.ToHtml(frontmatter!.RawContent, markdownPipeline);
     }
 
     /// <summary>
@@ -239,14 +258,19 @@ public abstract class BaseGeneratorCommand
                 {
                     site.Pages.Add(frontmatter);
                     site.RegularPages.Add(frontmatter);
+                    frontmatter.Permalink = "/" + CreatePermalink(file.filePath, site, frontmatter);
 
-                    // Convert the Markdown content to HTML
-                    frontmatter.ContentPreRendered = Markdown.ToHtml(frontmatter.ContentRaw);
-                    frontmatter.Permalink = "/" + GetOutputPath(file.filePath, site, frontmatter);
-
-                    if (site.HomePage is null && string.IsNullOrEmpty(frontmatter.SourcePath) && frontmatter.SourceFileNameWithoutExtension == "index")
+                    if (site.HomePage is null && frontmatter.SourceFileNameWithoutExtension == "index")
                     {
                         site.HomePage = frontmatter;
+                        frontmatter.Kind = Kind.index;
+                    }
+                    if (frontmatter.Aliases is not null)
+                    {
+                        for (var i = 0; i < frontmatter.Aliases.Count; i++)
+                        {
+                            frontmatter.Aliases[i] = "/" + CreatePermalink(file.filePath, site, frontmatter, frontmatter.Aliases[i]);
+                        }
                     }
                 }
             }
@@ -316,17 +340,18 @@ public abstract class BaseGeneratorCommand
         }
 
         Frontmatter frontmatter = new(
-            BaseGeneratorCommand: this,
-            Title: site.Title,
-            Site: site,
-            SourcePath: Path.Combine(relativePath, "index"),
-            SourceFileNameWithoutExtension: "index",
-            SourcePathDirectory: null
+            baseGeneratorCommand: this,
+            title: site.Title,
+            site: site,
+            sourcePath: Path.Combine(relativePath, "index"),
+            sourceFileNameWithoutExtension: "index",
+            sourcePathDirectory: null
         )
         {
             Kind = string.IsNullOrEmpty(relativePath) ? Kind.index : Kind.list,
-            Permalink = "/index.html",
+            Section = (string.IsNullOrEmpty(relativePath) ? Kind.index : Kind.list).ToString()
         };
+        frontmatter.Permalink = CreatePermalink(frontmatter.SourcePath, site, frontmatter);
         return frontmatter;
     }
 
@@ -395,13 +420,14 @@ public abstract class BaseGeneratorCommand
     }
 
     /// <summary>
-    /// Gets the output path for the file.
+    /// Gets the Permalink path for the file.
     /// </summary>
     /// <param name="fileRelativePath">The file's relative path.</param>
     /// <param name="site">The site instance.</param>
     /// <param name="frontmatter">The frontmatter.</param>
+    /// <param name="URL">The URL to consider. If null, we get frontmatter.URL</param>
     /// <returns>The output path.</returns>
-    protected static string GetOutputPath(string fileRelativePath, Site site, Frontmatter frontmatter)
+    public string CreatePermalink(string fileRelativePath, Site site, Frontmatter frontmatter, string? URL = null)
     {
         if (frontmatter is null)
         {
@@ -417,22 +443,38 @@ public abstract class BaseGeneratorCommand
         }
 
         var isIndex = frontmatter.SourceFileNameWithoutExtension == "index";
-        var outputRelativePath = isIndex ? ".html" : "/index.html";
+        string outputRelativePath;
+
+        URL ??= frontmatter.URL
+            ?? (isIndex ? "{{ page.SourcePathDirectory }}" : "{{ page.SourcePathDirectory }}/{{ page.Title }}");
 
         // TODO: Tokenize the URL instead of hardcoding the usage of the title
-        if (!string.IsNullOrEmpty(frontmatter.URL))
+        if (!string.IsNullOrEmpty(URL))
         {
-            outputRelativePath = $"{frontmatter.URL}{outputRelativePath}";
+            outputRelativePath = URL;
+
+            if (parser.TryParse(URL, out var template, out var error))
+            {
+                var context = new TemplateContext(templateOptions)
+                    .SetValue("page", frontmatter);
+                try
+                {
+                    outputRelativePath = template.Render(context);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error converting URL: {Error}", error);
+                }
+            }
         }
         else
         {
-            var folderRelativePath = Path.GetDirectoryName(fileRelativePath.Replace(site.SourceContentPath, string.Empty, StringComparison.InvariantCultureIgnoreCase));
-
-            var documentTitle = !isIndex && string.IsNullOrEmpty(frontmatter.Title)
-                ? frontmatter.Title
+            var folderRelativePath = Path.GetDirectoryName(fileRelativePath.Replace(site.SourceContentPath, string.Empty, StringComparison.InvariantCultureIgnoreCase)) ?? string.Empty;
+            var extraPath = isIndex
+                ? ""
                 : frontmatter.SourceFileNameWithoutExtension;
 
-            outputRelativePath = Path.Combine(folderRelativePath ?? string.Empty, path2: $"{documentTitle}" + outputRelativePath);
+            outputRelativePath = Path.Combine(folderRelativePath, extraPath) + (site.UglyURLs ? "/index.html" : "");
         }
 
         outputRelativePath = Urlizer.UrlizePath(outputRelativePath);

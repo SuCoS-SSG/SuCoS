@@ -35,7 +35,7 @@ sealed partial class Build : NukeBuild
     // The base URL for the GitLab API
     static string CI_API_V4_URL => Environment.GetEnvironmentVariable("CI_API_V4_URL");
 
-    static string date => DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    static string Date => DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Uploads the package to the GitLab generic package registry.
@@ -111,8 +111,8 @@ sealed partial class Build : NukeBuild
                     new
                     {
                         tag_name = TagName,
-                        name = $"{TagName} {date}",
-                        description = $"Created {date}"
+                        name = $"{TagName} {Date}",
+                        description = $"Created {Date}"
                     });
 
                 response.EnsureSuccessStatusCode();
@@ -144,7 +144,7 @@ sealed partial class Build : NukeBuild
                     {
                         tag_name = TagName,
                         @ref = GitLab?.CommitRefName ?? GitTasks.GitCurrentCommit(),
-                        message = $"Automatic tag creation: {isScheduled} at {date}"
+                        message = $"Automatic tag creation: {isScheduled} at {Date}"
                     });
 
                 response.EnsureSuccessStatusCode();
@@ -188,7 +188,6 @@ sealed partial class Build : NukeBuild
 
     async void GitLabCreateReleaseLink(string itemName, string itemLink)
     {
-        Log.Debug("Creating release link: {itemName} {itemLink}", itemName, itemLink);
         try
         {
             using var httpClient = HttpClientGitLabToken();
