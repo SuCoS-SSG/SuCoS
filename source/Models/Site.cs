@@ -24,6 +24,11 @@ public class Site
     public string SourcePath { get; set; } = "./";
 
     /// <summary>
+    /// The appearance of a URL is either ugly or pretty.
+    /// </summary>
+    public bool UglyURLs { get; set; } = false;
+
+    /// <summary>
     /// The path of the content, based on the source path.
     /// </summary>
     public string SourceContentPath => Path.Combine(SourcePath, "content");

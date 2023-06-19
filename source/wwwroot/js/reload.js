@@ -15,7 +15,7 @@ var pingInterval = setInterval(function () {
                 currentTimestamp = timestamp;
                 clearInterval(pingInterval);
                 showReloadWarning();
-                setTimeout(reloadPage, 3000);
+                setTimeout(reloadPage, 100);
             }
         })
         .catch(function (error) {
