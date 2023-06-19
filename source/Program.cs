@@ -30,40 +30,45 @@ public class Program
 
         // Shared options between the commands
         var sourceOption = new Option<string>(new[] { "--source", "-s" }, () => ".", "Source directory path");
+        var futureOption = new Option<bool>(new[] { "--future", "-f" }, () => false, "Include content with dates in the future");
         var verboseOption = new Option<bool>(new[] { "--verbose", "-v" }, () => false, "Verbose output");
 
         // BuildCommand setup
         var buildOutputOption = new Option<string>(new[] { "--output", "-o" }, () => "./public", "Output directory path");
 
         Command buildCommand = new("build", "Builds the site")
-            {
-                sourceOption,
-                buildOutputOption,
-                verboseOption
-            };
-        buildCommand.SetHandler((source, output, verbose) =>
+        {
+            sourceOption,
+            buildOutputOption,
+            futureOption,
+            verboseOption
+        };
+        buildCommand.SetHandler((source, output, future, verbose) =>
         {
             BuildOptions buildOptions = new()
             {
                 Source = source,
                 Output = output,
+                Future = future,
                 Verbose = verbose
             };
             _ = new BuildCommand(buildOptions);
         },
-        sourceOption, buildOutputOption, verboseOption);
+        sourceOption, buildOutputOption, futureOption, verboseOption);
 
         // ServerCommand setup
         Command serveCommand = new("serve", "Starts the server")
         {
             sourceOption,
+            futureOption,
             verboseOption
         };
-        serveCommand.SetHandler(async (source, verbose) =>
+        serveCommand.SetHandler(async (source, future, verbose) =>
         {
             ServeOptions serverOptions = new()
             {
                 Source = source,
+                Future = future,
                 Verbose = verbose
             };
 
@@ -71,7 +76,7 @@ public class Program
             await serveCommand.RunServer();
             await Task.Delay(-1);  // Wait forever.
         },
-        sourceOption, verboseOption);
+        sourceOption, futureOption, verboseOption);
 
         RootCommand rootCommand = new("SuCoS commands")
         {

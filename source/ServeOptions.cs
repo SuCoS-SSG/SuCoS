@@ -5,18 +5,15 @@ namespace SuCoS;
 /// </summary>
 public class ServeOptions : IGenerateOptions
 {
-    /// <summary>
-    /// The path of the source files.
-    /// </summary>
+    /// <inheritdoc/>
     public string Source { get; set; } = ".";
 
-    /// <summary>
-    /// The path of the output files.
-    /// </summary>
+    /// <inheritdoc/>
     public string Output { get; set; } = "./public";
 
-    /// <summary>
-    /// If true, the program will print more information.
-    /// </summary>
+    /// <inheritdoc/>
+    public bool Future { get; set; } = false;
+
+    /// <inheritdoc/>
     public bool Verbose { get; set; } = false;
 }

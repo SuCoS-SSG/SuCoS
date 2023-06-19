@@ -17,6 +17,26 @@ public class Frontmatter
     public string Title { get; init; }
 
     /// <summary>
+    /// Gets or sets the date of the page.
+    /// </summary>
+    public DateTime? Date { get; set; }
+
+    /// <summary>
+    /// Gets or sets the last modification date of the page.
+    /// </summary>
+    public DateTime? LastMod { get; set; }
+
+    /// <summary>
+    /// Gets or sets the publish date of the page.
+    /// </summary>
+    public DateTime? PublishDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the expiry date of the page.
+    /// </summary>
+    public DateTime? ExpiryDate { get; set; }
+
+    /// <summary>
     /// The path of the file, if it's a file.
     /// </summary>
     public string SourcePath { get; init; }

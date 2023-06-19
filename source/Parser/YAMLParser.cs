@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
+using Serilog;
 using SuCoS.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -14,7 +16,7 @@ namespace SuCoS.Parser;
 public partial class YAMLParser : IFrontmatterParser
 {
     [GeneratedRegex(@"^---\s*[\r\n](?<frontmatter>.*?)[\r\n]---\s*", RegexOptions.Singleline)]
-    private partial Regex _regex();
+    private partial Regex regex();
 
     /// <inheritdoc/>
     public Frontmatter? ParseFrontmatter(Site site, string filePath, ref string fileContent, BaseGeneratorCommand frontmatterManager)
@@ -25,7 +27,7 @@ public partial class YAMLParser : IFrontmatterParser
         }
 
         Frontmatter? frontmatter = null;
-        var match = _regex().Match(fileContent);
+        var match = regex().Match(fileContent);
         if (match.Success)
         {
             var frontmatterString = match.Groups["frontmatter"].Value;
@@ -41,6 +43,10 @@ public partial class YAMLParser : IFrontmatterParser
                 _ = frontmatterDictionary.TryGetValue("Title", out var titleValue);
                 _ = frontmatterDictionary.TryGetValue("URL", out var urlValue);
                 _ = frontmatterDictionary.TryGetValue("Type", out var typeValue);
+                _ = frontmatterDictionary.TryGetValue("Date", out var dateValue);
+                _ = frontmatterDictionary.TryGetValue("LastMod", out var dateLastModValue);
+                _ = frontmatterDictionary.TryGetValue("PublishDate", out var datePublishValue);
+                _ = frontmatterDictionary.TryGetValue("ExpiryDate", out var dateExpiryValue);
                 var section = GetSection(site, filePath);
 
                 List<string> tags = new();
@@ -69,7 +75,11 @@ public partial class YAMLParser : IFrontmatterParser
                     URL = urlValue?.ToString(),
                     Section = section,
                     Type = typeValue?.ToString() ?? section,
-                    Kind = Kind.single
+                    Kind = Kind.single,
+                    Date = DateTime.TryParse(dateValue?.ToString(), out var parsedDate) ? parsedDate : null,
+                    LastMod = DateTime.TryParse(dateLastModValue?.ToString(), out var parsedLastMod) ? parsedLastMod : null,
+                    PublishDate = DateTime.TryParse(datePublishValue?.ToString(), out var parsedPublishDate) ? parsedPublishDate : null,
+                    ExpiryDate = DateTime.TryParse(dateExpiryValue?.ToString(), out var parsedExpiryDate) ? parsedExpiryDate : null
                 };
 
                 foreach (var tagName in tags)
