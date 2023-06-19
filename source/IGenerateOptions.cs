@@ -16,6 +16,11 @@ public interface IGenerateOptions
     public string Output { get; set; }
 
     /// <summary>
+    /// Consider 
+    /// </summary>
+    bool Future { get; set; }
+
+    /// <summary>
     /// If true, the program will print more information.
     /// </summary>
     bool Verbose { get; set; }

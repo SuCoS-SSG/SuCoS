@@ -18,6 +18,11 @@ namespace SuCoS;
 public abstract class BaseGeneratorCommand
 {
     /// <summary>
+    /// Command line options
+    /// </summary>
+    readonly IGenerateOptions options;
+
+    /// <summary>
     /// The configuration file name.
     /// </summary>
     protected const string configFile = "sucos.yaml";
@@ -167,6 +172,7 @@ public abstract class BaseGeneratorCommand
         {
             throw new ArgumentNullException(nameof(options));
         }
+        this.options = options;
 
         Log.Information("Source path: {source}", propertyValue: options.Source);
 
@@ -228,12 +234,25 @@ public abstract class BaseGeneratorCommand
             try
             {
                 var frontmatter = ReadSourceFrontmatter(file.filePath, file.content, site, frontmatterParser);
-                site.Pages.Add(frontmatter);
-                site.RegularPages.Add(frontmatter);
+
+                if (IsValidDate(frontmatter))
+                {
+                    site.Pages.Add(frontmatter);
+                    site.RegularPages.Add(frontmatter);
+
+                    // Convert the Markdown content to HTML
+                    frontmatter.ContentPreRendered = Markdown.ToHtml(frontmatter.ContentRaw);
+                    frontmatter.Permalink = "/" + GetOutputPath(file.filePath, site, frontmatter);
+
+                    if (site.HomePage is null && string.IsNullOrEmpty(frontmatter.SourcePath) && frontmatter.SourceFileNameWithoutExtension == "index")
+                    {
+                        site.HomePage = frontmatter;
+                    }
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                Log.Error("Error parsing file {file}", file.filePath);
+                Log.Error(ex, "Error parsing file {file}", file.filePath);
             }
 
             // Use interlocked to safely increment the counter in a multi-threaded environment
@@ -359,16 +378,20 @@ public abstract class BaseGeneratorCommand
         var frontmatter = frontmatterParser.ParseFrontmatter(site, filePath, ref content, this)
             ?? throw new FormatException($"Error parsing frontmatter for {filePath}");
 
-        // Convert the Markdown content to HTML
-        frontmatter.ContentPreRendered = Markdown.ToHtml(frontmatter.ContentRaw, markdownPipeline);
-        frontmatter.Permalink = "/" + GetOutputPath(filePath, site, frontmatter);
-
-        if (site.HomePage is null && string.IsNullOrEmpty(frontmatter.SourcePath) && frontmatter.SourceFileNameWithoutExtension == "index")
-        {
-            site.HomePage = frontmatter;
-        }
-
         return frontmatter;
+    }
+
+    /// <summary>
+    /// Check if the page have a publishing date from the past.
+    /// </summary>
+    /// <param name="frontmatter">The given page</param>
+    /// <returns></returns>
+    bool IsValidDate(Frontmatter frontmatter)
+    {
+        return (frontmatter.PublishDate is null && frontmatter.Date is null)
+            || options.Future
+            || (frontmatter.PublishDate != null && (frontmatter.PublishDate <= DateTime.Now))
+            || (frontmatter.Date != null && (frontmatter.Date <= DateTime.Now));
     }
 
     /// <summary>
