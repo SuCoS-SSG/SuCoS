@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Fluid;
+using Fluid.Values;
 using Markdig;
 using Microsoft.Extensions.FileProviders;
 using Serilog;
@@ -63,7 +64,7 @@ public abstract class BaseGeneratorCommand
     protected readonly object syncLock = new();
 
     /// <summary>
-    /// The template options.
+    /// The Fluid/Liquid template options.
     /// </summary>
     protected readonly TemplateOptions templateOptions = new();
 
@@ -197,7 +198,7 @@ public abstract class BaseGeneratorCommand
 
         try
         {
-            site = ReadAppConfig(options: options, frontmatterParser);
+            site = ParseSiteSettings(options: options, frontmatterParser);
             if (site is null)
             {
                 throw new FormatException("Error reading app config");
@@ -212,6 +213,7 @@ public abstract class BaseGeneratorCommand
         templateOptions.MemberAccessStrategy.Register<Site>();
         templateOptions.MemberAccessStrategy.Register<BaseGeneratorCommand>();
         templateOptions.FileProvider = new PhysicalFileProvider(Path.GetFullPath(site.SourceThemePath));
+        templateOptions.Filters.AddFilter("whereParams", WhereParamsFilter);
 
         // Configure Markdig with the Bibliography extension
         markdownPipeline = new MarkdownPipelineBuilder()
@@ -260,7 +262,7 @@ public abstract class BaseGeneratorCommand
                     site.RegularPages.Add(frontmatter);
                     frontmatter.Permalink = "/" + CreatePermalink(file.filePath, site, frontmatter);
 
-                    if (site.HomePage is null && frontmatter.SourceFileNameWithoutExtension == "index")
+                    if (site.HomePage is null && frontmatter.SourcePath == "index.md")
                     {
                         site.HomePage = frontmatter;
                         frontmatter.Kind = Kind.index;
@@ -300,7 +302,7 @@ public abstract class BaseGeneratorCommand
     /// <param name="options">The generate options.</param>
     /// <param name="frontmatterParser">The frontmatter parser.</param>
     /// <returns>The site configuration.</returns>
-    protected static Site ReadAppConfig(IGenerateOptions options, IFrontmatterParser frontmatterParser)
+    protected static Site ParseSiteSettings(IGenerateOptions options, IFrontmatterParser frontmatterParser)
     {
         if (options is null)
         {
@@ -312,18 +314,18 @@ public abstract class BaseGeneratorCommand
         }
 
         // Read the main configation
-        var configFilePath = Path.Combine(options.Source, configFile);
-        if (!File.Exists(configFilePath))
+        var filePath = Path.Combine(options.Source, configFile);
+        if (!File.Exists(filePath))
         {
             throw new FileNotFoundException($"The {configFile} file was not found in the specified source directory: {options.Source}");
         }
 
-        var configFileContent = File.ReadAllText(configFilePath);
-        var config = frontmatterParser.ParseAppConfig(configFileContent);
-        config.SourcePath = options.Source;
-        config.OutputPath = options.Output;
+        var fileContent = File.ReadAllText(filePath);
+        var settings = frontmatterParser.ParseSiteSettings(fileContent);
+        settings.SourcePath = options.Source;
+        settings.OutputPath = options.Output;
 
-        return config;
+        return settings;
     }
 
     /// <summary>
@@ -343,7 +345,7 @@ public abstract class BaseGeneratorCommand
             baseGeneratorCommand: this,
             title: site.Title,
             site: site,
-            sourcePath: Path.Combine(relativePath, "index"),
+            sourcePath: Path.Combine(relativePath, "/index.md"),
             sourceFileNameWithoutExtension: "index",
             sourcePathDirectory: null
         )
@@ -619,5 +621,68 @@ public abstract class BaseGeneratorCommand
         contentTemplateCache.Clear();
         tagFrontmatterCache.Clear();
         IgnoreCacheBefore = DateTime.Now;
+    }
+
+    /// <summary>
+    /// Fluid/Liquid filter to navigate Params dictionary
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="arguments"></param>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    public static ValueTask<FluidValue> WhereParamsFilter(FluidValue input, FilterArguments arguments, TemplateContext context)
+    {
+        if (input is null)
+        {
+            throw new ArgumentNullException(nameof(input));
+        }
+        if (arguments is null)
+        {
+            throw new ArgumentNullException(nameof(arguments));
+        }
+
+        List<FluidValue> result = new();
+        var list = (input as ArrayValue)!.Values;
+
+        var keys = arguments.At(0).ToStringValue().Split('.');
+        foreach (var item in list)
+        {
+            if (item.ToObjectValue() is IParams param && CheckValueInDictionary(keys, param.Params, arguments.At(1).ToStringValue()))
+            {
+                result.Add(item);
+            }
+        }
+
+        return new ValueTask<FluidValue>(new ArrayValue((IEnumerable<FluidValue>)result));
+    }
+
+    static bool CheckValueInDictionary(string[] array, Dictionary<string, object> dictionary, string value)
+    {
+        var key = array[0];
+
+        // Check if the key exists in the dictionary
+        if (dictionary.TryGetValue(key, out var dictionaryValue))
+        {
+            // If it's the last element in the array, check if the dictionary value matches the value parameter
+            if (array.Length == 1)
+            {
+                return dictionaryValue.Equals(value);
+            }
+
+            // Check if the value is another dictionary
+            else if (dictionaryValue is Dictionary<string, object> nestedDictionary)
+            {
+                // Create a new array without the current key
+                var newArray = new string[array.Length - 1];
+                Array.Copy(array, 1, newArray, 0, newArray.Length);
+
+                // Recursively call the method with the nested dictionary and the new array
+                return CheckValueInDictionary(newArray, nestedDictionary, value);
+            }
+        }
+
+        // If the key doesn't exist or the value is not a dictionary, return false
+        return false;
     }
 }

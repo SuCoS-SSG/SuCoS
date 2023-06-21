@@ -98,7 +98,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     {
         try
         {
-            site = ReadAppConfig(options: options, frontmatterParser);
+            site = ParseSiteSettings(options: options, frontmatterParser);
             if (site is null)
             {
                 throw new FormatException("Error reading app config");
@@ -126,11 +126,6 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
                 if (url != null)
                 {
                     _ = pages.TryAdd(url, frontmatter);
-                    if (Path.GetFileName(url) == "index.html")
-                    {
-                        var path = Path.GetDirectoryName(url);
-                        _ = pages.TryAdd(path!, frontmatter);
-                    }
                 }
                 else
                 {

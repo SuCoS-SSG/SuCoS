@@ -22,11 +22,15 @@ The vision is to be a close substitute of [Hugo](https://gohugo.io/), but writte
 
 <img src="SuCoS-logo.svg" width="128px" style="display: block;margin-left: auto;margin-right: auto;" />
 
+[![Latest release](https://gitlab.com/sucos/sucos/-/badges/release.svg)](https://gitlab.com/sucos/sucos)
+![Pipepline](https://gitlab.com/sucos/sucos/badges/main/pipeline.svg?ignore_skipped=true)
+
 ## Usage
 
 First, navigate to the **SuCoS** folder.
 Chris Kibble
 Then, run the following command:
+
 ```bash
 SuCoS --source YOUR_SITE_PATH
 ```

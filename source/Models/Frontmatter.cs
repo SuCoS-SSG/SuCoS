@@ -9,7 +9,7 @@ namespace SuCoS;
 /// <summary>
 /// The meta data about each content Markdown file.
 /// </summary>
-public class Frontmatter
+public class Frontmatter : IParams
 {
     /// <summary>
     /// The content Title.
@@ -93,6 +93,9 @@ public class Frontmatter
             return urls;
         }
     }
+
+    /// <inheritdoc/>
+    public Dictionary<string, object> Params { get; set; } = new();
 
     /// <summary>
     /// Raw content, from the Markdown file.

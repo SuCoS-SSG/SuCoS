@@ -22,5 +22,5 @@ public interface IFrontmatterParser
     /// </summary>
     /// <param name="configFileContent"></param>
     /// <returns></returns>
-    Site ParseAppConfig(string configFileContent);
+    Site ParseSiteSettings(string configFileContent);
 }

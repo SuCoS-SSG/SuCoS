@@ -49,13 +49,13 @@ sealed partial class Build : NukeBuild
         .Executes(async () =>
         {
             // The package name constructed using packageName, runtimeIdentifier, and Version
-            var package = $"{packageName}-{runtimeIdentifier}-{CurrentVersion}";
+            var package = $"{packageName}-{runtimeIdentifier}-{CurrentTag}";
 
             // The filename of the package, constructed using the package variable
             var filename = $"{package}.zip";
 
             // The URL for the package in the GitLab generic package registry
-            var packageLink = GitLabAPIUrl($"packages/generic/{packageName}/{CurrentVersion}/{filename}");
+            var packageLink = GitLabAPIUrl($"packages/generic/{packageName}/{CurrentTag}/{filename}");
 
             // Create the zip package
             var fullpath = Path.GetFullPath(filename);
