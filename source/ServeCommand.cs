@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -75,7 +74,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// page content. This could be replaced with more complex logic, such as loading the content 
     /// from .html files.
     /// </summary>
-    private readonly Dictionary<string, Frontmatter> pages = new();
+    // private readonly Dictionary<string, Frontmatter> pages = new();
 
     private DateTime serverStartTime;
 
@@ -109,7 +108,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
             throw new FormatException("Error reading app config");
         }
 
-        pages.Clear();
+        // pages.Clear();
         ResetCache();
 
         ScanAllMarkdownFiles();
@@ -119,20 +118,20 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         // Generate the build report
         stopwatch.LogReport(site.Title);
 
-        foreach (var frontmatter in site.Pages)
-        {
-            foreach (var url in frontmatter.Urls)
-            {
-                if (url != null)
-                {
-                    _ = pages.TryAdd(url, frontmatter);
-                }
-                else
-                {
-                    Log.Error("No permalink for {Title}", frontmatter.Title);
-                }
-            }
-        }
+        // foreach (var frontmatter in site.Pages)
+        // {
+        //     foreach (var url in frontmatter.Urls)
+        //     {
+        //         if (url != null)
+        //         {
+        //             _ = pages.TryAdd(url, frontmatter);
+        //         }
+        //         else
+        //         {
+        //             Log.Error("No permalink for {Title}", frontmatter.Title);
+        //         }
+        //     }
+        // }
     }
 
     /// <summary>
@@ -237,6 +236,11 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     private async Task HandleRequest(HttpContext context)
     {
         var requestPath = context.Request.Path.Value;
+        if (string.IsNullOrEmpty(Path.GetExtension(context.Request.Path.Value)) && (requestPath.Length > 1))
+        {
+            requestPath = requestPath.TrimEnd('/');
+        }
+
         var fileAbsolutePath = Path.Combine(options.Source, "static", requestPath.TrimStart('/'));
 
         if (options.Verbose)
@@ -263,7 +267,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         }
 
         // Check if the requested file path corresponds to a registered page
-        else if (pages.TryGetValue(requestPath, out var frontmatter))
+        else if (site.Pages.TryGetValue(requestPath, out var frontmatter))
         {
             // Generate the output content for the frontmatter
             var content = CreateOutputFile(frontmatter);

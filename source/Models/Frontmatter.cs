@@ -9,13 +9,8 @@ namespace SuCoS;
 /// <summary>
 /// The meta data about each content Markdown file.
 /// </summary>
-public class Frontmatter : IParams
+public class Frontmatter : IBaseContent, IParams
 {
-    /// <summary>
-    /// The content Title.
-    /// </summary>
-    public string Title { get; init; }
-
     /// <summary>
     /// Gets or sets the date of the page.
     /// </summary>
@@ -56,10 +51,31 @@ public class Frontmatter : IParams
     /// </summary>
     public Site Site { get; init; }
 
-    /// <summary>
-    /// The URL pattern to be used to create the url.
-    /// </summary>
+    #region IBaseContent
+
+    /// <inheritdoc/>
+    public string Title { get; init; }
+
+    /// <inheritdoc/>
+    public string Section { get; set; } = string.Empty;
+
+    /// <inheritdoc/>
+    public Kind Kind { get; set; } = Kind.single;
+
+    /// <inheritdoc/>
+    public string Type { get; set; } = string.Empty;
+
+    /// <inheritdoc/>
     public string? URL { get; set; }
+
+    #endregion IBaseContent
+
+    #region IParams
+
+    /// <inheritdoc/>
+    public Dictionary<string, object> Params { get; set; } = new();
+
+    #endregion IParams
 
     /// <summary>
     /// Secondary URL patterns to be used to create the url.
@@ -94,9 +110,6 @@ public class Frontmatter : IParams
         }
     }
 
-    /// <inheritdoc/>
-    public Dictionary<string, object> Params { get; set; } = new();
-
     /// <summary>
     /// Raw content, from the Markdown file.
     /// </summary>
@@ -121,7 +134,6 @@ public class Frontmatter : IParams
             return ContentPreRenderedcached;
         }
     }
-
 
     /// <summary>
     /// The cached content.
@@ -159,26 +171,6 @@ public class Frontmatter : IParams
     /// Used to create the tags list and Related Posts section.
     /// </summary>
     public ConcurrentBag<Frontmatter>? Pages { get; set; }
-
-    /// <summary>
-    /// The directory where the content is located.
-    /// </summary>
-    /// 
-    /// <example>
-    /// If the content is located at <c>content/blog/2021-01-01-Hello-World.md</c>, 
-    /// then the value of this property will be <c>blog</c>.
-    /// </example>
-    public string Section { get; set; } = string.Empty;
-
-    /// <summary>
-    /// The type of content. It's the same of the Section, if not specified.
-    /// </summary>
-    public string Type { get; set; } = string.Empty;
-
-    /// <summary>
-    /// The type of the page, if it's a single page, a list of pages or the home page.
-    /// </summary>
-    public Kind Kind { get; set; } = Kind.single;
 
     /// <summary>
     /// Language of the content.

@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 namespace SuCoS.Models;
@@ -51,7 +50,12 @@ public class Site : IParams
     /// <summary>
     /// List of all pages, including generated.
     /// </summary>
-    public ConcurrentBag<Frontmatter> Pages { get; set; } = new();
+    public Dictionary<string, Frontmatter> Pages { get; set; } = new();
+
+    /// <summary>
+    /// List of pages from the content folder.
+    /// </summary>
+    public Dictionary<string, Frontmatter> RegularPages { get; set; } = new();
 
     /// <summary>
     /// The frontmatter of the home page;
@@ -59,15 +63,14 @@ public class Site : IParams
     public Frontmatter? HomePage { get; set; }
 
     /// <summary>
-    /// List of pages from the content folder.
-    /// </summary>
-    public ConcurrentBag<Frontmatter> RegularPages { get; set; } = new();
-
-    /// <summary>
     /// List of all content to be scanned and processed.
     /// </summary>
     public List<(string filePath, string content)> RawPages { get; set; } = new();
-    
+
+    #region IParams
+
     /// <inheritdoc/>
     public Dictionary<string, object> Params { get; set; } = new();
+
+    #endregion IParams
 }
