@@ -44,35 +44,33 @@ public class BuildCommand : BaseGeneratorCommand
 
         // Print each page
         var pagesCreated = 0; // counter to keep track of the number of pages created
-        _ = Parallel.ForEach(site.Pages, frontmatter =>
+        _ = Parallel.ForEach(site.Pages, pair =>
         {
-            foreach (var url in frontmatter.Urls)
+            var (url, frontmatter) = pair;
+            var result = CreateOutputFile(frontmatter);
+
+            var path = (url + (site.UglyURLs ? "" : "/index.html")).TrimStart('/');
+
+            // Generate the output path
+            var outputAbsolutePath = Path.Combine(site.OutputPath, path);
+
+            var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
+            if (!Directory.Exists(outputDirectory))
             {
-                var result = CreateOutputFile(frontmatter);
-
-                var path = (url + (site.UglyURLs ? "" : "/index.html")).TrimStart('/');
-
-                // Generate the output path
-                var outputAbsolutePath = Path.Combine(site.OutputPath, path);
-
-                var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
-                if (!Directory.Exists(outputDirectory))
-                {
-                    _ = Directory.CreateDirectory(outputDirectory!);
-                }
-
-                // Save the processed output to the final file
-                File.WriteAllText(outputAbsolutePath, result);
-
-                // Log
-                if (options.Verbose)
-                {
-                    Log.Information("Page created: {Permalink}", frontmatter.Permalink);
-                }
-
-                // Use interlocked to safely increment the counter in a multi-threaded environment
-                _ = Interlocked.Increment(ref pagesCreated);
+                _ = Directory.CreateDirectory(outputDirectory!);
             }
+
+            // Save the processed output to the final file
+            File.WriteAllText(outputAbsolutePath, result);
+
+            // Log
+            if (options.Verbose)
+            {
+                Log.Information("Page created: {Permalink}", frontmatter.Permalink);
+            }
+
+            // Use interlocked to safely increment the counter in a multi-threaded environment
+            _ = Interlocked.Increment(ref pagesCreated);
         });
 
         // Stop the stopwatch

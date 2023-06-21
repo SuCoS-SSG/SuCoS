@@ -31,7 +31,7 @@ public abstract class BaseGeneratorCommand
     /// <summary>
     /// The Fluid parser instance.
     /// </summary>
-    protected static readonly FluidParser parser = new();
+    protected static readonly FluidParser fluidParser = new();
 
     /// <summary>
     /// The site configuration.
@@ -56,12 +56,17 @@ public abstract class BaseGeneratorCommand
     /// <summary>
     /// Cache for tag frontmatter.
     /// </summary>
-    protected readonly Dictionary<string, Frontmatter> tagFrontmatterCache = new();
+    protected readonly Dictionary<string, Frontmatter> automaticContentCache = new();
 
     /// <summary>
     /// The synchronization lock object.
     /// </summary>
     protected readonly object syncLock = new();
+
+    /// <summary>
+    /// The synchronization lock object during ProstProcess.
+    /// </summary>
+    protected readonly object syncLockPostProcess = new();
 
     /// <summary>
     /// The Fluid/Liquid template options.
@@ -84,51 +89,66 @@ public abstract class BaseGeneratorCommand
     /// </summary>
     public DateTime IgnoreCacheBefore { get; set; }
 
-    /// <inheritdoc/>
-    public Frontmatter CreateTagFrontmatter(Site site, string tagName, Frontmatter originalFrontmatter)
+    /// <summary>
+    /// Create a page not from the content folder, but as part of the process.
+    /// It's used to create tag pages, section list pages, etc.
+    /// </summary>
+    public Frontmatter CreateAutomaticFrontmatter(BasicContent baseContent, Frontmatter originalFrontmatter)
     {
+        if (baseContent is null)
+        {
+            throw new ArgumentNullException(nameof(baseContent));
+        }
         if (originalFrontmatter is null)
         {
             throw new ArgumentNullException(nameof(originalFrontmatter));
         }
 
+        var id = baseContent.URL ?? baseContent.Section;
         Frontmatter? frontmatter = null;
         lock (syncLock)
         {
-            if (!tagFrontmatterCache.TryGetValue(tagName, out frontmatter))
+            if (!automaticContentCache.TryGetValue(id, out frontmatter))
             {
-                if (site is null)
-                {
-                    throw new ArgumentNullException(nameof(site));
-                }
-
                 frontmatter = new(
                     baseGeneratorCommand: this,
                     site: site,
-                    title: tagName,
-                    sourcePath: "tags",
+                    title: baseContent.Title,
+                    sourcePath: string.Empty,
                     sourceFileNameWithoutExtension: string.Empty,
                     sourcePathDirectory: null
                 )
                 {
-                    Section = "tags",
-                    Kind = Kind.list,
-                    Type = "tags",
-                    URL = "tags/" + Urlizer.Urlize(tagName),
-                    RawContent = $"# {tagName}",
+                    Section = baseContent.Section,
+                    Kind = baseContent.Kind,
+                    Type = baseContent.Type,
+                    URL = baseContent.URL,
                     Pages = new()
                 };
-                frontmatter.Permalink = "/" + CreatePermalink(frontmatter.URL, site, frontmatter);
-                site.Pages.Add(item: frontmatter);
-                tagFrontmatterCache.Add(tagName, frontmatter);
+
+                automaticContentCache.Add(id, frontmatter);
+                PostProcessFrontMatter(frontmatter);
             }
         }
-        lock (frontmatter?.Pages!)
+
+        if (frontmatter.Kind != Kind.index)
         {
             frontmatter.Pages!.Add(originalFrontmatter);
-            originalFrontmatter.Tags ??= new();
-            originalFrontmatter.Tags!.Add(frontmatter);
         }
+
+        // TODO: still too hardcoded
+        if (frontmatter.Type == "tags" && originalFrontmatter is not null)
+        {
+            lock (originalFrontmatter!)
+            {
+                if (frontmatter.Type == "tags")
+                {
+                    originalFrontmatter.Tags ??= new();
+                    originalFrontmatter.Tags!.Add(frontmatter);
+                }
+            }
+        }
+
         return frontmatter;
     }
 
@@ -145,7 +165,7 @@ public abstract class BaseGeneratorCommand
         {
             return frontmatter.Content;
         }
-        else if (parser.TryParse(fileContents, out var template, out var error))
+        else if (fluidParser.TryParse(fileContents, out var template, out var error))
         {
             var context = new TemplateContext(templateOptions)
                 .SetValue("page", frontmatter);
@@ -258,22 +278,7 @@ public abstract class BaseGeneratorCommand
 
                 if (IsValidDate(frontmatter))
                 {
-                    site.Pages.Add(frontmatter);
-                    site.RegularPages.Add(frontmatter);
-                    frontmatter.Permalink = "/" + CreatePermalink(file.filePath, site, frontmatter);
-
-                    if (site.HomePage is null && frontmatter.SourcePath == "index.md")
-                    {
-                        site.HomePage = frontmatter;
-                        frontmatter.Kind = Kind.index;
-                    }
-                    if (frontmatter.Aliases is not null)
-                    {
-                        for (var i = 0; i < frontmatter.Aliases.Count; i++)
-                        {
-                            frontmatter.Aliases[i] = "/" + CreatePermalink(file.filePath, site, frontmatter, frontmatter.Aliases[i]);
-                        }
-                    }
+                    PostProcessFrontMatter(frontmatter, true);
                 }
             }
             catch (Exception ex)
@@ -288,12 +293,75 @@ public abstract class BaseGeneratorCommand
         // If the home page is not yet created, create it!
         if (site.HomePage is null)
         {
-            var home = CreateIndexPage(site, string.Empty);
+            var home = CreateIndexPage(string.Empty);
             site.HomePage = home;
-            site.Pages.Add(home);
         }
 
         stopwatch.Stop("Parse", filesParsed);
+    }
+
+    /// <summary>
+    /// Extra calculation and automatic data for each frontmatter.
+    /// </summary>
+    /// <param name="frontmatter"></param>
+    /// <param name="overwrite"></param>
+    private void PostProcessFrontMatter(Frontmatter frontmatter, bool overwrite = false)
+    {
+        frontmatter.Permalink = CreatePermalink(site, frontmatter);
+        lock (syncLockPostProcess)
+        {
+            if (!site.Pages.TryGetValue(frontmatter.Permalink, out var old) || overwrite)
+            {
+                if (old is not null)
+                {
+                    if (old?.Pages is not null)
+                    {
+                        frontmatter.Pages ??= new();
+                        foreach (var page in old.Pages)
+                        {
+                            frontmatter.Pages.Add(page);
+                        }
+                    }
+                }
+
+                // Register the page for all urls
+                foreach (var url in frontmatter.Urls)
+                {
+                    site.Pages[url] = frontmatter;
+                }
+
+                if (frontmatter.Kind == Kind.single)
+                {
+                    site.RegularPages.Add(frontmatter.Permalink, frontmatter);
+                }
+
+                if (site.HomePage is null && frontmatter.SourcePath == "index.md")
+                {
+                    site.HomePage = frontmatter;
+                    frontmatter.Kind = Kind.index;
+                }
+
+                if (frontmatter.Aliases is not null)
+                {
+                    for (var i = 0; i < frontmatter.Aliases.Count; i++)
+                    {
+                        frontmatter.Aliases[i] = "/" + CreatePermalink(site, frontmatter, frontmatter.Aliases[i]);
+                    }
+                }
+            }
+        }
+
+        // Create a section page when due
+        if (frontmatter.Type != "section")
+        {
+            var contentTemplate = new BasicContent(
+                title: frontmatter.Section,
+                section: frontmatter.Section,
+                type: "section",
+                url: frontmatter.Section
+            );
+            CreateAutomaticFrontmatter(contentTemplate, frontmatter);
+        }
     }
 
     /// <summary>
@@ -331,16 +399,10 @@ public abstract class BaseGeneratorCommand
     /// <summary>
     /// Creates the frontmatter for the index page.
     /// </summary>
-    /// <param name="site">The site instance.</param>
     /// <param name="relativePath">The relative path of the page.</param>
     /// <returns>The created frontmatter for the index page.</returns>
-    protected Frontmatter CreateIndexPage(Site site, string relativePath)
+    protected Frontmatter CreateIndexPage(string relativePath)
     {
-        if (site is null)
-        {
-            throw new ArgumentNullException(nameof(site));
-        }
-
         Frontmatter frontmatter = new(
             baseGeneratorCommand: this,
             title: site.Title,
@@ -353,7 +415,8 @@ public abstract class BaseGeneratorCommand
             Kind = string.IsNullOrEmpty(relativePath) ? Kind.index : Kind.list,
             Section = (string.IsNullOrEmpty(relativePath) ? Kind.index : Kind.list).ToString()
         };
-        frontmatter.Permalink = CreatePermalink(frontmatter.SourcePath, site, frontmatter);
+
+        PostProcessFrontMatter(frontmatter);
         return frontmatter;
     }
 
@@ -424,20 +487,15 @@ public abstract class BaseGeneratorCommand
     /// <summary>
     /// Gets the Permalink path for the file.
     /// </summary>
-    /// <param name="fileRelativePath">The file's relative path.</param>
     /// <param name="site">The site instance.</param>
     /// <param name="frontmatter">The frontmatter.</param>
     /// <param name="URL">The URL to consider. If null, we get frontmatter.URL</param>
     /// <returns>The output path.</returns>
-    public string CreatePermalink(string fileRelativePath, Site site, Frontmatter frontmatter, string? URL = null)
+    public string CreatePermalink(Site site, Frontmatter frontmatter, string? URL = null)
     {
         if (frontmatter is null)
         {
             throw new ArgumentNullException(nameof(frontmatter));
-        }
-        if (fileRelativePath is null)
-        {
-            throw new ArgumentNullException(nameof(fileRelativePath));
         }
         if (site is null)
         {
@@ -450,36 +508,28 @@ public abstract class BaseGeneratorCommand
         URL ??= frontmatter.URL
             ?? (isIndex ? "{{ page.SourcePathDirectory }}" : "{{ page.SourcePathDirectory }}/{{ page.Title }}");
 
-        // TODO: Tokenize the URL instead of hardcoding the usage of the title
-        if (!string.IsNullOrEmpty(URL))
-        {
-            outputRelativePath = URL;
+        outputRelativePath = URL;
 
-            if (parser.TryParse(URL, out var template, out var error))
+        if (fluidParser.TryParse(URL, out var template, out var error))
+        {
+            var context = new TemplateContext(templateOptions)
+                .SetValue("page", frontmatter);
+            try
             {
-                var context = new TemplateContext(templateOptions)
-                    .SetValue("page", frontmatter);
-                try
-                {
-                    outputRelativePath = template.Render(context);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error converting URL: {Error}", error);
-                }
+                outputRelativePath = template.Render(context);
             }
-        }
-        else
-        {
-            var folderRelativePath = Path.GetDirectoryName(fileRelativePath.Replace(site.SourceContentPath, string.Empty, StringComparison.InvariantCultureIgnoreCase)) ?? string.Empty;
-            var extraPath = isIndex
-                ? ""
-                : frontmatter.SourceFileNameWithoutExtension;
-
-            outputRelativePath = Path.Combine(folderRelativePath, extraPath) + (site.UglyURLs ? "/index.html" : "");
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error converting URL: {Error}", error);
+            }
         }
 
         outputRelativePath = Urlizer.UrlizePath(outputRelativePath);
+
+        if (!string.IsNullOrEmpty(outputRelativePath) && !Path.IsPathRooted(outputRelativePath) && !outputRelativePath.StartsWith("/"))
+        {
+            outputRelativePath = "/" + outputRelativePath;
+        }
 
         return outputRelativePath;
     }
@@ -504,7 +554,7 @@ public abstract class BaseGeneratorCommand
         {
             result = frontmatter.Content;
         }
-        else if (parser.TryParse(fileContents, out var template, out var error))
+        else if (fluidParser.TryParse(fileContents, out var template, out var error))
         {
             var context = new TemplateContext(templateOptions);
             _ = context.SetValue("page", frontmatter);
@@ -619,7 +669,8 @@ public abstract class BaseGeneratorCommand
     {
         baseTemplateCache.Clear();
         contentTemplateCache.Clear();
-        tagFrontmatterCache.Clear();
+        automaticContentCache.Clear();
+        site.Pages.Clear();
         IgnoreCacheBefore = DateTime.Now;
     }
 

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Serilog;
 using SuCoS.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -114,7 +113,13 @@ public partial class YAMLParser : IFrontmatterParser
 
                 foreach (var tagName in tags)
                 {
-                    _ = frontmatterManager.CreateTagFrontmatter(site, tagName: tagName, frontmatter);
+                    var contentTemplate = new BasicContent(
+                        title: tagName,
+                        section: "tags",
+                        type: "tags",
+                        url: "tags/" + Urlizer.Urlize(tagName)
+                    );
+                    _ = frontmatterManager.CreateAutomaticFrontmatter(contentTemplate, frontmatter);
                 }
             }
         }
