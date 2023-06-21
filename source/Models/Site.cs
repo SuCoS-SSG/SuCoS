@@ -6,7 +6,7 @@ namespace SuCoS.Models;
 /// <summary>
 /// The main configuration of the program, primarily extracted from the app.yaml file.
 /// </summary>
-public class Site
+public class Site : IParams
 {
     /// <summary>
     /// Site Title.
@@ -67,4 +67,7 @@ public class Site
     /// List of all content to be scanned and processed.
     /// </summary>
     public List<(string filePath, string content)> RawPages { get; set; } = new();
+    
+    /// <inheritdoc/>
+    public Dictionary<string, object> Params { get; set; } = new();
 }

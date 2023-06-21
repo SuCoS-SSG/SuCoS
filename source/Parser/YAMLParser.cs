@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
+using Serilog;
 using SuCoS.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -13,8 +15,24 @@ namespace SuCoS.Parser;
 /// </summary>
 public partial class YAMLParser : IFrontmatterParser
 {
+
     [GeneratedRegex(@"^---\s*[\r\n](?<frontmatter>.*?)[\r\n]---\s*", RegexOptions.Singleline)]
-    private partial Regex regex();
+    private partial Regex YAMLRegex();
+
+    /// <summary>
+    /// YamlDotNet parser, strictly set to allow automatically parse only known fields
+    /// </summary>
+    readonly IDeserializer yamlDeserializerRigid = new DeserializerBuilder()
+        .WithNamingConvention(PascalCaseNamingConvention.Instance)
+        .IgnoreUnmatchedProperties()
+        .Build();
+
+    /// <summary>
+    /// YamlDotNet parser to loosely parse the YAML file. Used to include all non-matching fields
+    /// into Params.
+    /// </summary>
+    readonly IDeserializer yamlDeserializer = new DeserializerBuilder()
+        .Build();
 
     /// <inheritdoc/>
     public Frontmatter? ParseFrontmatter(Site site, string filePath, ref string fileContent, BaseGeneratorCommand frontmatterManager)
@@ -25,16 +43,15 @@ public partial class YAMLParser : IFrontmatterParser
         }
 
         Frontmatter? frontmatter = null;
-        var match = regex().Match(fileContent);
+        var match = YAMLRegex().Match(fileContent);
         if (match.Success)
         {
-            var frontmatterString = match.Groups["frontmatter"].Value;
+            var content = match.Groups["frontmatter"].Value;
 
             fileContent = fileContent[match.Length..].TrimStart('\n');
 
             // Parse the front matter string into Frontmatter properties
-            var yamlDeserializer = new DeserializerBuilder().Build();
-            var yamlObject = yamlDeserializer.Deserialize(new StringReader(frontmatterString));
+            var yamlObject = yamlDeserializer.Deserialize(new StringReader(content));
 
             if (yamlObject is Dictionary<object, object> frontmatterDictionary)
             {
@@ -93,6 +110,8 @@ public partial class YAMLParser : IFrontmatterParser
                     }
                 }
 
+                ParseParams(frontmatter, typeof(Frontmatter), content);
+
                 foreach (var tagName in tags)
                 {
                     _ = frontmatterManager.CreateTagFrontmatter(site, tagName: tagName, frontmatter);
@@ -118,13 +137,40 @@ public partial class YAMLParser : IFrontmatterParser
     }
 
     /// <inheritdoc/>
-    public Site ParseAppConfig(string configFileContent)
+    public Site ParseSiteSettings(string content)
     {
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(PascalCaseNamingConvention.Instance)
-            .IgnoreUnmatchedProperties()
-            .Build();
-        var config = deserializer.Deserialize<Site>(configFileContent);
-        return config;
+        var settings = yamlDeserializerRigid.Deserialize<Site>(content);
+        ParseParams(settings, typeof(Site), content);
+        return settings;
+    }
+
+    /// <summary>
+    ///  Parse all YAML files for non-matching fields.
+    /// </summary>
+    /// <param name="settings">Site or Frontmatter object, that implements IParams</param>
+    /// <param name="type">The type (Site or Frontmatter)</param>
+    /// <param name="content">YAML content</param>
+    void ParseParams(IParams settings, Type type, string content)
+    {
+        var yamlObject = yamlDeserializer.Deserialize(new StringReader(content));
+        if (yamlObject is Dictionary<object, object> yamlDictionary)
+        {
+            foreach (var key in yamlDictionary.Keys.Cast<string>())
+            {
+                // If the property is not a standard Frontmatter property
+                if (type.GetProperty(key) == null)
+                {
+                    // Recursively create a dictionary structure for the value
+                    if (yamlDictionary[key] is Dictionary<object, object> valueDictionary)
+                    {
+                        settings.Params[key] = valueDictionary;
+                    }
+                    else
+                    {
+                        settings.Params[key] = yamlDictionary[key];
+                    }
+                }
+            }
+        }
     }
 }

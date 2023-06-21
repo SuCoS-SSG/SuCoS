@@ -22,7 +22,7 @@ sealed partial class Build : NukeBuild
 
     string VersionMajor => $"{gitVersion.Major}";
 
-    string VersionMajorMinor =>  $"{gitVersion.Major}.{gitVersion.Minor}";
+    string VersionMajorMinor => $"{gitVersion.Major}.{gitVersion.Minor}";
 
     /// <summary>
     /// The version in a format that can be used as a tag.
@@ -35,7 +35,7 @@ sealed partial class Build : NukeBuild
     bool HasNewCommits => gitVersion.CommitsSinceVersionSource != "0";
 
     string currentVersion;
-    string CurrentVersion
+    string CurrentTag
     {
         get
         {
@@ -43,6 +43,7 @@ sealed partial class Build : NukeBuild
             return currentVersion;
         }
     }
+    string CurrentVersion => CurrentTag.TrimStart('v');
 
     /// <summary>
     /// Prints the current version.
@@ -52,8 +53,9 @@ sealed partial class Build : NukeBuild
         {
             var lastCommmit = GitTasks.Git("log -1").FirstOrDefault().Text;
             var status = GitTasks.Git("status").FirstOrDefault().Text;
-            Log.Information("Current version: {Version}", CurrentVersion);
-            Log.Information($"GitVersion before = {Version}");
+            Log.Information("Current version:  {Version}", CurrentVersion);
+            Log.Information("Current tag:     {Version}", CurrentTag);
+            Log.Information("Next version:     {Version}", Version);
         });
 
     /// <summary>
