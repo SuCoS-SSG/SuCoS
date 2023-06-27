@@ -33,7 +33,7 @@ public class BuildCommand : BaseGeneratorCommand
 
         // Copy static folder files into the root of the output folder
         CopyFolder(site.SourceStaticPath, site.OutputPath);
-
+        
         // Generate the build report
         stopwatch.LogReport(site.Title);
     }
@@ -44,7 +44,7 @@ public class BuildCommand : BaseGeneratorCommand
 
         // Print each page
         var pagesCreated = 0; // counter to keep track of the number of pages created
-        _ = Parallel.ForEach(site.Pages, pair =>
+        _ = Parallel.ForEach(site.PagesDict, pair =>
         {
             var (url, frontmatter) = pair;
             var result = CreateOutputFile(frontmatter);

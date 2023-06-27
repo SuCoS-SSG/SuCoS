@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+
 namespace SuCoS.Models;
 
 /// <summary>
@@ -47,15 +49,51 @@ public class Site : IParams
     /// </summary>
     public string OutputPath { get; set; } = "./";
 
+    private List<Frontmatter>? pagesCache;
+
     /// <summary>
     /// List of all pages, including generated.
     /// </summary>
-    public Dictionary<string, Frontmatter> Pages { get; set; } = new();
+    public List<Frontmatter> Pages
+    {
+        get
+        {
+            pagesCache ??= PagesDict.Values.ToList();
+            return pagesCache!;
+        }
+    }
+
+    /// <summary>
+    /// Expose a page getter to templates.
+    /// </summary>
+    /// <param name="permalink"></param>
+    /// <returns></returns>
+    public Frontmatter? GetPage(string permalink)
+    {
+        return PagesDict.TryGetValue(permalink, out var page) ? page : null;
+    }
+
+    /// <summary>
+    /// List of all pages, including generated, by their permalink.
+    /// </summary>
+    public Dictionary<string, Frontmatter> PagesDict { get; } = new();
+
+    private List<Frontmatter>? regularPagesCache;
 
     /// <summary>
     /// List of pages from the content folder.
     /// </summary>
-    public Dictionary<string, Frontmatter> RegularPages { get; set; } = new();
+    public List<Frontmatter> RegularPages
+    {
+        get
+        {
+            regularPagesCache ??= PagesDict
+                    .Where(pair => pair.Value.Kind == Kind.single)
+                    .Select(pair => pair.Value)
+                    .ToList();
+            return regularPagesCache;
+        }
+    }
 
     /// <summary>
     /// The frontmatter of the home page;

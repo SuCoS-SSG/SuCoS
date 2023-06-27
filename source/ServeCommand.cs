@@ -93,47 +93,6 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         fileWatcher = StartFileWatcher(options.Source);
     }
 
-    private void CreatePagesDictionary()
-    {
-        try
-        {
-            site = ParseSiteSettings(options: options, frontmatterParser);
-            if (site is null)
-            {
-                throw new FormatException("Error reading app config");
-            }
-        }
-        catch
-        {
-            throw new FormatException("Error reading app config");
-        }
-
-        // pages.Clear();
-        ResetCache();
-
-        ScanAllMarkdownFiles();
-
-        ParseSourceFiles();
-
-        // Generate the build report
-        stopwatch.LogReport(site.Title);
-
-        // foreach (var frontmatter in site.Pages)
-        // {
-        //     foreach (var url in frontmatter.Urls)
-        //     {
-        //         if (url != null)
-        //         {
-        //             _ = pages.TryAdd(url, frontmatter);
-        //         }
-        //         else
-        //         {
-        //             Log.Error("No permalink for {Title}", frontmatter.Title);
-        //         }
-        //     }
-        // }
-    }
-
     /// <summary>
     /// Starts the file watcher to monitor file changes in the specified source path.
     /// </summary>
@@ -183,8 +142,6 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
             Log.Information("Starting server...");
         }
 
-        CreatePagesDictionary();
-
         serverStartTime = DateTime.UtcNow;
 
         host = new WebHostBuilder()
@@ -213,7 +170,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
 
         try
         {
-            Log.Information("Restarting server...");
+            CreatePagesDictionary();
 
             // Stop the server
             if (host != null)
@@ -267,7 +224,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         }
 
         // Check if the requested file path corresponds to a registered page
-        else if (site.Pages.TryGetValue(requestPath, out var frontmatter))
+        else if (site.PagesDict.TryGetValue(requestPath, out var frontmatter))
         {
             // Generate the output content for the frontmatter
             var content = CreateOutputFile(frontmatter);

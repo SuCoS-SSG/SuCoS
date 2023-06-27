@@ -2,6 +2,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using Serilog;
 using SuCoS.Models;
 
 namespace SuCoS;
@@ -118,7 +120,7 @@ public class Frontmatter : IBaseContent, IParams
     /// <summary>
     /// The markdown content.
     /// </summary>
-    private string ContentPreRenderedcached { get; set; } = string.Empty;
+    private string contentPreRenderedCached { get; set; }
 
     /// <summary>
     /// The markdown content converted to HTML
@@ -127,11 +129,8 @@ public class Frontmatter : IBaseContent, IParams
     {
         get
         {
-            if (string.IsNullOrEmpty(ContentPreRenderedcached))
-            {
-                ContentPreRenderedcached = BaseGeneratorCommand.CreateContentPreRendered(this);
-            }
-            return ContentPreRenderedcached;
+            contentPreRenderedCached ??= BaseGeneratorCommand.CreateContentPreRendered(this);
+            return contentPreRenderedCached;
         }
     }
 
@@ -166,11 +165,55 @@ public class Frontmatter : IBaseContent, IParams
     /// </summary>
     public List<Frontmatter>? Tags { get; set; }
 
+    private List<Frontmatter>? pagesCached { get; set; }
+
     /// <summary>
     /// Other content that mention this content.
     /// Used to create the tags list and Related Posts section.
     /// </summary>
-    public ConcurrentBag<Frontmatter>? Pages { get; set; }
+    public List<Frontmatter> Pages
+    {
+        get
+        {
+            if (PagesReferences is null)
+            {
+                return new List<Frontmatter>();
+            }
+
+            if (pagesCached is null)
+            {
+                pagesCached ??= new();
+                foreach (var permalink in PagesReferences)
+                {
+                    Log.Debug($"---{permalink}");
+                    pagesCached.Add(Site.PagesDict[permalink]);
+                }
+            }
+            return pagesCached;
+        }
+    }
+
+    /// <summary>
+    /// Other content that mention this content.
+    /// Used to create the tags list and Related Posts section.
+    /// </summary>
+    public ConcurrentBag<string>? PagesReferences { get; set; }
+
+    private List<Frontmatter>? regularPagesCache;
+
+    /// <summary>
+    /// List of pages from the content folder.
+    /// </summary>
+    public List<Frontmatter> RegularPages
+    {
+        get
+        {
+            regularPagesCache ??= Pages
+                    .Where(frontmatter => frontmatter.Kind == Kind.single)
+                    .ToList();
+            return regularPagesCache;
+        }
+    }
 
     /// <summary>
     /// Language of the content.
