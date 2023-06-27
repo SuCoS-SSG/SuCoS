@@ -104,7 +104,7 @@ public abstract class BaseGeneratorCommand
             throw new ArgumentNullException(nameof(originalFrontmatter));
         }
 
-        var id = baseContent.URL ?? baseContent.Section;
+        var id = baseContent.URL ?? "";
         Frontmatter? frontmatter = null;
         lock (syncLock)
         {
@@ -123,7 +123,7 @@ public abstract class BaseGeneratorCommand
                     Kind = baseContent.Kind,
                     Type = baseContent.Type,
                     URL = baseContent.URL,
-                    Pages = new()
+                    PagesReferences = new()
                 };
 
                 automaticContentCache.Add(id, frontmatter);
@@ -131,13 +131,13 @@ public abstract class BaseGeneratorCommand
             }
         }
 
-        if (frontmatter.Kind != Kind.index)
+        if (frontmatter.Kind != Kind.index && originalFrontmatter.Permalink is not null)
         {
-            frontmatter.Pages!.Add(originalFrontmatter);
+            frontmatter.PagesReferences!.Add(originalFrontmatter.Permalink!);
         }
 
         // TODO: still too hardcoded
-        if (frontmatter.Type == "tags" && originalFrontmatter is not null)
+        if (frontmatter.Type == "tags")
         {
             lock (originalFrontmatter!)
             {
@@ -199,7 +199,7 @@ public abstract class BaseGeneratorCommand
             throw new ArgumentNullException(nameof(frontmatter));
         }
 
-        return Markdown.ToHtml(frontmatter!.RawContent, markdownPipeline);
+        return Markdown.ToHtml(frontmatter.RawContent, markdownPipeline);
     }
 
     /// <summary>
@@ -216,6 +216,30 @@ public abstract class BaseGeneratorCommand
 
         Log.Information("Source path: {source}", propertyValue: options.Source);
 
+
+        // Configure Markdig with the Bibliography extension
+        markdownPipeline = new MarkdownPipelineBuilder()
+            .UseAdvancedExtensions()
+            .Build();
+
+        // Liquid template options, needed to theme the content 
+        // but also parse URLs
+        templateOptions.MemberAccessStrategy.Register<Frontmatter>();
+        templateOptions.MemberAccessStrategy.Register<Site>();
+        templateOptions.MemberAccessStrategy.Register<BaseGeneratorCommand>();
+        templateOptions.Filters.AddFilter("whereParams", WhereParamsFilter);
+
+        CreatePagesDictionary();
+
+        templateOptions.FileProvider = new PhysicalFileProvider(Path.GetFullPath(site!.SourceThemePath));
+    }
+
+    /// <summary>
+    /// Creates the pages dictionary.
+    /// </summary>
+    /// <exception cref="FormatException"></exception>
+    protected void CreatePagesDictionary()
+    {
         try
         {
             site = ParseSiteSettings(options: options, frontmatterParser);
@@ -229,16 +253,7 @@ public abstract class BaseGeneratorCommand
             throw new FormatException("Error reading app config");
         }
 
-        templateOptions.MemberAccessStrategy.Register<Frontmatter>();
-        templateOptions.MemberAccessStrategy.Register<Site>();
-        templateOptions.MemberAccessStrategy.Register<BaseGeneratorCommand>();
-        templateOptions.FileProvider = new PhysicalFileProvider(Path.GetFullPath(site.SourceThemePath));
-        templateOptions.Filters.AddFilter("whereParams", WhereParamsFilter);
-
-        // Configure Markdig with the Bibliography extension
-        markdownPipeline = new MarkdownPipelineBuilder()
-            .UseAdvancedExtensions()
-            .Build();
+        ResetCache();
 
         ScanAllMarkdownFiles();
 
@@ -291,11 +306,12 @@ public abstract class BaseGeneratorCommand
         });
 
         // If the home page is not yet created, create it!
-        if (site.HomePage is null)
+        if (!site.PagesDict.TryGetValue("/", out var home))
         {
-            var home = CreateIndexPage(string.Empty);
-            site.HomePage = home;
+            home = CreateIndexPage(string.Empty);
         }
+        site.HomePage = home;
+        home.Kind = Kind.index;
 
         stopwatch.Stop("Parse", filesParsed);
     }
@@ -310,16 +326,16 @@ public abstract class BaseGeneratorCommand
         frontmatter.Permalink = CreatePermalink(site, frontmatter);
         lock (syncLockPostProcess)
         {
-            if (!site.Pages.TryGetValue(frontmatter.Permalink, out var old) || overwrite)
+            if (!site.PagesDict.TryGetValue(frontmatter.Permalink, out var old) || overwrite)
             {
                 if (old is not null)
                 {
-                    if (old?.Pages is not null)
+                    if (old?.PagesReferences is not null)
                     {
-                        frontmatter.Pages ??= new();
-                        foreach (var page in old.Pages)
+                        frontmatter.PagesReferences ??= new();
+                        foreach (var page in old.PagesReferences)
                         {
-                            frontmatter.Pages.Add(page);
+                            frontmatter.PagesReferences.Add(page);
                         }
                     }
                 }
@@ -327,18 +343,7 @@ public abstract class BaseGeneratorCommand
                 // Register the page for all urls
                 foreach (var url in frontmatter.Urls)
                 {
-                    site.Pages[url] = frontmatter;
-                }
-
-                if (frontmatter.Kind == Kind.single)
-                {
-                    site.RegularPages.Add(frontmatter.Permalink, frontmatter);
-                }
-
-                if (site.HomePage is null && frontmatter.SourcePath == "index.md")
-                {
-                    site.HomePage = frontmatter;
-                    frontmatter.Kind = Kind.index;
+                    site.PagesDict[url] = frontmatter;
                 }
 
                 if (frontmatter.Aliases is not null)
@@ -352,11 +357,11 @@ public abstract class BaseGeneratorCommand
         }
 
         // Create a section page when due
-        if (frontmatter.Type != "section")
+        if (frontmatter.Type != "section" && !string.IsNullOrEmpty(frontmatter.Permalink))
         {
             var contentTemplate = new BasicContent(
                 title: frontmatter.Section,
-                section: frontmatter.Section,
+                section: "section",
                 type: "section",
                 url: frontmatter.Section
             );
@@ -407,9 +412,9 @@ public abstract class BaseGeneratorCommand
             baseGeneratorCommand: this,
             title: site.Title,
             site: site,
-            sourcePath: Path.Combine(relativePath, "/index.md"),
+            sourcePath: Path.Combine(relativePath, "index.md"),
             sourceFileNameWithoutExtension: "index",
-            sourcePathDirectory: null
+            sourcePathDirectory: "/"
         )
         {
             Kind = string.IsNullOrEmpty(relativePath) ? Kind.index : Kind.list,
@@ -526,7 +531,7 @@ public abstract class BaseGeneratorCommand
 
         outputRelativePath = Urlizer.UrlizePath(outputRelativePath);
 
-        if (!string.IsNullOrEmpty(outputRelativePath) && !Path.IsPathRooted(outputRelativePath) && !outputRelativePath.StartsWith("/"))
+        if (!Path.IsPathRooted(outputRelativePath) && !outputRelativePath.StartsWith("/"))
         {
             outputRelativePath = "/" + outputRelativePath;
         }
@@ -670,7 +675,7 @@ public abstract class BaseGeneratorCommand
         baseTemplateCache.Clear();
         contentTemplateCache.Clear();
         automaticContentCache.Clear();
-        site.Pages.Clear();
+        site.PagesDict.Clear();
         IgnoreCacheBefore = DateTime.Now;
     }
 
