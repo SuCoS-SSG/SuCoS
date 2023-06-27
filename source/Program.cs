@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Threading.Tasks;
 using Serilog;
+using Serilog.Events;
 
 namespace SuCoS;
 
@@ -14,7 +15,6 @@ public class Program
     {
         // use Serilog to log the program's output
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
             .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
             .CreateLogger();
 
@@ -49,9 +49,12 @@ public class Program
             {
                 Source = source,
                 Output = output,
-                Future = future,
-                Verbose = verbose
+                Future = future
             };
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Is(verbose ? LogEventLevel.Debug : LogEventLevel.Information)
+                .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
+                .CreateLogger();
             _ = new BuildCommand(buildOptions);
         },
         sourceOption, buildOutputOption, futureOption, verboseOption);
@@ -68,9 +71,12 @@ public class Program
             ServeOptions serverOptions = new()
             {
                 Source = source,
-                Future = future,
-                Verbose = verbose
+                Future = future
             };
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Is(verbose ? LogEventLevel.Debug : LogEventLevel.Information)
+                .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
+                .CreateLogger();
 
             var serveCommand = new ServeCommand(serverOptions);
             await serveCommand.RunServer();

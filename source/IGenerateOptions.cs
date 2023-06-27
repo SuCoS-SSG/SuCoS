@@ -19,9 +19,4 @@ public interface IGenerateOptions
     /// Consider 
     /// </summary>
     bool Future { get; set; }
-
-    /// <summary>
-    /// If true, the program will print more information.
-    /// </summary>
-    bool Verbose { get; set; }
 }

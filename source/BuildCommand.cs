@@ -33,7 +33,7 @@ public class BuildCommand : BaseGeneratorCommand
 
         // Copy static folder files into the root of the output folder
         CopyFolder(site.SourceStaticPath, site.OutputPath);
-        
+
         // Generate the build report
         stopwatch.LogReport(site.Title);
     }
@@ -47,7 +47,7 @@ public class BuildCommand : BaseGeneratorCommand
         _ = Parallel.ForEach(site.PagesDict, pair =>
         {
             var (url, frontmatter) = pair;
-            var result = CreateOutputFile(frontmatter);
+            var result = frontmatter.CreateOutputFile();
 
             var path = (url + (site.UglyURLs ? "" : "/index.html")).TrimStart('/');
 
@@ -64,10 +64,7 @@ public class BuildCommand : BaseGeneratorCommand
             File.WriteAllText(outputAbsolutePath, result);
 
             // Log
-            if (options.Verbose)
-            {
-                Log.Information("Page created: {Permalink}", frontmatter.Permalink);
-            }
+            Log.Debug("Page created: {Permalink}", frontmatter.Permalink);
 
             // Use interlocked to safely increment the counter in a multi-threaded environment
             _ = Interlocked.Increment(ref pagesCreated);
