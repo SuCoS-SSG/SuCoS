@@ -46,7 +46,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// remains up-to-date. The FileSystemWatcher is configured with the source directory 
     /// at construction and starts watching immediately.
     /// </summary>
-    private readonly FileSystemWatcher fileWatcher;
+    private readonly FileSystemWatcher sourceFileWatcher;
 
     /// <summary>
     /// A Timer that helps to manage the frequency of server restarts.
@@ -69,14 +69,57 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// </summary>
     private readonly SemaphoreSlim restartServerLock = new(1, 1);
 
-    /// <summary>
-    /// A dictionary mapping route paths (e.g., "about") to functions that generate the corresponding 
-    /// page content. This could be replaced with more complex logic, such as loading the content 
-    /// from .html files.
-    /// </summary>
-    // private readonly Dictionary<string, Frontmatter> pages = new();
-
     private DateTime serverStartTime;
+
+    /// <summary>
+    /// Method to start the server explicitly
+    /// </summary>
+    /// <returns></returns>
+    public async Task RunServer()
+    {
+        // Start the server!
+        await StartServer("http://localhost", 1122);
+    }
+
+    /// <summary>
+    /// Starts the server asynchronously.
+    /// </summary>
+    /// <param name="baseURL">The base URL for the server.</param>
+    /// <param name="port">The port number for the server.</param>
+    /// <returns>A Task representing the asynchronous operation.</returns>
+    public async Task StartServer(string baseURL, int port)
+    {
+        Log.Information("Starting server...");
+
+        // Generate the build report
+        stopwatch.LogReport(site.Title);
+
+        serverStartTime = DateTime.UtcNow;
+
+        host = new WebHostBuilder()
+            .UseKestrel()
+            .UseUrls(baseURLGlobal)
+            .UseContentRoot(options.Source) // Set the content root path
+            .UseEnvironment("Debug") // Set the hosting environment to Debug
+            .Configure(app =>
+            {
+                app.Run(HandleRequest); // Call the custom method for handling requests
+            })
+            .Build();
+
+        await host.StartAsync();
+        Log.Information("You site is live: {baseURL}:{port}", baseURL, port);
+
+    }
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        host?.Dispose();
+        sourceFileWatcher?.Dispose();
+        debounceTimer?.Dispose();
+        GC.SuppressFinalize(this);
+    }
 
     /// <summary>
     /// Constructor for the ServeCommand class.
@@ -90,7 +133,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         baseURLGlobal = $"{baseURL}:{port}";
 
         // Watch for file changes in the specified path
-        fileWatcher = StartFileWatcher(options.Source);
+        sourceFileWatcher = StartFileWatcher(options.Source);
     }
 
     /// <summary>
@@ -121,46 +164,6 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     }
 
     /// <summary>
-    /// Method to start the server explicitly
-    /// </summary>
-    /// <returns></returns>
-    public async Task RunServer()
-    {
-        // Start the server!
-        await StartServer("http://localhost", 1122);
-    }
-    /// <summary>
-    /// Starts the server asynchronously.
-    /// </summary>
-    /// <param name="baseURL">The base URL for the server.</param>
-    /// <param name="port">The port number for the server.</param>
-    /// <returns>A Task representing the asynchronous operation.</returns>
-    public async Task StartServer(string baseURL, int port)
-    {
-        if (options.Verbose || true)
-        {
-            Log.Information("Starting server...");
-        }
-
-        serverStartTime = DateTime.UtcNow;
-
-        host = new WebHostBuilder()
-            .UseKestrel()
-            .UseUrls(baseURLGlobal)
-            .UseContentRoot(options.Source) // Set the content root path
-            .UseEnvironment("Debug") // Set the hosting environment to Debug
-            .Configure(app =>
-            {
-                app.Run(HandleRequest); // Call the custom method for handling requests
-            })
-            .Build();
-
-        await host.StartAsync();
-        Log.Information("You site is live: {baseURL}:{port}", baseURL, port);
-
-    }
-
-    /// <summary>
     /// Restarts the server asynchronously.
     /// </summary>
     private async Task RestartServer()
@@ -170,7 +173,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
 
         try
         {
-            CreatePagesDictionary();
+            site = SiteHelper.Init(configFile, options, frontmatterParser, WhereParamsFilter, stopwatch);
 
             // Stop the server
             if (host != null)
@@ -200,49 +203,56 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
 
         var fileAbsolutePath = Path.Combine(options.Source, "static", requestPath.TrimStart('/'));
 
-        if (options.Verbose)
-        {
-            Log.Information("Request received for {RequestPath}", requestPath);
-        }
+        Log.Debug("Request received for {RequestPath}", requestPath);
 
         // Return the server startup timestamp as the response
         if (requestPath == "/ping")
         {
-            var timestamp = serverStartTime.ToString("o");
-            await context.Response.WriteAsync(timestamp);
+            await HandlePingRequest(context);
         }
 
         // Check if it is one of the Static files (serve the actual file)
         else if (File.Exists(fileAbsolutePath))
         {
-            // Set the content type header
-            context.Response.ContentType = GetContentType(fileAbsolutePath);
-
-            using var fileStream = new FileStream(fileAbsolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            // Copy the file stream to the response body
-            await fileStream.CopyToAsync(context.Response.Body);
+            await HandleStaticFileRequest(context, fileAbsolutePath);
         }
 
         // Check if the requested file path corresponds to a registered page
         else if (site.PagesDict.TryGetValue(requestPath, out var frontmatter))
         {
-            // Generate the output content for the frontmatter
-            var content = CreateOutputFile(frontmatter);
-
-            // Inject JavaScript snippet for reloading the page if it was restarted
-            content = InjectReloadScript(content);
-
-            // Write the generated content to the response
-            await context.Response.WriteAsync(content);
+            await HandleRegisteredPageRequest(context, frontmatter);
         }
 
         else
         {
-            // The requested file was not found
-            // Set the response status code to 404 and write a corresponding message
-            context.Response.StatusCode = 404;
-            await context.Response.WriteAsync("404 - File Not Found");
+            await HandleNotFoundRequest(context);
         }
+    }
+
+    private Task HandlePingRequest(HttpContext context)
+    {
+        var content = serverStartTime.ToString("o");
+        return context.Response.WriteAsync(content);
+    }
+
+    private async Task HandleStaticFileRequest(HttpContext context, string fileAbsolutePath)
+    {
+        context.Response.ContentType = GetContentType(fileAbsolutePath);
+        using var fileStream = new FileStream(fileAbsolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        await fileStream.CopyToAsync(context.Response.Body);
+    }
+
+    private async Task HandleRegisteredPageRequest(HttpContext context, Frontmatter frontmatter)
+    {
+        var content = frontmatter.CreateOutputFile();
+        content = InjectReloadScript(content);
+        await context.Response.WriteAsync(content);
+    }
+
+    private async Task HandleNotFoundRequest(HttpContext context)
+    {
+        context.Response.StatusCode = 404;
+        await context.Response.WriteAsync("404 - File Not Found");
     }
 
     /// <summary>
@@ -279,9 +289,8 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
             using var reader = new StreamReader(stream);
             scriptContent = reader.ReadToEnd();
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            var ex = new FileNotFoundException("Could not read the JavaScript file.", e);
             Log.Error(ex, "Could not read the JavaScript file.");
             throw ex;
         }
@@ -294,7 +303,6 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
 
         return content;
     }
-
 
     /// <summary>
     /// Handles the file change event from the file watcher.
@@ -317,14 +325,5 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
                 restartInProgress = false;
             }
         }, null, TimeSpan.FromMilliseconds(1), Timeout.InfiniteTimeSpan);
-    }
-
-    /// <inheritdoc/>
-    public void Dispose()
-    {
-        host?.Dispose();
-        fileWatcher?.Dispose();
-        debounceTimer?.Dispose();
-        GC.SuppressFinalize(this);
     }
 }

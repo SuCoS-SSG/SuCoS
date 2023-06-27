@@ -42,7 +42,8 @@ dlldata.c
 **/bin/
 **/obj/
 artifacts/
-publish/
+**/publish/
+**/public/
 output/
 project.fragment.lock.json
 project.lock.json

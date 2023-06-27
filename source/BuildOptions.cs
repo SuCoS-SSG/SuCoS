@@ -13,7 +13,4 @@ public class BuildOptions : IGenerateOptions
 
     /// <inheritdoc/>
     public bool Future { get; set; } = false;
-
-    /// <inheritdoc/>
-    public bool Verbose { get; set; } = false;
 }

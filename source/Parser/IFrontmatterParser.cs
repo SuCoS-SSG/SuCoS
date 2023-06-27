@@ -13,9 +13,8 @@ public interface IFrontmatterParser
     /// <param name="site"></param>
     /// <param name="fileContent"></param>
     /// <param name="filePath"></param>
-    /// <param name="taxonomyCreator"></param>
     /// <returns></returns>
-    Frontmatter? ParseFrontmatter(Site site, string filePath, ref string fileContent, BaseGeneratorCommand taxonomyCreator);
+    Frontmatter? ParseFrontmatter(Site site, string filePath, ref string fileContent);
 
     /// <summary>
     /// Parse the app config file.
