@@ -2,6 +2,7 @@ using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Utilities.Collections;
+using Serilog;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 namespace SuCoS;
@@ -12,16 +13,17 @@ namespace SuCoS;
 /// </summary>
 sealed partial class Build : NukeBuild
 {
-    [Parameter("output-directory (default: ./output)")]
-    readonly string outputDirectory = RootDirectory / "output";
-
     Target Clean => _ => _
         .Executes(() =>
         {
-            sourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(
+            sourceDirectory.GlobDirectories("**/bin", "**/obj", "**/output").ForEach(
                 (path) => path.DeleteDirectory()
             );
-            PublishDirectory.CreateOrCleanDirectory();
+            testDirectory.GlobDirectories("**/bin", "**/obj", "**/output").ForEach(
+                (path) => path.DeleteDirectory()
+            );
+            PublishDirectory.DeleteDirectory();
+            coverageDirectory.DeleteDirectory();
         });
 
     Target Restore => _ => _
@@ -36,11 +38,12 @@ sealed partial class Build : NukeBuild
         .DependsOn(Restore)
         .Executes(() =>
         {
+            Log.Debug("Configuration {Configuration}", configurationSet);
+            Log.Debug("configuration {configuration}", configuration);
             DotNetBuild(s => s
                 .SetNoLogo(true)
                 .SetProjectFile(solution)
-                .SetConfiguration(configuration)
-                .SetOutputDirectory(outputDirectory)
+                .SetConfiguration(configurationSet)
                 .EnableNoRestore()
                 );
         });

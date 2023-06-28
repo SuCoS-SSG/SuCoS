@@ -5,10 +5,9 @@ using System.IO;
 using System.Linq;
 using Fluid;
 using Markdig;
-using Serilog;
-using SuCoS.Models;
+using SuCoS.Helper;
 
-namespace SuCoS;
+namespace SuCoS.Models;
 
 /// <summary>
 /// The meta data about each content Markdown file.
@@ -138,10 +137,10 @@ public class Frontmatter : IBaseContent, IParams
     {
         get
         {
-            if (contentCacheTime is null || Site.IgnoreCacheBefore >= contentCacheTime)
+            if (contentCacheTime is null || Site.IgnoreCacheBefore > contentCacheTime)
             {
                 contentCache = CreateContent();
-                contentCacheTime = DateTime.UtcNow;
+                contentCacheTime = clock.UtcNow;
             }
             return contentCache!;
         }
@@ -170,7 +169,10 @@ public class Frontmatter : IBaseContent, IParams
                 pagesCached ??= new();
                 foreach (var permalink in PagesReferences)
                 {
-                    pagesCached.Add(Site.PagesDict[permalink]);
+                    if (permalink is not null)
+                    {
+                        pagesCached.Add(Site.PagesDict[permalink]);
+                    }
                 }
             }
             return pagesCached;
@@ -205,12 +207,12 @@ public class Frontmatter : IBaseContent, IParams
     /// <summary>
     /// Check if the page is expired
     /// </summary>
-    public bool IsDateExpired => ExpiryDate is not null && ExpiryDate >= DateTime.Now;
+    public bool IsDateExpired => ExpiryDate is not null && ExpiryDate <= clock.Now;
 
     /// <summary>
     /// Check if the page is publishable
     /// </summary>
-    public bool IsDatePublishable => GetPublishDate is null || GetPublishDate <= DateTime.Now;
+    public bool IsDatePublishable => GetPublishDate is null || GetPublishDate <= clock.Now;
 
     /// <summary>
     /// The markdown content.
@@ -233,6 +235,8 @@ public class Frontmatter : IBaseContent, IParams
 
     private DateTime? GetPublishDate => PublishDate ?? Date;
 
+    private readonly ISystemClock clock;
+
     /// <summary>
     /// Required.
     /// </summary>
@@ -240,9 +244,11 @@ public class Frontmatter : IBaseContent, IParams
         string title,
         string sourcePath,
         Site site,
+        ISystemClock clock,
         string? sourceFileNameWithoutExtension = null,
         string? sourcePathDirectory = null)
     {
+        this.clock = clock;
         Title = title;
         Site = site;
         SourcePath = sourcePath;
@@ -268,35 +274,35 @@ public class Frontmatter : IBaseContent, IParams
     public string CreatePermalink(string? URLforce = null)
     {
         var isIndex = SourceFileNameWithoutExtension == "index";
-        string outputRelativePath;
+        var permaLink = string.Empty;
 
         URLforce ??= URL
             ?? (isIndex ? "{{ page.SourcePathDirectory }}" : "{{ page.SourcePathDirectory }}/{{ page.Title }}");
 
-        outputRelativePath = URLforce;
-
-        if (Site.FluidParser.TryParse(URLforce, out var template, out var error))
+        try
         {
-            var context = new TemplateContext(Site.TemplateOptions)
-                .SetValue("page", this);
-            try
+            if (Site.FluidParser.TryParse(URLforce, out var template, out var error))
             {
-                outputRelativePath = template.Render(context);
+                var context = new TemplateContext(Site.TemplateOptions)
+                    .SetValue("page", this);
+                permaLink = template.Render(context);
             }
-            catch (Exception ex)
+            else
             {
-                Log.Error(ex, "Error converting URL: {Error}", error);
+                throw new FormatException(error);
             }
         }
-
-        outputRelativePath = Urlizer.UrlizePath(outputRelativePath);
-
-        if (!Path.IsPathRooted(outputRelativePath) && !outputRelativePath.StartsWith("/"))
+        catch (Exception ex)
         {
-            outputRelativePath = "/" + outputRelativePath;
+            Site.Logger?.Error(ex, "Error converting URL: {URLforce}", URLforce);
         }
 
-        return outputRelativePath;
+        if (!Path.IsPathRooted(permaLink) && !permaLink.StartsWith('/'))
+        {
+            permaLink = '/' + permaLink;
+        }
+
+        return Urlizer.UrlizePath(permaLink);
     }
 
     /// <summary>
@@ -326,7 +332,7 @@ public class Frontmatter : IBaseContent, IParams
         }
         else
         {
-            Log.Error("Error parsing theme template: {Error}", error);
+            Site.Logger?.Error("Error parsing theme template: {Error}", error);
             return string.Empty;
         }
 
@@ -341,9 +347,9 @@ public class Frontmatter : IBaseContent, IParams
     {
         var fileContents = FileUtils.GetTemplate(Site.SourceThemePath, this, Site);
         // Theme content
-        if (string.IsNullOrEmpty(value: fileContents))
+        if (string.IsNullOrEmpty(fileContents))
         {
-            return Content;
+            return ContentPreRendered;
         }
         else if (Site.FluidParser.TryParse(fileContents, out var template, out var error))
         {
@@ -356,13 +362,13 @@ public class Frontmatter : IBaseContent, IParams
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error rendering theme template: {Error}", error);
+                Site.Logger?.Error(ex, "Error rendering theme template: {Error}", error);
                 return string.Empty;
             }
         }
         else
         {
-            Log.Error("Error parsing theme template: {Error}", error);
+            Site.Logger?.Error("Error parsing theme template: {Error}", error);
             return string.Empty;
         }
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using SuCoS.Helper;
 using SuCoS.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -40,6 +41,7 @@ public partial class YAMLParser : IFrontmatterParser
         {
             throw new ArgumentNullException(nameof(site));
         }
+        var dateTime = new SystemClock();
 
         Frontmatter? frontmatter = null;
         var match = YAMLRegex().Match(fileContent);
@@ -80,6 +82,7 @@ public partial class YAMLParser : IFrontmatterParser
                 frontmatter = new(
                     title: titleValue?.ToString() ?? sourceFileNameWithoutExtension,
                     site: site,
+                    clock: dateTime,
                     sourcePath: filePath,
                     sourceFileNameWithoutExtension: sourceFileNameWithoutExtension,
                     sourcePathDirectory: null
@@ -121,6 +124,10 @@ public partial class YAMLParser : IFrontmatterParser
                     _ = site.CreateAutomaticFrontmatter(contentTemplate, frontmatter);
                 }
             }
+            else
+            {
+                throw new YamlDotNet.Core.YamlException("Frontmatter yaml parsing failed");
+            }
         }
         if (frontmatter is not null)
         {
@@ -131,7 +138,12 @@ public partial class YAMLParser : IFrontmatterParser
         return null;
     }
 
-    private static string GetSection(string filePath)
+    /// <summary>
+    /// Get the section name from a file path
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <returns></returns>
+    public static string GetSection(string filePath)
     {
         // Split the path into individual folders
         var folders = filePath?.Split(Path.DirectorySeparatorChar);
@@ -154,8 +166,17 @@ public partial class YAMLParser : IFrontmatterParser
     /// <param name="settings">Site or Frontmatter object, that implements IParams</param>
     /// <param name="type">The type (Site or Frontmatter)</param>
     /// <param name="content">YAML content</param>
-    void ParseParams(IParams settings, Type type, string content)
+    public void ParseParams(IParams settings, Type type, string content)
     {
+        if (settings is null)
+        {
+            throw new ArgumentNullException(nameof(settings));
+        }
+        if (type is null)
+        {
+            throw new ArgumentNullException(nameof(type));
+        }
+
         var yamlObject = yamlDeserializer.Deserialize(new StringReader(content));
         if (yamlObject is Dictionary<object, object> yamlDictionary)
         {

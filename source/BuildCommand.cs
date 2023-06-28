@@ -11,22 +11,20 @@ namespace SuCoS;
 /// </summary>
 public class BuildCommand : BaseGeneratorCommand
 {
-    private readonly BuildOptions options;
-
     /// <summary>
     /// Entry point of the build command. It will be called by the main program
     /// in case the build command is invoked (which is by default).
     /// </summary>
-    /// <param name="options"></param>
-    public BuildCommand(BuildOptions options) : base(options: options)
+    /// <param name="options">Command line options</param>
+    /// <param name="logger">The logger instance. Injectable for testing</param>
+    public BuildCommand(BuildOptions options, ILogger logger) : base(options, logger)
     {
         if (options is null)
         {
             throw new ArgumentNullException(nameof(options));
         }
-        this.options = options;
 
-        Log.Information("Output path: {output}", options.Output);
+        logger.Information("Output path: {output}", options.Output);
 
         // Generate the site pages
         CreateOutputFiles();
@@ -64,7 +62,7 @@ public class BuildCommand : BaseGeneratorCommand
             File.WriteAllText(outputAbsolutePath, result);
 
             // Log
-            Log.Debug("Page created: {Permalink}", frontmatter.Permalink);
+            logger.Debug("Page created: {Permalink}", frontmatter.Permalink);
 
             // Use interlocked to safely increment the counter in a multi-threaded environment
             _ = Interlocked.Increment(ref pagesCreated);

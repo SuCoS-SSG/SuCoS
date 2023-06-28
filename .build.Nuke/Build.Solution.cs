@@ -11,7 +11,8 @@ namespace SuCoS;
 sealed partial class Build : NukeBuild
 {
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
-    readonly Configuration configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
+    readonly string configuration;
+    string configurationSet => configuration ?? (IsLocalBuild ? Configuration.Debug : Configuration.Release);
 
     [Solution]
     readonly Solution solution;

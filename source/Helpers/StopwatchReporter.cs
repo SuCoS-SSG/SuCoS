@@ -5,7 +5,7 @@ using System.Globalization;
 using System.Linq;
 using Serilog;
 
-namespace SuCoS;
+namespace SuCoS.Helper;
 
 /// <summary>
 ///  This class is used to report the time taken to execute
@@ -14,14 +14,16 @@ namespace SuCoS;
 /// </summary>
 public class StopwatchReporter
 {
+    private readonly ILogger logger;
     private readonly Dictionary<string, Stopwatch> stopwatches;
     private readonly Dictionary<string, int> itemCounts;
 
     /// <summary>
     /// Constructor
     /// </summary>
-    public StopwatchReporter()
+    public StopwatchReporter(ILogger logger)
     {
+        this.logger = logger;
         stopwatches = new Dictionary<string, Stopwatch>();
         itemCounts = new Dictionary<string, int>();
     }
@@ -102,6 +104,6 @@ Total                     {totalDurationAllSteps} ms
 ═════════════════════════════════════════════";
 
         // Log the report
-        Log.Information(report, siteTitle);
+        logger.Information(report, siteTitle);
     }
 }

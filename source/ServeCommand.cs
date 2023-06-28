@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using SuCoS.Helper;
+using SuCoS.Models;
 
 namespace SuCoS;
 
@@ -89,7 +91,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <returns>A Task representing the asynchronous operation.</returns>
     public async Task StartServer(string baseURL, int port)
     {
-        Log.Information("Starting server...");
+        logger.Information("Starting server...");
 
         // Generate the build report
         stopwatch.LogReport(site.Title);
@@ -108,7 +110,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
             .Build();
 
         await host.StartAsync();
-        Log.Information("You site is live: {baseURL}:{port}", baseURL, port);
+        logger.Information("You site is live: {baseURL}:{port}", baseURL, port);
 
     }
 
@@ -125,7 +127,8 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// Constructor for the ServeCommand class.
     /// </summary>
     /// <param name="options">ServeOptions object specifying the serve options.</param>
-    public ServeCommand(ServeOptions options) : base(options)
+    /// <param name="logger">The logger instance. Injectable for testing</param>
+    public ServeCommand(ServeOptions options, ILogger logger) : base(options, logger)
     {
         this.options = options ?? throw new ArgumentNullException(nameof(options));
         var baseURL = "http://localhost";
@@ -145,7 +148,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     {
         var SourceAbsolutePath = Path.GetFullPath(SourcePath);
 
-        Log.Information("Watching for file changes in {SourceAbsolutePath}", SourceAbsolutePath);
+        logger.Information("Watching for file changes in {SourceAbsolutePath}", SourceAbsolutePath);
 
         var fileWatcher = new FileSystemWatcher
         {
@@ -173,7 +176,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
 
         try
         {
-            site = SiteHelper.Init(configFile, options, frontmatterParser, WhereParamsFilter, stopwatch);
+            site = SiteHelper.Init(configFile, options, frontmatterParser, WhereParamsFilter, logger, stopwatch);
 
             // Stop the server
             if (host != null)
@@ -203,7 +206,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
 
         var fileAbsolutePath = Path.Combine(options.Source, "static", requestPath.TrimStart('/'));
 
-        Log.Debug("Request received for {RequestPath}", requestPath);
+        logger.Debug("Request received for {RequestPath}", requestPath);
 
         // Return the server startup timestamp as the response
         if (requestPath == "/ping")
@@ -277,7 +280,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// </summary>
     /// <param name="content">The content to inject the reload script into.</param>
     /// <returns>The content with the reload script injected.</returns>
-    private static string InjectReloadScript(string content)
+    private string InjectReloadScript(string content)
     {
         // Read the content of the JavaScript file
         string scriptContent;
@@ -291,8 +294,8 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Could not read the JavaScript file.");
-            throw ex;
+            logger.Error(ex, "Could not read the JavaScript file.");
+            throw;
         }
 
         // Inject the JavaScript content
@@ -318,7 +321,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         {
             if (!restartInProgress)
             {
-                Log.Information("File change detected: {FullPath}", e.FullPath);
+                logger.Information("File change detected: {FullPath}", e.FullPath);
 
                 restartInProgress = true;
                 await RestartServer();

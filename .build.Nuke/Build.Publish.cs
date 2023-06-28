@@ -34,7 +34,7 @@ sealed partial class Build : NukeBuild
             DotNetPublish(s => s
                 .SetNoLogo(true)
                 .SetProject(solution)
-                .SetConfiguration(configuration)
+                .SetConfiguration(configurationSet)
                 .SetOutput(PublishDirectory)
                 .SetRuntime(runtimeIdentifier)
                 .SetSelfContained(publishSelfContained)
