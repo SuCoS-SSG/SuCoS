@@ -1,16 +1,19 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace SuCoS;
+namespace SuCoS.Helper;
 
 /// <summary>
 /// Helper class to convert a string to a URL-friendly string.
 /// </summary>
 public static partial class Urlizer
 {
-    [GeneratedRegex(@"[^a-z0-9.]")]
-    private static partial Regex UrlizeRegex();
+    [GeneratedRegex(@"[^a-zA-Z0-9]+")]
+    private static partial Regex UrlizeRegexAlpha();
+    [GeneratedRegex(@"[^a-zA-Z0-9.]+")]
+    private static partial Regex UrlizeRegexAlphaDot();
 
     /// <summary>
     /// Converts a string to a URL-friendly string.
@@ -22,25 +25,19 @@ public static partial class Urlizer
     /// <exception cref="ArgumentNullException"></exception>
     public static string Urlize(string title, UrlizerOptions? options = null)
     {
-        if (title == null)
-        {
-            throw new ArgumentNullException(nameof(title));
-        }
+        title ??= "";
 
         options ??= new UrlizerOptions(); // Use default options if not provided
 
-        var cleanedTitle = title;
+        var cleanedTitle = !options.LowerCase ? title : title.ToLower(CultureInfo.CurrentCulture);
 
-        // Apply culture-specific case conversion if enabled
-        if (options.LowerCase)
-        {
-            cleanedTitle = cleanedTitle.ToLower(CultureInfo.CurrentCulture);
-        }
+        var replacementChar = options.ReplacementChar ?? '\0';
+        var replacementCharString = options.ReplacementChar.ToString() ?? "";
 
         // Remove non-alphanumeric characters and replace spaces with the replacement character
-        cleanedTitle = UrlizeRegex()
-            .Replace(cleanedTitle, options.ReplacementChar.ToString())
-            .Trim(options.ReplacementChar);
+        cleanedTitle = (options.ReplaceDot ? UrlizeRegexAlpha() : UrlizeRegexAlphaDot())
+            .Replace(cleanedTitle, replacementCharString)
+            .Trim(replacementChar);
 
         return cleanedTitle;
     }
@@ -53,12 +50,17 @@ public static partial class Urlizer
     /// <returns></returns>
     public static string UrlizePath(string path, UrlizerOptions? options = null)
     {
-        var items = (path ?? string.Empty).Split("/");
+        var pathString = (path ?? string.Empty);
+        var items = pathString.Split("/");
+        var result = new List<string>();
         for (var i = 0; i < items.Length; i++)
         {
-            items[i] = Urlize(items[i], options);
+            if (!string.IsNullOrEmpty(items[i]))
+            {
+                result.Add(Urlize(items[i], options));
+            }
         }
-        return string.Join("/", items);
+        return (pathString.StartsWith('/') ? '/' : string.Empty) + string.Join('/', result);
     }
 }
 
@@ -76,5 +78,11 @@ public class UrlizerOptions
     /// <summary>
     /// The character that will be used to replace spaces and other invalid characters.
     /// </summary>
-    public char ReplacementChar { get; set; } = '-';
+    public char? ReplacementChar { get; set; } = '-';
+
+    /// <summary>
+    /// Replace dots with the replacement character.
+    /// Note that it will break file paths and domain names.
+    /// </summary>
+    public bool ReplaceDot { get; set; }
 }

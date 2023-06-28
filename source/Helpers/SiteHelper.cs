@@ -2,10 +2,11 @@ using System;
 using System.IO;
 using Fluid;
 using Microsoft.Extensions.FileProviders;
+using Serilog;
 using SuCoS.Models;
 using SuCoS.Parser;
 
-namespace SuCoS;
+namespace SuCoS.Helper;
 
 /// <summary>
 /// Helper methods for scanning files.
@@ -20,8 +21,9 @@ public static class SiteHelper
     /// <param name="frontmatterParser">The frontmatter parser.</param>
     /// <param name="configFile">The site settings file.</param>
     /// <param name="whereParamsFilter">The method to be used in the whereParams.</param>
+    /// <param name="logger">The logger instance. Injectable for testing</param>
     /// <returns>The site settings.</returns>
-    public static Site ParseSettings(string configFile, IGenerateOptions options, IFrontmatterParser frontmatterParser, FilterDelegate whereParamsFilter)
+    public static Site ParseSettings(string configFile, IGenerateOptions options, IFrontmatterParser frontmatterParser, FilterDelegate whereParamsFilter, ILogger logger)
     {
         if (options is null)
         {
@@ -44,15 +46,13 @@ public static class SiteHelper
             var fileContent = File.ReadAllText(filePath);
             var site = frontmatterParser.ParseSiteSettings(fileContent);
 
+            site.Logger = logger;
             site.options = options;
             site.SourceDirectoryPath = options.Source;
             site.OutputPath = options.Output;
 
             // Liquid template options, needed to theme the content 
             // but also parse URLs
-            site.TemplateOptions.MemberAccessStrategy.Register<Frontmatter>();
-            site.TemplateOptions.MemberAccessStrategy.Register<Site>();
-            site.TemplateOptions.MemberAccessStrategy.Register<BaseGeneratorCommand>();
             site.TemplateOptions.Filters.AddFilter("whereParams", whereParamsFilter);
 
             if (site is null)
@@ -72,7 +72,7 @@ public static class SiteHelper
     /// Creates the pages dictionary.
     /// </summary>
     /// <exception cref="FormatException"></exception>
-    public static Site Init(string configFile, IGenerateOptions options, IFrontmatterParser frontmatterParser, FilterDelegate whereParamsFilter, StopwatchReporter stopwatch)
+    public static Site Init(string configFile, IGenerateOptions options, IFrontmatterParser frontmatterParser, FilterDelegate whereParamsFilter, ILogger logger, StopwatchReporter stopwatch)
     {
         if (stopwatch is null)
         {
@@ -82,7 +82,7 @@ public static class SiteHelper
         Site site;
         try
         {
-            site = SiteHelper.ParseSettings(configFile, options, frontmatterParser, whereParamsFilter);
+            site = SiteHelper.ParseSettings(configFile, options, frontmatterParser, whereParamsFilter, logger);
         }
         catch
         {

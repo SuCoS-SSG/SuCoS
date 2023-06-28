@@ -8,11 +8,7 @@
       "properties": {
         "configuration": {
           "type": "string",
-          "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)",
-          "enum": [
-            "<Debug>k__BackingField",
-            "<Release>k__BackingField"
-          ]
+          "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)"
         },
         "containerDefaultRID": {
           "type": "string",
@@ -62,10 +58,6 @@
         "NoLogo": {
           "type": "boolean",
           "description": "Disables displaying the NUKE logo"
-        },
-        "outputDirectory": {
-          "type": "string",
-          "description": "output-directory (default: ./output)"
         },
         "packageName": {
           "type": "string",
@@ -123,9 +115,12 @@
               "CreatePackage",
               "GitLabCreateRelease",
               "GitLabCreateTag",
+              "PrepareTestFiles",
               "Publish",
               "Restore",
-              "ShowCurrentVersion"
+              "ShowCurrentVersion",
+              "Test",
+              "TestReport"
             ]
           }
         },
@@ -146,9 +141,12 @@
               "CreatePackage",
               "GitLabCreateRelease",
               "GitLabCreateTag",
+              "PrepareTestFiles",
               "Publish",
               "Restore",
-              "ShowCurrentVersion"
+              "ShowCurrentVersion",
+              "Test",
+              "TestReport"
             ]
           }
         },

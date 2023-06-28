@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Fluid;
 using Markdig;
 using Serilog;
+using SuCoS.Helper;
 using SuCoS.Parser;
 
 namespace SuCoS.Models;
@@ -141,6 +142,11 @@ public class Site : IParams
     public readonly TemplateOptions TemplateOptions = new();
 
     /// <summary>
+    /// The logger instance.
+    /// </summary>
+    public ILogger? Logger;
+
+    /// <summary>
     /// The time that the older cache should be ignored.
     /// </summary>
     public DateTime IgnoreCacheBefore { get; set; }
@@ -169,6 +175,8 @@ public class Site : IParams
 
     private List<Frontmatter>? regularPagesCache;
 
+    private readonly ISystemClock clock;
+
     /// <summary>
     /// Markdig 20+ built-in extensions
     /// </summary>
@@ -176,6 +184,26 @@ public class Site : IParams
     public readonly MarkdownPipeline MarkdownPipeline = new MarkdownPipelineBuilder()
             .UseAdvancedExtensions()
             .Build();
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    public Site() : this(new SystemClock())
+    {
+    }
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    public Site(ISystemClock clock)
+    {
+        // Liquid template options, needed to theme the content 
+        // but also parse URLs
+        TemplateOptions.MemberAccessStrategy.Register<Frontmatter>();
+        TemplateOptions.MemberAccessStrategy.Register<Site>();
+
+        this.clock = clock;
+    }
 
     /// <summary>
     /// Scans all markdown files in the source directory.
@@ -227,6 +255,7 @@ public class Site : IParams
             if (!automaticContentCache.TryGetValue(id, out frontmatter))
             {
                 frontmatter = new(
+                    clock: new SystemClock(),
                     site: this,
                     title: baseContent.Title,
                     sourcePath: string.Empty,
@@ -294,7 +323,7 @@ public class Site : IParams
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error parsing file {file}", file.filePath);
+                Logger?.Error(ex, "Error parsing file {file}", file.filePath);
             }
 
             // Use interlocked to safely increment the counter in a multi-threaded environment
@@ -322,6 +351,7 @@ public class Site : IParams
         Frontmatter frontmatter = new(
             title: Title,
             site: this,
+            clock: clock,
             sourcePath: Path.Combine(relativePath, "index.md"),
             sourceFileNameWithoutExtension: "index",
             sourcePathDirectory: "/"
@@ -340,8 +370,13 @@ public class Site : IParams
     /// </summary>
     /// <param name="frontmatter"></param>
     /// <param name="overwrite"></param>
-    private void PostProcessFrontMatter(Frontmatter frontmatter, bool overwrite = false)
+    public void PostProcessFrontMatter(Frontmatter frontmatter, bool overwrite = false)
     {
+        if (frontmatter is null)
+        {
+            throw new ArgumentNullException(nameof(frontmatter));
+        }
+
         frontmatter.Permalink = frontmatter.CreatePermalink();
         lock (syncLockPostProcess)
         {

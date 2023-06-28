@@ -11,13 +11,33 @@ namespace SuCoS;
 /// </summary>
 public class Program
 {
-    private static int Main(string[] args)
+    private ILogger logger;
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    public Program(ILogger logger)
     {
-        // use Serilog to log the program's output
-        Log.Logger = new LoggerConfiguration()
+        this.logger = logger;
+    }
+
+    /// <summary>
+    /// Entry point of the program
+    /// </summary>
+    /// <param name="args"></param>
+    /// <returns></returns>
+    public static int Main(string[] args)
+    {
+        ILogger logger = new LoggerConfiguration()
             .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
             .CreateLogger();
 
+        var program = new Program(logger);
+        return program.Run(args);
+    }
+
+    private int Run(string[] args)
+    {
         // Print the logo of the program.
         OutputLogo();
 
@@ -26,7 +46,7 @@ public class Program
         var assemblyName = assembly?.GetName();
         var appName = assemblyName?.Name;
         var appVersion = assemblyName?.Version;
-        Log.Information("{name} v{version}", appName, appVersion);
+        logger.Information("{name} v{version}", appName, appVersion);
 
         // Shared options between the commands
         var sourceOption = new Option<string>(new[] { "--source", "-s" }, () => ".", "Source directory path");
@@ -51,11 +71,11 @@ public class Program
                 Output = output,
                 Future = future
             };
-            Log.Logger = new LoggerConfiguration()
+            logger = new LoggerConfiguration()
                 .MinimumLevel.Is(verbose ? LogEventLevel.Debug : LogEventLevel.Information)
                 .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
                 .CreateLogger();
-            _ = new BuildCommand(buildOptions);
+            _ = new BuildCommand(buildOptions, logger);
         },
         sourceOption, buildOutputOption, futureOption, verboseOption);
 
@@ -73,12 +93,12 @@ public class Program
                 Source = source,
                 Future = future
             };
-            Log.Logger = new LoggerConfiguration()
+            logger = new LoggerConfiguration()
                 .MinimumLevel.Is(verbose ? LogEventLevel.Debug : LogEventLevel.Information)
                 .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
                 .CreateLogger();
 
-            var serveCommand = new ServeCommand(serverOptions);
+            var serveCommand = new ServeCommand(serverOptions, logger);
             await serveCommand.RunServer();
             await Task.Delay(-1);  // Wait forever.
         },
@@ -93,9 +113,9 @@ public class Program
         return rootCommand.Invoke(args);
     }
 
-    private static void OutputLogo()
+    private void OutputLogo()
     {
-        Log.Information(@"
+        logger.Information(@"
  ____             ____            ____       
 /\  _`\          /\  _`\         /\  _`\     
 \ \,\L\_\  __  __\ \ \/\_\    ___\ \,\L\_\   

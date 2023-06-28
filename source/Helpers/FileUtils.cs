@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using SuCoS.Models;
 
-namespace SuCoS;
+namespace SuCoS.Helper;
 
 /// <summary>
 /// Helper methods for scanning files.

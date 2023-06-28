@@ -1,7 +1,7 @@
 image: mcr.microsoft.com/dotnet/sdk:7.0
 
 stages:
-  - build
+  - build-test
   - check-and-create-release
   - publish
 
@@ -27,22 +27,22 @@ services:
   - docker:dind
 
 # build the project on every commit
-build:
+test:
   <<: *dotnet_nuke_template
-  stage: build
+  stage: build-test
   except:
     - tags
     - schedules
   script:
     - |
-      ./build.sh Compile \
-        --output-directory "./output"
+      ./build.sh TestReport \
+        --configuration "Debug"
   artifacts:
     paths:
-      - output/*
+      - coverage-results/report/*
 
-# # check if there is new commits, if so, create a tag and a release
-# # this will trigger the publish stage "publish"
+# check if there is new commits, if so, create a tag and a release
+# this will trigger the publish stage "publish"
 check-and-create-release:
   <<: *dotnet_nuke_template
   stage: check-and-create-release

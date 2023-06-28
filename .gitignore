@@ -47,3 +47,4 @@ artifacts/
 output/
 project.fragment.lock.json
 project.lock.json
+**/coverage-results/

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Fluid;
 using Fluid.Values;
 using Serilog;
+using SuCoS.Helper;
 using SuCoS.Models;
 using SuCoS.Parser;
 
@@ -32,22 +33,34 @@ public abstract class BaseGeneratorCommand
     /// <summary>
     /// The stopwatch reporter.
     /// </summary>
-    protected readonly StopwatchReporter stopwatch = new();
+    protected readonly StopwatchReporter stopwatch;
+
+    /// <summary>
+    /// The logger (Serilog).
+    /// </summary>
+    protected ILogger logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseGeneratorCommand"/> class.
     /// </summary>
     /// <param name="options">The generate options.</param>
-    protected BaseGeneratorCommand(IGenerateOptions options)
+    /// <param name="logger">The logger instance. Injectable for testing</param>
+    protected BaseGeneratorCommand(IGenerateOptions options, ILogger logger)
     {
         if (options is null)
         {
             throw new ArgumentNullException(nameof(options));
         }
+        if (logger is null)
+        {
+            throw new ArgumentNullException(nameof(logger));
+        }
+        this.logger = logger;
+        stopwatch = new(logger);
 
-        Log.Information("Source path: {source}", propertyValue: options.Source);
+        logger.Information("Source path: {source}", propertyValue: options.Source);
 
-        site = SiteHelper.Init(configFile, options, frontmatterParser, WhereParamsFilter, stopwatch);
+        site = SiteHelper.Init(configFile, options, frontmatterParser, WhereParamsFilter, logger, stopwatch);
     }
 
     /// <summary>
