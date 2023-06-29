@@ -14,7 +14,7 @@ sealed partial class Build : NukeBuild
     [Parameter("Runtime identifier for the build (e.g., win-x64, linux-x64, osx-x64) (default: linux-x64)")]
     readonly string runtimeIdentifier = "linux-x64";
 
-    [Parameter("publish-directory (default: ./publish)")]
+    [Parameter("publish-directory (default: ./publish/{runtimeIdentifier})")]
     readonly AbsolutePath publishDirectory;
     AbsolutePath PublishDirectory => publishDirectory ?? RootDirectory / "publish" / runtimeIdentifier;
 
@@ -33,7 +33,7 @@ sealed partial class Build : NukeBuild
         {
             DotNetPublish(s => s
                 .SetNoLogo(true)
-                .SetProject(solution)
+                .SetProject("source/SuCoS.csproj")
                 .SetConfiguration(configurationSet)
                 .SetOutput(PublishDirectory)
                 .SetRuntime(runtimeIdentifier)

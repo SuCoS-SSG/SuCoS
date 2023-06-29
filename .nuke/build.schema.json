@@ -80,7 +80,7 @@
         },
         "publishDirectory": {
           "type": "string",
-          "description": "publish-directory (default: ./publish)"
+          "description": "publish-directory (default: ./publish/{runtimeIdentifier})"
         },
         "publishSelfContained": {
           "type": "boolean",
