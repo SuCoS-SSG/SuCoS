@@ -58,9 +58,14 @@ public class Site : IParams
     public string SourceStaticPath => Path.Combine(SourceDirectoryPath, "static");
 
     /// <summary>
-    /// The path of the static content (that will be copied as is), based on the source path.
+    /// The path theme.
     /// </summary>
     public string SourceThemePath => Path.Combine(SourceDirectoryPath, "theme");
+
+    /// <summary>
+    /// The path of the static content (that will be copied as is), based on the theme path.
+    /// </summary>
+    public string SourceThemeStaticPath => Path.Combine(SourceThemePath, "static");
 
     /// <summary>
     /// The path where the generated site files will be saved.
@@ -417,7 +422,7 @@ public class Site : IParams
         }
 
         // Create a section page when due
-        if (frontmatter.Type != "section" 
+        if (frontmatter.Type != "section"
             && !string.IsNullOrEmpty(frontmatter.Permalink)
             && !string.IsNullOrEmpty(frontmatter.Section))
         {

@@ -29,6 +29,9 @@ public class BuildCommand : BaseGeneratorCommand
         // Generate the site pages
         CreateOutputFiles();
 
+        // Copy theme static folder files into the root of the output folder
+        CopyFolder(site.SourceThemeStaticPath, site.OutputPath);
+
         // Copy static folder files into the root of the output folder
         CopyFolder(site.SourceStaticPath, site.OutputPath);
 
