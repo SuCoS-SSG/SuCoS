@@ -204,7 +204,8 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
             requestPath = requestPath.TrimEnd('/');
         }
 
-        var fileAbsolutePath = Path.Combine(options.Source, "static", requestPath.TrimStart('/'));
+        var fileAbsolutePath = Path.Combine(site.SourceStaticPath, requestPath.TrimStart('/'));
+        var fileAbsoluteThemePath = Path.Combine(site.SourceThemeStaticPath, requestPath.TrimStart('/'));
 
         logger.Debug("Request received for {RequestPath}", requestPath);
 
@@ -218,6 +219,12 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         else if (File.Exists(fileAbsolutePath))
         {
             await HandleStaticFileRequest(context, fileAbsolutePath);
+        }
+
+        // Check if it is one of the Static files (serve the actual file)
+        else if (File.Exists(fileAbsoluteThemePath))
+        {
+            await HandleStaticFileRequest(context, fileAbsoluteThemePath);
         }
 
         // Check if the requested file path corresponds to a registered page
