@@ -27,7 +27,7 @@ public class FrontmatterTests
     [InlineData("Test Title", "/path/to/file.md", "file", "/path/to")]
     public void ShouldCreateFrontmatterWithCorrectProperties(string title, string sourcePath, string sourceFileNameWithoutExtension, string sourcePathDirectory)
     {
-        var frontmatter = new Frontmatter(title, sourcePath, site, clock, sourceFileNameWithoutExtension, sourcePathDirectory);
+        var frontmatter = new Frontmatter(title, sourcePath, site, sourceFileNameWithoutExtension, sourcePathDirectory);
 
         Assert.Equal(title, frontmatter.Title);
         Assert.Equal(sourcePath, frontmatter.SourcePath);
@@ -40,26 +40,25 @@ public class FrontmatterTests
     public void ShouldHaveDefaultValuesForOptionalProperties()
     {
         // Arrange
-        var frontmatter = new Frontmatter("Test Title", "/path/to/file.md", site, clock);
+        var frontmatter = new Frontmatter("Test Title", "/path/to/file.md", site);
 
         // Assert
         Assert.Equal(string.Empty, frontmatter.Section);
         Assert.Equal(Kind.single, frontmatter.Kind);
-        Assert.Equal(string.Empty, frontmatter.Type);
+        Assert.Equal("page", frontmatter.Type);
         Assert.Null(frontmatter.URL);
         Assert.Empty(frontmatter.Params);
         Assert.Null(frontmatter.Date);
         Assert.Null(frontmatter.LastMod);
         Assert.Null(frontmatter.PublishDate);
         Assert.Null(frontmatter.ExpiryDate);
-        Assert.Null(frontmatter.Aliases);
+        Assert.Null(frontmatter.AliasesProcessed);
         Assert.Null(frontmatter.Permalink);
         Assert.Empty(frontmatter.Urls);
         Assert.Equal(string.Empty, frontmatter.RawContent);
         Assert.Null(frontmatter.Tags);
         Assert.Null(frontmatter.PagesReferences);
         Assert.Empty(frontmatter.RegularPages);
-        Assert.Equal(string.Empty, frontmatter.Language);
         Assert.False(frontmatter.IsDateExpired);
         Assert.True(frontmatter.IsDatePublishable);
     }
@@ -72,7 +71,7 @@ public class FrontmatterTests
 
         systemClockMock.Setup(c => c.Now).Returns(new DateTime(2023, 6, 2));
 
-        var frontmatter = new Frontmatter(title, sourcePath, site, clock)
+        var frontmatter = new Frontmatter(title, sourcePath, site)
         {
             ExpiryDate = expiryDate,
             PublishDate = publishDate
@@ -86,7 +85,7 @@ public class FrontmatterTests
     [InlineData("{{ page.Title }}/{{ page.SourceFileNameWithoutExtension }}", "/test-title/file")]
     public void ShouldCreatePermalinkWithDefaultOrCustomURLTemplate(string urlTemplate, string expectedPermalink)
     {
-        var frontmatter = new Frontmatter(title, sourcePath, site, clock)
+        var frontmatter = new Frontmatter(title, sourcePath, site)
         {
             URL = urlTemplate
         };
@@ -103,7 +102,7 @@ public class FrontmatterTests
     {
         systemClockMock.Setup(c => c.Now).Returns(new DateTime(2023, 6, 28));
 
-        var frontmatter = new Frontmatter(title, sourcePath, site, clock)
+        var frontmatter = new Frontmatter(title, sourcePath, site)
         {
             ExpiryDate = clock.Now.AddDays(days)
         };
@@ -118,7 +117,7 @@ public class FrontmatterTests
     {
         systemClockMock.Setup(c => c.Now).Returns(new DateTime(2023, 6, 28));
 
-        var frontmatter = new Frontmatter(title, sourcePath, site, clock)
+        var frontmatter = new Frontmatter(title, sourcePath, site)
         {
             Date = clock.Now.AddDays(1)
         };
@@ -134,7 +133,7 @@ public class FrontmatterTests
     [InlineData("/another/path", "/another/path/test-title")]
     public void CreatePermalink_ShouldReturnCorrectUrl_WhenUrlIsNull(string sourcePathDirectory, string expectedUrl)
     {
-        var frontmatter = new Frontmatter(title, sourcePath, site, clock)
+        var frontmatter = new Frontmatter(title, sourcePath, site)
         {
             SourcePathDirectory = sourcePathDirectory
         };
@@ -147,7 +146,7 @@ public class FrontmatterTests
     [InlineData(Kind.list, false)]
     public void RegularPages_ShouldReturnCorrectPages_WhenKindIsSingle(Kind kind, bool isExpectedPage)
     {
-        var page = new Frontmatter(title, sourcePath, site, clock) { Kind = kind };
+        var page = new Frontmatter(title, sourcePath, site) { Kind = kind };
         site.PostProcessFrontMatter(page);
 
         Assert.Equal(isExpectedPage, site.RegularPages.Contains(page));
@@ -161,7 +160,7 @@ public class FrontmatterTests
     [InlineData("2022-06-28", "2024-06-28", true)]
     public void IsDatePublishable_ShouldReturnCorrectValues(string? publishDate, string? date, bool expectedValue)
     {
-        var frontmatter = new Frontmatter(title, sourcePath, site, clock)
+        var frontmatter = new Frontmatter(title, sourcePath, site)
         {
             PublishDate = publishDate is null ? null : DateTime.Parse(publishDate, CultureInfo.InvariantCulture),
             Date = date is null ? null : DateTime.Parse(date, CultureInfo.InvariantCulture)

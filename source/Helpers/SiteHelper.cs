@@ -99,4 +99,26 @@ public static class SiteHelper
 
         return site;
     }
+
+    /// <summary>
+    /// Get the section name from a file path
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <returns></returns>
+    public static string GetSection(string filePath)
+    {
+        // Split the path into individual folders
+        var folders = filePath?.Split(Path.DirectorySeparatorChar);
+
+        // Retrieve the first folder
+        for (var i = 0; i < folders?.Length; i++)
+        {
+            if (!string.IsNullOrEmpty(folders[i]))
+            {
+                return folders[i];
+            }
+        }
+
+        return string.Empty;
+    }
 }

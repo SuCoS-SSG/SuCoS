@@ -6,6 +6,7 @@ using System.Linq;
 using Fluid;
 using Markdig;
 using SuCoS.Helper;
+using YamlDotNet.Serialization;
 
 namespace SuCoS.Models;
 
@@ -17,16 +18,16 @@ public class Frontmatter : IBaseContent, IParams
     #region IBaseContent
 
     /// <inheritdoc/>
-    public string Title { get; init; }
+    public string? Title { get; set; } = string.Empty;
 
     /// <inheritdoc/>
-    public string Section { get; set; } = string.Empty;
+    public string? Section { get; set; } = string.Empty;
 
     /// <inheritdoc/>
-    public Kind Kind { get; set; } = Kind.single;
+    public Kind Kind { get; set; } = Models.Kind.single;
 
     /// <inheritdoc/>
-    public string Type { get; set; } = string.Empty;
+    public string Type { get; set; } = "page";
 
     /// <inheritdoc/>
     public string? URL { get; set; }
@@ -36,6 +37,7 @@ public class Frontmatter : IBaseContent, IParams
     #region IParams
 
     /// <inheritdoc/>
+    [YamlIgnore]
     public Dictionary<string, object> Params { get; set; } = new();
 
     #endregion IParams
@@ -63,22 +65,7 @@ public class Frontmatter : IBaseContent, IParams
     /// <summary>
     /// The path of the file, if it's a file.
     /// </summary>
-    public string SourcePath { get; init; }
-
-    /// <summary>
-    /// The source filename, without the extension. ;)
-    /// </summary>
-    public string SourceFileNameWithoutExtension { get; init; }
-
-    /// <summary>
-    /// The source directory of the file.
-    /// </summary>
-    public string SourcePathDirectory { get; init; }
-
-    /// <summary>
-    /// Point to the site configuration.
-    /// </summary>
-    public Site Site { get; init; }
+    public string? SourcePath { get; set; }
 
     /// <summary>
     /// Secondary URL patterns to be used to create the url.
@@ -86,37 +73,63 @@ public class Frontmatter : IBaseContent, IParams
     public List<string>? Aliases { get; set; }
 
     /// <summary>
-    /// The URL for the content.
+    /// The source filename, without the extension. ;)
     /// </summary>
-    public string? Permalink { get; set; }
+    [YamlIgnore]
+    public string? SourceFileNameWithoutExtension { get; set; }
 
     /// <summary>
-    /// Get all URLs related to this content.
+    /// The source directory of the file.
     /// </summary>
-    public List<string> Urls
-    {
-        get
-        {
-            var urls = new List<string>();
-            if (Permalink is not null)
-            {
-                urls.Add(Permalink);
-            }
-            if (Aliases is not null)
-            {
-                foreach (var aliases in Aliases)
-                {
-                    urls.Add(aliases);
-                }
-            }
-            return urls;
-        }
-    }
+    [YamlIgnore]
+    public string? SourcePathDirectory { get; set; }
+
+    /// <summary>
+    /// Point to the site configuration.
+    /// </summary>
+    [YamlIgnore]
+    public Site Site { get; set; }
+
+    /// <summary>
+    /// Secondary URL patterns to be used to create the url.
+    /// </summary>
+    [YamlIgnore]
+    public List<string>? AliasesProcessed { get; set; }
+
+    /// <summary>
+    /// The URL for the content.
+    /// </summary>
+    [YamlIgnore]
+    public string? Permalink { get; set; }
 
     /// <summary>
     /// Raw content, from the Markdown file.
     /// </summary>
+    [YamlIgnore]
     public string RawContent { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Other content that mention this content.
+    /// Used to create the tags list and Related Posts section.
+    /// </summary>
+    public ConcurrentBag<string>? PagesReferences { get; set; }
+
+    /// <summary>
+    /// A list of tags, if any.
+    /// </summary>
+    [YamlIgnore]
+    public List<Frontmatter>? Tags { get; set; }
+
+    /// <summary>
+    /// Check if the page is expired
+    /// </summary>
+    public bool IsDateExpired => ExpiryDate is not null && ExpiryDate <= clock.Now;
+
+    /// <summary>
+    /// Check if the page is publishable
+    /// </summary>
+    [YamlIgnore]
+    public bool IsDatePublishable => GetPublishDate is null || GetPublishDate <= clock.Now;
 
     /// <summary>
     /// The markdown content converted to HTML
@@ -147,11 +160,6 @@ public class Frontmatter : IBaseContent, IParams
     }
 
     /// <summary>
-    /// A list of tags, if any.
-    /// </summary>
-    public List<Frontmatter>? Tags { get; set; }
-
-    /// <summary>
     /// Other content that mention this content.
     /// Used to create the tags list and Related Posts section.
     /// </summary>
@@ -180,12 +188,6 @@ public class Frontmatter : IBaseContent, IParams
     }
 
     /// <summary>
-    /// Other content that mention this content.
-    /// Used to create the tags list and Related Posts section.
-    /// </summary>
-    public ConcurrentBag<string>? PagesReferences { get; set; }
-
-    /// <summary>
     /// List of pages from the content folder.
     /// </summary>
     public List<Frontmatter> RegularPages
@@ -193,26 +195,34 @@ public class Frontmatter : IBaseContent, IParams
         get
         {
             regularPagesCache ??= Pages
-                    .Where(frontmatter => frontmatter.Kind == Kind.single)
+                    .Where(frontmatter => frontmatter.Kind == Models.Kind.single)
                     .ToList();
             return regularPagesCache;
         }
     }
 
     /// <summary>
-    /// Language of the content.
+    /// Get all URLs related to this content.
     /// </summary>
-    public string Language { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Check if the page is expired
-    /// </summary>
-    public bool IsDateExpired => ExpiryDate is not null && ExpiryDate <= clock.Now;
-
-    /// <summary>
-    /// Check if the page is publishable
-    /// </summary>
-    public bool IsDatePublishable => GetPublishDate is null || GetPublishDate <= clock.Now;
+    public List<string> Urls
+    {
+        get
+        {
+            var urls = new List<string>();
+            if (Permalink is not null)
+            {
+                urls.Add(Permalink);
+            }
+            if (AliasesProcessed is not null)
+            {
+                foreach (var aliases in AliasesProcessed)
+                {
+                    urls.Add(aliases);
+                }
+            }
+            return urls;
+        }
+    }
 
     /// <summary>
     /// The markdown content.
@@ -235,7 +245,7 @@ public class Frontmatter : IBaseContent, IParams
 
     private DateTime? GetPublishDate => PublishDate ?? Date;
 
-    private readonly ISystemClock clock;
+    private ISystemClock clock => Site.Clock;
 
     /// <summary>
     /// Required.
@@ -244,16 +254,21 @@ public class Frontmatter : IBaseContent, IParams
         string title,
         string sourcePath,
         Site site,
-        ISystemClock clock,
         string? sourceFileNameWithoutExtension = null,
         string? sourcePathDirectory = null)
     {
-        this.clock = clock;
         Title = title;
         Site = site;
         SourcePath = sourcePath;
         SourceFileNameWithoutExtension = sourceFileNameWithoutExtension ?? Path.GetFileNameWithoutExtension(sourcePath);
         SourcePathDirectory = sourcePathDirectory ?? Path.GetDirectoryName(sourcePath) ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    public Frontmatter()
+    {
     }
 
     /// <summary>
@@ -274,6 +289,7 @@ public class Frontmatter : IBaseContent, IParams
     public string CreatePermalink(string? URLforce = null)
     {
         var isIndex = SourceFileNameWithoutExtension == "index";
+
         var permaLink = string.Empty;
 
         URLforce ??= URL

@@ -9,6 +9,7 @@ using Markdig;
 using Serilog;
 using SuCoS.Helper;
 using SuCoS.Parser;
+using YamlDotNet.Serialization;
 
 namespace SuCoS.Models;
 
@@ -17,6 +18,14 @@ namespace SuCoS.Models;
 /// </summary>
 public class Site : IParams
 {
+    #region IParams
+
+    /// <inheritdoc/>
+    [YamlIgnore]
+    public Dictionary<string, object> Params { get; set; } = new();
+
+    #endregion IParams
+
     /// <summary>
     /// Site Title.
     /// </summary>
@@ -28,14 +37,15 @@ public class Site : IParams
     public string BaseUrl { get; set; } = "./";
 
     /// <summary>
-    /// The base path of the source site files.
-    /// </summary>
-    public string SourceDirectoryPath { get; set; } = "./";
-
-    /// <summary>
     /// The appearance of a URL is either ugly or pretty.
     /// </summary>
     public bool UglyURLs { get; set; } = false;
+
+    /// <summary>
+    /// The base path of the source site files.
+    /// </summary>
+    [YamlIgnore]
+    public string SourceDirectoryPath { get; set; } = "./";
 
     /// <summary>
     /// The path of the content, based on the source path.
@@ -107,6 +117,7 @@ public class Site : IParams
     /// <summary>
     /// List of all content to be scanned and processed.
     /// </summary>
+    [YamlIgnore]
     public List<(string filePath, string content)> RawPages { get; set; } = new();
 
     /// <summary>
@@ -114,22 +125,15 @@ public class Site : IParams
     /// </summary>
     public IGenerateOptions? options;
 
-    #region IParams
-
-    /// <inheritdoc/>
-    public Dictionary<string, object> Params { get; set; } = new();
-
-    #endregion IParams
-
     /// <summary>
     /// Cache for content templates.
     /// </summary>
-    public readonly Dictionary<(string, Kind, string), string> contentTemplateCache = new();
+    public readonly Dictionary<(string?, Kind?, string?), string> contentTemplateCache = new();
 
     /// <summary>
     /// Cache for base templates.
     /// </summary>
-    public readonly Dictionary<(string, Kind, string), string> baseTemplateCache = new();
+    public readonly Dictionary<(string?, Kind?, string?), string> baseTemplateCache = new();
 
     /// <summary>
     /// The Fluid parser instance.
@@ -150,6 +154,11 @@ public class Site : IParams
     /// The time that the older cache should be ignored.
     /// </summary>
     public DateTime IgnoreCacheBefore { get; set; }
+
+    /// <summary>
+    /// Datetime wrapper
+    /// </summary>
+    public readonly ISystemClock Clock;
 
     /// <summary>
     /// Cache for tag frontmatter.
@@ -174,8 +183,6 @@ public class Site : IParams
     private List<Frontmatter>? pagesCache;
 
     private List<Frontmatter>? regularPagesCache;
-
-    private readonly ISystemClock clock;
 
     /// <summary>
     /// Markdig 20+ built-in extensions
@@ -202,7 +209,7 @@ public class Site : IParams
         TemplateOptions.MemberAccessStrategy.Register<Frontmatter>();
         TemplateOptions.MemberAccessStrategy.Register<Site>();
 
-        this.clock = clock;
+        this.Clock = clock;
     }
 
     /// <summary>
@@ -255,7 +262,6 @@ public class Site : IParams
             if (!automaticContentCache.TryGetValue(id, out frontmatter))
             {
                 frontmatter = new(
-                    clock: new SystemClock(),
                     site: this,
                     title: baseContent.Title,
                     sourcePath: string.Empty,
@@ -351,7 +357,6 @@ public class Site : IParams
         Frontmatter frontmatter = new(
             title: Title,
             site: this,
-            clock: clock,
             sourcePath: Path.Combine(relativePath, "index.md"),
             sourceFileNameWithoutExtension: "index",
             sourcePathDirectory: "/"
@@ -396,9 +401,10 @@ public class Site : IParams
 
                 if (frontmatter.Aliases is not null)
                 {
+                    frontmatter.AliasesProcessed ??= new();
                     for (var i = 0; i < frontmatter.Aliases.Count; i++)
                     {
-                        frontmatter.Aliases[i] = "/" + frontmatter.CreatePermalink(frontmatter.Aliases[i]);
+                        frontmatter.AliasesProcessed.Add("/" + frontmatter.CreatePermalink(frontmatter.Aliases[i]));
                     }
                 }
 
@@ -411,7 +417,9 @@ public class Site : IParams
         }
 
         // Create a section page when due
-        if (frontmatter.Type != "section" && !string.IsNullOrEmpty(frontmatter.Permalink))
+        if (frontmatter.Type != "section" 
+            && !string.IsNullOrEmpty(frontmatter.Permalink)
+            && !string.IsNullOrEmpty(frontmatter.Section))
         {
             var contentTemplate = new BasicContent(
                 title: frontmatter.Section,

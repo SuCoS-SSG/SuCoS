@@ -19,7 +19,7 @@ public class BasicContent : IBaseContent
     public string Type { get; }
 
     /// <inheritdoc/>
-    public string? URL { get; }
+    public string URL { get; }
 
     /// <summary>
     /// Constructor
@@ -29,7 +29,7 @@ public class BasicContent : IBaseContent
     /// <param name="type"></param>
     /// <param name="url"></param>
     /// <param name="kind"></param>
-    public BasicContent(string title, string section, string type, string url, Kind kind = Kind.list)
+    public BasicContent(string title, string section, string type, string url, Kind kind = Models.Kind.list)
     {
         Title = title;
         Section = section;

@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using SuCoS.Helper;
 using SuCoS.Models;
 using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace SuCoS.Parser;
 
@@ -15,7 +14,6 @@ namespace SuCoS.Parser;
 /// </summary>
 public partial class YAMLParser : IFrontmatterParser
 {
-
     [GeneratedRegex(@"^---\s*[\r\n](?<frontmatter>.*?)[\r\n]---\s*", RegexOptions.Singleline)]
     private partial Regex YAMLRegex();
 
@@ -23,7 +21,6 @@ public partial class YAMLParser : IFrontmatterParser
     /// YamlDotNet parser, strictly set to allow automatically parse only known fields
     /// </summary>
     readonly IDeserializer yamlDeserializerRigid = new DeserializerBuilder()
-        .WithNamingConvention(PascalCaseNamingConvention.Instance)
         .IgnoreUnmatchedProperties()
         .Build();
 
@@ -41,79 +38,42 @@ public partial class YAMLParser : IFrontmatterParser
         {
             throw new ArgumentNullException(nameof(site));
         }
-        var dateTime = new SystemClock();
+        if (filePath is null)
+        {
+            throw new ArgumentNullException(nameof(filePath));
+        }
 
-        Frontmatter? frontmatter = null;
         var match = YAMLRegex().Match(fileContent);
         if (match.Success)
         {
-            var content = match.Groups["frontmatter"].Value;
-
+            var yaml = match.Groups["frontmatter"].Value;
             fileContent = fileContent[match.Length..].TrimStart('\n');
+            var frontmatter = ParseYAML(filePath, site, yaml, fileContent);
+            return frontmatter;
+        }
+        return null;
+    }
 
-            // Parse the front matter string into Frontmatter properties
-            var yamlObject = yamlDeserializer.Deserialize(new StringReader(content));
+    private Frontmatter ParseYAML(string filePath, Site site, string frontmatter, string fileContent)
+    {
+        var page = yamlDeserializerRigid.Deserialize<Frontmatter>(frontmatter);
+        var sourceFileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath) ?? string.Empty;
+        var section = SiteHelper.GetSection(filePath);
+        page.RawContent = fileContent;
+        page.Section = section;
+        page.Site = site;
+        page.SourceFileNameWithoutExtension = sourceFileNameWithoutExtension;
+        page.SourcePath = filePath;
+        page.SourcePathDirectory = Path.GetDirectoryName(filePath);
+        page.Title ??= sourceFileNameWithoutExtension;
+        page.Type ??= section;
 
-            if (yamlObject is Dictionary<object, object> frontmatterDictionary)
+        var yamlObject = yamlDeserializer.Deserialize(new StringReader(frontmatter));
+        if (yamlObject is Dictionary<object, object> yamlDictionary)
+        {
+            if (yamlDictionary.TryGetValue("Tags", out var tags) && tags is List<string> tagsValues)
             {
-                _ = frontmatterDictionary.TryGetValue("Title", out var titleValue);
-                _ = frontmatterDictionary.TryGetValue("URL", out var urlValue);
-                _ = frontmatterDictionary.TryGetValue("Type", out var typeValue);
-                _ = frontmatterDictionary.TryGetValue("Date", out var dateValue);
-                _ = frontmatterDictionary.TryGetValue("LastMod", out var dateLastModValue);
-                _ = frontmatterDictionary.TryGetValue("PublishDate", out var datePublishValue);
-                _ = frontmatterDictionary.TryGetValue("ExpiryDate", out var dateExpiryValue);
-                var section = GetSection(filePath);
-
-                List<string> tags = new();
-                if (frontmatterDictionary.TryGetValue("Tags", out var tagsValue) && tagsValue is List<object> tagsListObj)
-                {
-                    foreach (var item in tagsListObj)
-                    {
-                        var value = item.ToString();
-                        if (!string.IsNullOrWhiteSpace(value))
-                        {
-                            tags.Add(value);
-                        }
-                    }
-                }
-
-                var sourceFileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath) ?? string.Empty;
-                frontmatter = new(
-                    title: titleValue?.ToString() ?? sourceFileNameWithoutExtension,
-                    site: site,
-                    clock: dateTime,
-                    sourcePath: filePath,
-                    sourceFileNameWithoutExtension: sourceFileNameWithoutExtension,
-                    sourcePathDirectory: null
-                )
-                {
-                    URL = urlValue?.ToString(),
-                    Section = section,
-                    Type = typeValue?.ToString() ?? section,
-                    Kind = Kind.single,
-                    Date = DateTime.TryParse(dateValue?.ToString(), out var parsedDate) ? parsedDate : null,
-                    LastMod = DateTime.TryParse(dateLastModValue?.ToString(), out var parsedLastMod) ? parsedLastMod : null,
-                    PublishDate = DateTime.TryParse(datePublishValue?.ToString(), out var parsedPublishDate) ? parsedPublishDate : null,
-                    ExpiryDate = DateTime.TryParse(dateExpiryValue?.ToString(), out var parsedExpiryDate) ? parsedExpiryDate : null
-                };
-
-                if (frontmatterDictionary.TryGetValue("Aliases", out var aliasesValue) && aliasesValue is List<object> aliasesValueObj)
-                {
-                    frontmatter.Aliases ??= new List<string>();
-                    foreach (var item in aliasesValueObj)
-                    {
-                        var value = item.ToString();
-                        if (!string.IsNullOrWhiteSpace(value))
-                        {
-                            frontmatter.Aliases.Add(value);
-                        }
-                    }
-                }
-
-                ParseParams(frontmatter, typeof(Frontmatter), content);
-
-                foreach (var tagName in tags)
+                foreach (var tagName in tagsValues)
                 {
                     var contentTemplate = new BasicContent(
                         title: tagName,
@@ -121,35 +81,12 @@ public partial class YAMLParser : IFrontmatterParser
                         type: "tags",
                         url: "tags/" + Urlizer.Urlize(tagName)
                     );
-                    _ = site.CreateAutomaticFrontmatter(contentTemplate, frontmatter);
+                    _ = site.CreateAutomaticFrontmatter(contentTemplate, page);
                 }
             }
-            else
-            {
-                throw new YamlDotNet.Core.YamlException("Frontmatter yaml parsing failed");
-            }
+            ParseParams(page, typeof(Frontmatter), frontmatter, yamlDictionary);
         }
-        if (frontmatter is not null)
-        {
-            frontmatter.RawContent = fileContent;
-            return frontmatter;
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Get the section name from a file path
-    /// </summary>
-    /// <param name="filePath"></param>
-    /// <returns></returns>
-    public static string GetSection(string filePath)
-    {
-        // Split the path into individual folders
-        var folders = filePath?.Split(Path.DirectorySeparatorChar);
-
-        // Retrieve the first folder
-        return folders?[0] ?? string.Empty;
+        return page;
     }
 
     /// <inheritdoc/>
@@ -166,7 +103,8 @@ public partial class YAMLParser : IFrontmatterParser
     /// <param name="settings">Site or Frontmatter object, that implements IParams</param>
     /// <param name="type">The type (Site or Frontmatter)</param>
     /// <param name="content">YAML content</param>
-    public void ParseParams(IParams settings, Type type, string content)
+    /// <param name="yamlObject">yamlObject already parsed if available</param>
+    public void ParseParams(IParams settings, Type type, string content, object? yamlObject = null)
     {
         if (settings is null)
         {
@@ -177,7 +115,7 @@ public partial class YAMLParser : IFrontmatterParser
             throw new ArgumentNullException(nameof(type));
         }
 
-        var yamlObject = yamlDeserializer.Deserialize(new StringReader(content));
+        yamlObject ??= yamlDeserializer.Deserialize(new StringReader(content));
         if (yamlObject is Dictionary<object, object> yamlDictionary)
         {
             foreach (var key in yamlDictionary.Keys.Cast<string>())
