@@ -35,11 +35,14 @@ test:
     - schedules
   script:
     - |
-      ./build.sh TestReport \
-        --configuration "Debug"
+      ./build.sh TestReport Publish \
+        --configuration "Debug" \
+        --publish-directory "./publish"
+  coverage: '/^Line coverage: (\d+.\d+)%/'
   artifacts:
     paths:
       - coverage-results/report/*
+      - publish/*
 
 # check if there is new commits, if so, create a tag and a release
 # this will trigger the publish stage "publish"

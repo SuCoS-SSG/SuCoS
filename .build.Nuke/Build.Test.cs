@@ -7,6 +7,8 @@ using Nuke.Common.IO;
 using Nuke.Common.Tools.Coverlet;
 using static Nuke.Common.Tools.Coverlet.CoverletTasks;
 using static Nuke.Common.IO.FileSystemTasks;
+using Serilog;
+using System;
 
 namespace SuCoS;
 
@@ -23,7 +25,8 @@ sealed partial class Build : NukeBuild
     AbsolutePath coverageDirectory => RootDirectory / "coverage-results";
     AbsolutePath ReportDirectory => coverageDirectory / "report";
     AbsolutePath CoverageResultDirectory => coverageDirectory / "coverage";
-    AbsolutePath CoverageResultFile => CoverageResultDirectory / "coverage.cobertura.xml";
+    AbsolutePath CoverageResultFile => CoverageResultDirectory / "coverage.xml";
+    AbsolutePath CoverageSummaryResultFile => ReportDirectory / "Summary.txt";
 
     Target PrepareTestFiles => _ => _
         .After(Clean)
@@ -54,7 +57,10 @@ sealed partial class Build : NukeBuild
             ReportDirectory.CreateDirectory();
             ReportGenerator(s => s
                     .SetTargetDirectory(ReportDirectory)
-                    .SetReportTypes(new ReportTypes[] { ReportTypes.Html })
-                    .SetReports(CoverageResultFile));
+                    .SetReportTypes(new ReportTypes[] { ReportTypes.Html, ReportTypes.TextSummary })
+                    .SetReports(CoverageResultFile)
+                    );
+            var summaryText = CoverageSummaryResultFile.ReadAllLines();
+            Log.Information(string.Join(Environment.NewLine, summaryText));
         });
 }
