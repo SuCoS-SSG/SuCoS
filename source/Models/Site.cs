@@ -404,7 +404,7 @@ public class Site : IParams
                     frontmatter.AliasesProcessed ??= new();
                     for (var i = 0; i < frontmatter.Aliases.Count; i++)
                     {
-                        frontmatter.AliasesProcessed.Add("/" + frontmatter.CreatePermalink(frontmatter.Aliases[i]));
+                        frontmatter.AliasesProcessed.Add(frontmatter.CreatePermalink(frontmatter.Aliases[i]));
                     }
                 }
 
@@ -451,7 +451,7 @@ public class Site : IParams
         }
 
         // Separate the YAML frontmatter from the file content
-        var frontmatter = frontmatterParser.ParseFrontmatter(this, filePath, ref content)
+        var frontmatter = frontmatterParser.ParseFrontmatter(this, filePath, content)
             ?? throw new FormatException($"Error parsing frontmatter for {filePath}");
 
         return frontmatter;

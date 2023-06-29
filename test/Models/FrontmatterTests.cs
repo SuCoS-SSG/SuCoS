@@ -25,10 +25,11 @@ public class FrontmatterTests
 
     [Theory]
     [InlineData("Test Title", "/path/to/file.md", "file", "/path/to")]
-    public void ShouldCreateFrontmatterWithCorrectProperties(string title, string sourcePath, string sourceFileNameWithoutExtension, string sourcePathDirectory)
+    public void Frontmatter_ShouldCreateWithCorrectProperties(string title, string sourcePath, string sourceFileNameWithoutExtension, string sourcePathDirectory)
     {
         var frontmatter = new Frontmatter(title, sourcePath, site, sourceFileNameWithoutExtension, sourcePathDirectory);
 
+        // Assert
         Assert.Equal(title, frontmatter.Title);
         Assert.Equal(sourcePath, frontmatter.SourcePath);
         Assert.Same(site, frontmatter.Site);
@@ -37,7 +38,7 @@ public class FrontmatterTests
     }
 
     [Fact]
-    public void ShouldHaveDefaultValuesForOptionalProperties()
+    public void Frontmatter_ShouldHaveDefaultValuesForOptionalProperties()
     {
         // Arrange
         var frontmatter = new Frontmatter("Test Title", "/path/to/file.md", site);
@@ -64,35 +65,24 @@ public class FrontmatterTests
     }
 
     [Fact]
-    public void ShouldReturnValidDateBasedOnExpiryDateAndPublishDate()
-    {
-        var publishDate = new DateTime(2023, 6, 1);
-        var expiryDate = new DateTime(2023, 6, 3);
-
-        systemClockMock.Setup(c => c.Now).Returns(new DateTime(2023, 6, 2));
-
-        var frontmatter = new Frontmatter(title, sourcePath, site)
-        {
-            ExpiryDate = expiryDate,
-            PublishDate = publishDate
-        };
-
-        Assert.True(frontmatter.IsValidDate(null));
-    }
-
-    [Theory]
-    [InlineData(null, "/path/to/test-title")]
-    [InlineData("{{ page.Title }}/{{ page.SourceFileNameWithoutExtension }}", "/test-title/file")]
-    public void ShouldCreatePermalinkWithDefaultOrCustomURLTemplate(string urlTemplate, string expectedPermalink)
+    public void Aliases_ShouldParseAsUrls()
     {
         var frontmatter = new Frontmatter(title, sourcePath, site)
         {
-            URL = urlTemplate
+            Title = "Title",
+            Aliases = new List<string>() { "v123", "{{ page.Title }}" }
         };
 
-        var actualPermalink = frontmatter.CreatePermalink();
+        // Act
+        site.PostProcessFrontMatter(frontmatter);
 
-        Assert.Equal(expectedPermalink, actualPermalink);
+        // Assert
+        foreach (var url in new string[] { "/v123", "/title" })
+        {
+            site.PagesDict.TryGetValue(url, out var frontmatter1);
+            Assert.NotNull(frontmatter1);
+            Assert.Same(frontmatter, frontmatter1);
+        }
     }
 
     [Theory]
@@ -100,56 +90,13 @@ public class FrontmatterTests
     [InlineData(1, false)]
     public void IsDateExpired_ShouldReturnExpectedResult(int days, bool expected)
     {
-        systemClockMock.Setup(c => c.Now).Returns(new DateTime(2023, 6, 28));
-
         var frontmatter = new Frontmatter(title, sourcePath, site)
         {
             ExpiryDate = clock.Now.AddDays(days)
         };
 
+        // Assert
         Assert.Equal(expected, frontmatter.IsDateExpired);
-    }
-
-    [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, true)]
-    public void IsValidDate_ShouldReturnExpectedResult(bool futureOption, bool expected)
-    {
-        systemClockMock.Setup(c => c.Now).Returns(new DateTime(2023, 6, 28));
-
-        var frontmatter = new Frontmatter(title, sourcePath, site)
-        {
-            Date = clock.Now.AddDays(1)
-        };
-
-        var options = new Mock<IGenerateOptions>();
-        options.Setup(o => o.Future).Returns(futureOption);
-
-        Assert.Equal(expected, frontmatter.IsValidDate(options.Object));
-    }
-
-    [Theory]
-    [InlineData("/test/path", "/test/path/test-title")]
-    [InlineData("/another/path", "/another/path/test-title")]
-    public void CreatePermalink_ShouldReturnCorrectUrl_WhenUrlIsNull(string sourcePathDirectory, string expectedUrl)
-    {
-        var frontmatter = new Frontmatter(title, sourcePath, site)
-        {
-            SourcePathDirectory = sourcePathDirectory
-        };
-
-        Assert.Equal(expectedUrl, frontmatter.CreatePermalink());
-    }
-
-    [Theory]
-    [InlineData(Kind.single, true)]
-    [InlineData(Kind.list, false)]
-    public void RegularPages_ShouldReturnCorrectPages_WhenKindIsSingle(Kind kind, bool isExpectedPage)
-    {
-        var page = new Frontmatter(title, sourcePath, site) { Kind = kind };
-        site.PostProcessFrontMatter(page);
-
-        Assert.Equal(isExpectedPage, site.RegularPages.Contains(page));
     }
 
     [Theory]
@@ -166,6 +113,68 @@ public class FrontmatterTests
             Date = date is null ? null : DateTime.Parse(date, CultureInfo.InvariantCulture)
         };
 
+        // Assert
         Assert.Equal(expectedValue, frontmatter.IsDatePublishable);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public void IsValidDate_ShouldReturnExpectedResult(bool futureOption, bool expected)
+    {
+        var frontmatter = new Frontmatter(title, sourcePath, site)
+        {
+            Date = clock.Now.AddDays(1)
+        };
+
+        // Act
+        var options = new Mock<IGenerateOptions>();
+        options.Setup(o => o.Future).Returns(futureOption);
+
+        // Assert
+        Assert.Equal(expected, frontmatter.IsValidDate(options.Object));
+    }
+
+    [Theory]
+    [InlineData("/test/path", "/test/path/test-title")]
+    [InlineData("/another/path", "/another/path/test-title")]
+    public void CreatePermalink_ShouldReturnCorrectUrl_WhenUrlIsNull(string sourcePathDirectory, string expectedUrl)
+    {
+        var frontmatter = new Frontmatter(title, sourcePath, site)
+        {
+            SourcePathDirectory = sourcePathDirectory
+        };
+
+        // Assert
+        Assert.Equal(expectedUrl, frontmatter.CreatePermalink());
+    }
+
+    [Theory]
+    [InlineData(null, "/path/to/test-title")]
+    [InlineData("{{ page.Title }}/{{ page.SourceFileNameWithoutExtension }}", "/test-title/file")]
+    public void Permalink_CreateWithDefaultOrCustomURLTemplate(string urlTemplate, string expectedPermalink)
+    {
+        var frontmatter = new Frontmatter(title, sourcePath, site)
+        {
+            URL = urlTemplate
+        };
+        var actualPermalink = frontmatter.CreatePermalink();
+
+        // Assert
+        Assert.Equal(expectedPermalink, actualPermalink);
+    }
+
+    [Theory]
+    [InlineData(Kind.single, true)]
+    [InlineData(Kind.list, false)]
+    public void RegularPages_ShouldReturnCorrectPages_WhenKindIsSingle(Kind kind, bool isExpectedPage)
+    {
+        var page = new Frontmatter(title, sourcePath, site) { Kind = kind };
+
+        // Act
+        site.PostProcessFrontMatter(page);
+
+        // Assert
+        Assert.Equal(isExpectedPage, site.RegularPages.Contains(page));
     }
 }

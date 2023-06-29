@@ -14,7 +14,7 @@ public interface IFrontmatterParser
     /// <param name="fileContent"></param>
     /// <param name="filePath"></param>
     /// <returns></returns>
-    Frontmatter? ParseFrontmatter(Site site, string filePath, ref string fileContent);
+    Frontmatter? ParseFrontmatter(Site site, in string filePath, in string fileContent);
 
     /// <summary>
     /// Parse the app config file.
