@@ -108,7 +108,7 @@ public static class FileUtils
         }
 
         // Generate the lookup order for template files based on the theme path, frontmatter section, type, and kind
-        var sections = new string[] { frontmatter.Section.ToString(), string.Empty };
+        var sections = frontmatter.Section is not null ? new string[] { frontmatter.Section.ToString(), string.Empty } : new string[] { string.Empty };
         var types = new string[] { frontmatter.Type.ToString(), "_default" };
         var kinds = isBaseTemplate
             ? new string[] { frontmatter.Kind.ToString() + "-baseof", "baseof" }

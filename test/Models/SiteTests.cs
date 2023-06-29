@@ -51,7 +51,7 @@ Test Content 2
         var key = (firstKeyPart, secondKeyPart, thirdKeyPart);
         site.baseTemplateCache.Add(key, value);
         site.contentTemplateCache.Add(key, value);
-        site.PagesDict.Add("test", new Frontmatter("Test Title", "sourcePath", site, systemClockMock.Object));
+        site.PagesDict.Add("test", new Frontmatter("Test Title", "sourcePath", site));
 
         site.ResetCache();
 

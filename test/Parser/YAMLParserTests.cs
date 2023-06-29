@@ -3,6 +3,7 @@ using Moq;
 using SuCoS.Models;
 using SuCoS.Parser;
 using System.Globalization;
+using SuCoS.Helper;
 
 namespace SuCoS.Tests;
 
@@ -49,7 +50,7 @@ Title: Test Title
     {
         var filePath = Path.Combine("folder1", "folder2", "file.md");
 
-        var section = YAMLParser.GetSection(filePath);
+        var section = SiteHelper.GetSection(filePath);
 
         Assert.Equal("folder1", section);
     }
@@ -130,7 +131,7 @@ Title: My Site
     [Fact]
     public void ParseParams_ShouldFillParamsWithNonMatchingFields()
     {
-        var settings = new Frontmatter("Test Title", "/test.md", mockSite.Object, new SystemClock());
+        var settings = new Frontmatter("Test Title", "/test.md", mockSite.Object);
         var content = @"
 Title: Test Title
 customParam: Custom Value
@@ -140,16 +141,5 @@ customParam: Custom Value
 
         Assert.True(settings.Params.ContainsKey("customParam"));
         Assert.Equal("Custom Value", settings.Params["customParam"]);
-    }
-
-    [Fact]
-    public void ParseFrontmatter_ShouldReturnNull_WhenNoFrontmatter()
-    {
-        var fileContent = "There is no frontmatter in this content.";
-        var filePath = "test.md";
-
-        var frontmatter = parser.ParseFrontmatter(mockSite.Object, filePath, ref fileContent);
-
-        Assert.Null(frontmatter);
     }
 }

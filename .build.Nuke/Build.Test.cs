@@ -47,9 +47,8 @@ sealed partial class Build : NukeBuild
                 .SetFormat(CoverletOutputFormat.opencover));
         });
 
-    Target TestReport => _ => _
+    public Target TestReport => _ => _
         .DependsOn(Test)
-        .AssuredAfterFailure()
         .Executes(() =>
         {
             ReportDirectory.CreateDirectory();
