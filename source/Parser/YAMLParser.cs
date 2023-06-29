@@ -32,7 +32,7 @@ public partial class YAMLParser : IFrontmatterParser
         .Build();
 
     /// <inheritdoc/>
-    public Frontmatter? ParseFrontmatter(Site site, string filePath, ref string fileContent)
+    public Frontmatter? ParseFrontmatter(Site site, in string filePath, in string fileContent)
     {
         if (site is null)
         {
@@ -47,19 +47,19 @@ public partial class YAMLParser : IFrontmatterParser
         if (match.Success)
         {
             var yaml = match.Groups["frontmatter"].Value;
-            fileContent = fileContent[match.Length..].TrimStart('\n');
-            var frontmatter = ParseYAML(filePath, site, yaml, fileContent);
+            var rawContent = fileContent[match.Length..].TrimStart('\n');
+            var frontmatter = ParseYAML(ref site, filePath, yaml, rawContent);
             return frontmatter;
         }
         return null;
     }
 
-    private Frontmatter ParseYAML(string filePath, Site site, string frontmatter, string fileContent)
+    private Frontmatter ParseYAML(ref Site site, in string filePath, string frontmatter, string rawContent)
     {
         var page = yamlDeserializerRigid.Deserialize<Frontmatter>(frontmatter);
         var sourceFileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath) ?? string.Empty;
         var section = SiteHelper.GetSection(filePath);
-        page.RawContent = fileContent;
+        page.RawContent = rawContent;
         page.Section = section;
         page.Site = site;
         page.SourceFileNameWithoutExtension = sourceFileNameWithoutExtension;

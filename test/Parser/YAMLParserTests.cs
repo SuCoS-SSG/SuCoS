@@ -10,12 +10,35 @@ namespace SuCoS.Tests;
 public class YAMLParserTests
 {
     private readonly YAMLParser parser;
-    private readonly Mock<Site> mockSite;
+    private readonly Mock<Site> site;
+    private readonly string fileContent = @"---
+Title: Real Data Title
+Date: 2023-07-01
+Categories: ['Test', 'Real Data']
+Tags: ['Test', 'Real Data']
+---
+
+# Real Data Test
+
+This is a test using real data. Real Data Test
+";
 
     public YAMLParserTests()
     {
         parser = new YAMLParser();
-        mockSite = new Mock<Site>();
+        site = new Mock<Site>();
+    }
+
+    [Fact]
+    public void GetSection_ShouldReturnFirstFolderName()
+    {
+        var filePath = Path.Combine("folder1", "folder2", "file.md");
+
+        // Act
+        var section = SiteHelper.GetSection(filePath);
+
+        // Asset
+        Assert.Equal("folder1", section);
     }
 
     [Theory]
@@ -29,8 +52,11 @@ Title: Test Title
     public void ParseFrontmatter_ShouldParseTitleCorrectly(string fileContent, string expectedTitle)
     {
         var filePath = "test.md";
-        var frontmatter = parser.ParseFrontmatter(mockSite.Object, filePath, ref fileContent);
 
+        // Act
+        var frontmatter = parser.ParseFrontmatter(site.Object, filePath, fileContent);
+
+        // Asset
         Assert.Equal(expectedTitle, frontmatter?.Title);
     }
 
@@ -42,17 +68,8 @@ Title: Test Title
 ---
 ";
 
-        Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatter(null!, "test.md", ref fileContent));
-    }
-
-    [Fact]
-    public void GetSection_ShouldReturnFirstFolderName()
-    {
-        var filePath = Path.Combine("folder1", "folder2", "file.md");
-
-        var section = SiteHelper.GetSection(filePath);
-
-        Assert.Equal("folder1", section);
+        // Asset
+        Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatter(null!, "test.md", fileContent));
     }
 
     [Theory]
@@ -69,8 +86,10 @@ Date: 2023/01/01
         var filePath = "test.md";
         var expectedDate = DateTime.Parse(expectedDateString, CultureInfo.InvariantCulture);
 
-        var frontmatter = parser.ParseFrontmatter(mockSite.Object, filePath, ref fileContent);
+        // Act
+        var frontmatter = parser.ParseFrontmatter(site.Object, filePath, fileContent);
 
+        // Asset
         Assert.Equal(expectedDate, frontmatter?.Date);
     }
 
@@ -92,8 +111,10 @@ ExpiryDate: 2024-06-01
         var expectedPublishDate = DateTime.Parse("2023-06-01", CultureInfo.InvariantCulture);
         var expectedExpiryDate = DateTime.Parse("2024-06-01", CultureInfo.InvariantCulture);
 
-        var frontmatter = parser.ParseFrontmatter(mockSite.Object, filePath, ref fileContent);
+        // Act
+        var frontmatter = parser.ParseFrontmatter(site.Object, filePath, fileContent);
 
+        // Asset
         Assert.Equal("Test Title", frontmatter?.Title);
         Assert.Equal("post", frontmatter?.Type);
         Assert.Equal(expectedDate, frontmatter?.Date);
@@ -111,7 +132,8 @@ Title
 ";
         var filePath = "test.md";
 
-        Assert.Throws<YamlDotNet.Core.YamlException>(() => parser.ParseFrontmatter(mockSite.Object, filePath, ref fileContent));
+        // Asset
+        Assert.Throws<YamlDotNet.Core.YamlException>(() => parser.ParseFrontmatter(site.Object, filePath, fileContent));
     }
 
     [Fact]
@@ -122,8 +144,10 @@ BaseUrl: https://www.example.com/
 Title: My Site
 ";
 
+        // Act
         var siteSettings = parser.ParseSiteSettings(siteContent);
 
+        // Asset
         Assert.Equal("https://www.example.com/", siteSettings.BaseUrl);
         Assert.Equal("My Site", siteSettings.Title);
     }
@@ -131,15 +155,42 @@ Title: My Site
     [Fact]
     public void ParseParams_ShouldFillParamsWithNonMatchingFields()
     {
-        var settings = new Frontmatter("Test Title", "/test.md", mockSite.Object);
+        var settings = new Frontmatter("Test Title", "/test.md", site.Object);
         var content = @"
 Title: Test Title
 customParam: Custom Value
 ";
 
+        // Act
         parser.ParseParams(settings, typeof(Frontmatter), content);
 
+        // Asset
         Assert.True(settings.Params.ContainsKey("customParam"));
         Assert.Equal("Custom Value", settings.Params["customParam"]);
+    }
+
+
+    [Fact]
+    public void ParseFrontmatter_ShouldParseContentInSiteFolder()
+    {
+        var frontmatter = parser.ParseFrontmatter(site.Object, "", fileContent);
+
+        // Act
+        site.Object.PostProcessFrontMatter(frontmatter!);
+
+        // Asset
+        Assert.Equal(DateTime.Parse("2023-07-01"), frontmatter?.Date);
+    }
+
+    [Fact]
+    public void ParseFrontmatter_ShouldParseCategoriesCorrectly()
+    {
+        var frontmatter = parser.ParseFrontmatter(site.Object, "", fileContent);
+
+        // Act
+        site.Object.PostProcessFrontMatter(frontmatter!);
+
+        // Asset
+        Assert.Equal(new[] { "Test", "Real Data" }, frontmatter?.Params["Categories"]);
     }
 }
