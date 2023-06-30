@@ -117,6 +117,7 @@ public class Frontmatter : IBaseContent, IParams
     /// Other content that mention this content.
     /// Used to create the tags list and Related Posts section.
     /// </summary>
+    [YamlIgnore]
     public ConcurrentBag<string>? PagesReferences { get; set; }
 
     /// <summary>
@@ -135,6 +136,21 @@ public class Frontmatter : IBaseContent, IParams
     /// </summary>
     [YamlIgnore]
     public bool IsDatePublishable => GetPublishDate is null || GetPublishDate <= clock.Now;
+
+    /// <summary>
+    /// Just a simple check if the current page is the home page
+    /// </summary>
+    public bool IsHome => Site.Home == this;
+
+    /// <summary>
+    /// Just a simple check if the current page is a section page
+    /// </summary>
+    public bool IsSection => Type == "section";
+
+    /// <summary>
+    /// Just a simple check if the current page is a "page"
+    /// </summary>
+    public bool IsPage => Type == "page";
 
     /// <summary>
     /// The markdown content converted to HTML

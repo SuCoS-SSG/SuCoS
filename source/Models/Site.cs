@@ -117,7 +117,7 @@ public class Site : IParams
     /// <summary>
     /// The frontmatter of the home page;
     /// </summary>
-    public Frontmatter? HomePage { get; set; }
+    public Frontmatter? Home { get; set; }
 
     /// <summary>
     /// List of all content to be scanned and processed.
@@ -346,7 +346,7 @@ public class Site : IParams
         {
             home = CreateIndexPage(string.Empty);
         }
-        HomePage = home;
+        Home = home;
         home.Kind = Kind.index;
 
         stopwatch.Stop("Parse", filesParsed);
