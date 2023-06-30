@@ -29,7 +29,7 @@ public class BasicContent : IBaseContent
     /// <param name="type"></param>
     /// <param name="url"></param>
     /// <param name="kind"></param>
-    public BasicContent(string title, string section, string type, string url, Kind kind = Models.Kind.list)
+    public BasicContent(string title, string section, string type, string url, Kind kind = Kind.list)
     {
         Title = title;
         Section = section;
@@ -38,4 +38,3 @@ public class BasicContent : IBaseContent
         URL = url;
     }
 }
-

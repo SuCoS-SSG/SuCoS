@@ -24,7 +24,7 @@ public class Frontmatter : IBaseContent, IParams
     public string? Section { get; set; } = string.Empty;
 
     /// <inheritdoc/>
-    public Kind Kind { get; set; } = Models.Kind.single;
+    public Kind Kind { get; set; } = Kind.single;
 
     /// <inheritdoc/>
     public string Type { get; set; } = "page";
@@ -71,6 +71,11 @@ public class Frontmatter : IBaseContent, IParams
     /// Secondary URL patterns to be used to create the url.
     /// </summary>
     public List<string>? Aliases { get; set; }
+
+    /// <summary>
+    /// Page weight. Useful for sorting.
+    /// </summary>
+    public int Weight { get; set; } = 0;
 
     /// <summary>
     /// The source filename, without the extension. ;)
@@ -195,7 +200,7 @@ public class Frontmatter : IBaseContent, IParams
         get
         {
             regularPagesCache ??= Pages
-                    .Where(frontmatter => frontmatter.Kind == Models.Kind.single)
+                    .Where(frontmatter => frontmatter.Kind == Kind.single)
                     .ToList();
             return regularPagesCache;
         }
