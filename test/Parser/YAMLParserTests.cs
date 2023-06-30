@@ -179,7 +179,7 @@ customParam: Custom Value
         site.Object.PostProcessFrontMatter(frontmatter!);
 
         // Asset
-        Assert.Equal(DateTime.Parse("2023-07-01"), frontmatter?.Date);
+        Assert.Equal(DateTime.Parse("2023-07-01", CultureInfo.InvariantCulture), frontmatter?.Date);
     }
 
     [Fact]

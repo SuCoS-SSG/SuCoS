@@ -18,49 +18,50 @@ namespace SuCoS;
 /// </summary>
 sealed partial class Build : NukeBuild
 {
-    AbsolutePath TestDLL => testDirectory / "bin" / "Debug" / "net7.0";
     AbsolutePath testDirectory => RootDirectory / "test";
-    AbsolutePath TestSiteDirectory => RootDirectory / "test" / ".TestSites";
-    AbsolutePath TestOutputDirectory => TestDLL / ".TestSites";
+    AbsolutePath testDLLDirectory => testDirectory / "bin" / "Debug" / "net7.0";
+    AbsolutePath testSiteSourceDirectory => RootDirectory / "test" / ".TestSites";
+    AbsolutePath testSiteDestinationDirectory => testDLLDirectory / ".TestSites";
+    AbsolutePath testAssembly => testDLLDirectory / "test.dll";
     AbsolutePath coverageDirectory => RootDirectory / "coverage-results";
-    AbsolutePath ReportDirectory => coverageDirectory / "report";
-    AbsolutePath CoverageResultDirectory => coverageDirectory / "coverage";
-    AbsolutePath CoverageResultFile => CoverageResultDirectory / "coverage.xml";
-    AbsolutePath CoverageSummaryResultFile => ReportDirectory / "Summary.txt";
+    AbsolutePath coverageResultDirectory => coverageDirectory / "coverage";
+    AbsolutePath coverageResultFile => coverageResultDirectory / "coverage.xml";
+    AbsolutePath coverageReportDirectory => coverageDirectory / "report";
+    AbsolutePath coverageReportSummaryDirectory => coverageReportDirectory / "Summary.txt";
 
     Target PrepareTestFiles => _ => _
         .After(Clean)
         .Executes(() =>
         {
-            TestOutputDirectory.CreateOrCleanDirectory();
-            CopyDirectoryRecursively(TestSiteDirectory, TestOutputDirectory, DirectoryExistsPolicy.Merge);
+            testSiteDestinationDirectory.CreateOrCleanDirectory();
+            CopyDirectoryRecursively(testSiteSourceDirectory, testSiteDestinationDirectory, DirectoryExistsPolicy.Merge);
         });
 
     Target Test => _ => _
         .DependsOn(Compile, PrepareTestFiles)
         .Executes(() =>
         {
-            CoverageResultDirectory.CreateDirectory();
+            coverageResultDirectory.CreateDirectory();
             Coverlet(s => s
                 .SetTarget("dotnet")
                 .SetTargetArgs("test --no-build --no-restore")
-                .SetAssembly(TestDLL / "test.dll")
+                .SetAssembly(testAssembly)
                 // .SetThreshold(75)
-                .SetOutput(CoverageResultFile)
-                .SetFormat(CoverletOutputFormat.opencover));
+                .SetOutput(coverageResultFile)
+                .SetFormat(CoverletOutputFormat.cobertura));
         });
 
     public Target TestReport => _ => _
         .DependsOn(Test)
         .Executes(() =>
         {
-            ReportDirectory.CreateDirectory();
+            coverageReportDirectory.CreateDirectory();
             ReportGenerator(s => s
-                    .SetTargetDirectory(ReportDirectory)
+                    .SetTargetDirectory(coverageReportDirectory)
                     .SetReportTypes(new ReportTypes[] { ReportTypes.Html, ReportTypes.TextSummary })
-                    .SetReports(CoverageResultFile)
+                    .SetReports(coverageResultFile)
                     );
-            var summaryText = CoverageSummaryResultFile.ReadAllLines();
+            var summaryText = coverageReportSummaryDirectory.ReadAllLines();
             Log.Information(string.Join(Environment.NewLine, summaryText));
         });
 }

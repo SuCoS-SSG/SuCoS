@@ -19,9 +19,9 @@ variables:
   PUBLISH_SINGLE_FILE: "true"
   PUBLISH_TRIMMED: "false"
 
-cache:
-  paths:
-    - "**/.nuget/packages"
+# cache:
+#   paths:
+#     - "**/.nuget/packages"
 
 services:
   - docker:dind
@@ -38,11 +38,15 @@ test:
       ./build.sh TestReport Publish \
         --configuration "Debug" \
         --publish-directory "./publish"
-  coverage: '/^Line coverage: (\d+.\d+)%/'
+  coverage: '/^  Line coverage: (\d*.\d*)%/'
   artifacts:
     paths:
       - coverage-results/report/*
       - publish/*
+    reports:
+      coverage_report: 
+        coverage_format: cobertura
+        path: coverage-results/coverage/coverage.xml
 
 # check if there is new commits, if so, create a tag and a release
 # this will trigger the publish stage "publish"
