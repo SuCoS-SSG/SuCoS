@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using SuCoS.Models;
 
 namespace SuCoS.Helper;
@@ -14,20 +15,20 @@ public static class FileUtils
     /// Gets all Markdown files in the specified directory.
     /// </summary>
     /// <param name="directory">The directory path.</param>
+    /// <param name="basePath">The initial directory path.</param>
     /// <returns>The list of Markdown file paths.</returns>
-    public static List<string> GetAllMarkdownFiles(string directory)
+    public static List<string> GetAllMarkdownFiles(string directory, string? basePath = null)
     {
-        var markdownFiles = new List<string>();
-        var files = Directory.GetFiles(directory, "*.md");
-        markdownFiles.AddRange(files);
+        basePath ??= directory;
+        var files = Directory.GetFiles(directory, "*.md").ToList();
 
         var subdirectories = Directory.GetDirectories(directory);
         foreach (var subdirectory in subdirectories)
         {
-            markdownFiles.AddRange(GetAllMarkdownFiles(subdirectory));
+            files.AddRange(GetAllMarkdownFiles(subdirectory, basePath));
         }
 
-        return markdownFiles;
+        return files;
     }
 
     /// <summary>

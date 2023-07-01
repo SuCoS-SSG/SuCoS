@@ -65,7 +65,7 @@ public class BuildCommand : BaseGeneratorCommand
             File.WriteAllText(outputAbsolutePath, result);
 
             // Log
-            logger.Debug("Page created: {Permalink}", frontmatter.Permalink);
+            logger.Debug("Page created: {Permalink}", outputAbsolutePath);
 
             // Use interlocked to safely increment the counter in a multi-threaded environment
             _ = Interlocked.Increment(ref pagesCreated);

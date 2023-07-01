@@ -2,6 +2,7 @@ using Xunit;
 using Moq;
 using SuCoS.Models;
 using System.Globalization;
+using SuCoS.Helper;
 
 namespace SuCoS.Tests;
 
@@ -14,6 +15,10 @@ public class SiteTests
     private readonly Mock<ISystemClock> systemClockMock;
     readonly string testSite1Path = ".TestSites/01";
 
+    // based on the compiled test.dll path
+    // that is typically "bin/Debug/netX.0/test.dll"
+    readonly string testSitesPath = "../../..";
+
     public SiteTests()
     {
         systemClockMock = new Mock<ISystemClock>();
@@ -23,24 +28,18 @@ public class SiteTests
     }
 
     [Theory]
-    [InlineData("test01.md", @"---
-Title: Test Content 1
----
-
-Test Content 1
-")]
-    [InlineData("test02.md", @"---
-Title: Test Content 2
----
-
-Test Content 2
-")]
-    public void Test_ScanAllMarkdownFiles(string fileName, string fileContent)
+    [InlineData("test01.md")]
+    [InlineData("test02.md")]
+    public void Test_ScanAllMarkdownFiles(string fileName)
     {
-        site.SourceDirectoryPath = testSite1Path;
-        site.ScanAllMarkdownFiles();
+        var siteFullPath = Path.GetFullPath(Path.Combine(testSitesPath, testSite1Path));
 
-        Assert.Contains(site.RawPages, rp => rp.filePath == fileName && rp.content == fileContent);
+        // Act
+        var ContentPaths = FileUtils.GetAllMarkdownFiles(Path.Combine(siteFullPath, "content"));
+        var fileFullPath = Path.Combine(siteFullPath, "content", fileName);
+
+        // Assert
+        Assert.Contains(ContentPaths, rp => rp == fileFullPath);
     }
 
     [Theory]

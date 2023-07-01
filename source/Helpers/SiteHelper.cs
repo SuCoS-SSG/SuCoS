@@ -91,7 +91,9 @@ public static class SiteHelper
 
         site.ResetCache();
 
-        site.ScanAllMarkdownFiles();
+        // Scan content files
+        var markdownFiles = FileUtils.GetAllMarkdownFiles(site.SourceContentPath);
+        site.ContentPaths.AddRange(markdownFiles);
 
         site.ParseSourceFiles(stopwatch);
 
