@@ -6,7 +6,6 @@ using Nuke.Common.Tools.ReportGenerator;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.Coverlet;
 using static Nuke.Common.Tools.Coverlet.CoverletTasks;
-using static Nuke.Common.IO.FileSystemTasks;
 using Serilog;
 using System;
 
@@ -20,8 +19,6 @@ sealed partial class Build : NukeBuild
 {
     AbsolutePath testDirectory => RootDirectory / "test";
     AbsolutePath testDLLDirectory => testDirectory / "bin" / "Debug" / "net7.0";
-    AbsolutePath testSiteSourceDirectory => RootDirectory / "test" / ".TestSites";
-    AbsolutePath testSiteDestinationDirectory => testDLLDirectory / ".TestSites";
     AbsolutePath testAssembly => testDLLDirectory / "test.dll";
     AbsolutePath coverageDirectory => RootDirectory / "coverage-results";
     AbsolutePath coverageResultDirectory => coverageDirectory / "coverage";
@@ -29,16 +26,8 @@ sealed partial class Build : NukeBuild
     AbsolutePath coverageReportDirectory => coverageDirectory / "report";
     AbsolutePath coverageReportSummaryDirectory => coverageReportDirectory / "Summary.txt";
 
-    Target PrepareTestFiles => _ => _
-        .After(Clean)
-        .Executes(() =>
-        {
-            testSiteDestinationDirectory.CreateOrCleanDirectory();
-            CopyDirectoryRecursively(testSiteSourceDirectory, testSiteDestinationDirectory, DirectoryExistsPolicy.Merge);
-        });
-
     Target Test => _ => _
-        .DependsOn(Compile, PrepareTestFiles)
+        .DependsOn(Compile)
         .Executes(() =>
         {
             coverageResultDirectory.CreateDirectory();

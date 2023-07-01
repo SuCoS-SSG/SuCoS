@@ -316,6 +316,7 @@ public class Frontmatter : IBaseContent, IParams
         URLforce ??= URL
             ?? (isIndex ? "{{ page.SourcePathDirectory }}" : "{{ page.SourcePathDirectory }}/{{ page.Title }}");
 
+
         try
         {
             if (Site.FluidParser.TryParse(URLforce, out var template, out var error))

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Text;
 using SuCoS.Helper;
 using SuCoS.Models;
 using YamlDotNet.Serialization;
@@ -14,9 +14,6 @@ namespace SuCoS.Parser;
 /// </summary>
 public partial class YAMLParser : IFrontmatterParser
 {
-    [GeneratedRegex(@"^---\s*[\r\n](?<frontmatter>.*?)[\r\n]---\s*", RegexOptions.Singleline)]
-    private partial Regex YAMLRegex();
-
     /// <summary>
     /// YamlDotNet parser, strictly set to allow automatically parse only known fields
     /// </summary>
@@ -32,7 +29,7 @@ public partial class YAMLParser : IFrontmatterParser
         .Build();
 
     /// <inheritdoc/>
-    public Frontmatter? ParseFrontmatter(Site site, in string filePath, in string fileContent)
+    public Frontmatter? ParseFrontmatterAndMarkdownFromFile(Site site, in string filePath, in string? sourceContentPath = null)
     {
         if (site is null)
         {
@@ -43,20 +40,56 @@ public partial class YAMLParser : IFrontmatterParser
             throw new ArgumentNullException(nameof(filePath));
         }
 
-        var match = YAMLRegex().Match(fileContent);
-        if (match.Success)
+        string? fileContent;
+        string? fileRelativePath;
+        try
         {
-            var yaml = match.Groups["frontmatter"].Value;
-            var rawContent = fileContent[match.Length..].TrimStart('\n');
-            var frontmatter = ParseYAML(ref site, filePath, yaml, rawContent);
-            return frontmatter;
+            fileContent = File.ReadAllText(filePath);
+            fileRelativePath = Path.GetRelativePath(sourceContentPath ?? string.Empty, filePath);
         }
-        return null;
+        catch (Exception ex)
+        {
+            throw new FileNotFoundException(filePath, ex);
+        }
+
+        return ParseFrontmatterAndMarkdown(site, fileRelativePath, fileContent);
     }
 
-    private Frontmatter ParseYAML(ref Site site, in string filePath, string frontmatter, string rawContent)
+    /// <inheritdoc/>
+    public Frontmatter? ParseFrontmatterAndMarkdown(Site site, in string fileRelativePath, in string fileContent)
     {
-        var page = yamlDeserializerRigid.Deserialize<Frontmatter>(frontmatter);
+        if (site is null)
+        {
+            throw new ArgumentNullException(nameof(site));
+        }
+        if (fileRelativePath is null)
+        {
+            throw new ArgumentNullException(nameof(fileRelativePath));
+        }
+
+        using var content = new StringReader(fileContent);
+        var frontmatterBuilder = new StringBuilder();
+        string? line;
+
+        while ((line = content.ReadLine()) != null && line != "---") { }
+        while ((line = content.ReadLine()) != null && line != "---")
+        {
+            frontmatterBuilder.AppendLine(line);
+        }
+
+        // Join the read lines to form the frontmatter
+        var yaml = frontmatterBuilder.ToString();
+        var rawContent = content.ReadToEnd();
+
+        // Now, you can parse the YAML frontmatter
+        var page = ParseYAML(ref site, fileRelativePath, yaml, rawContent);
+
+        return page;
+    }
+
+    private Frontmatter ParseYAML(ref Site site, in string filePath, string yaml, in string rawContent)
+    {
+        var page = yamlDeserializerRigid.Deserialize<Frontmatter>(new StringReader(yaml)) ?? throw new FormatException("Error parsing frontmatter");
         var sourceFileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath) ?? string.Empty;
         var section = SiteHelper.GetSection(filePath);
         page.RawContent = rawContent;
@@ -68,13 +101,14 @@ public partial class YAMLParser : IFrontmatterParser
         page.Title ??= sourceFileNameWithoutExtension;
         page.Type ??= section;
 
-        var yamlObject = yamlDeserializer.Deserialize(new StringReader(frontmatter));
+        var yamlObject = yamlDeserializer.Deserialize(new StringReader(yaml));
         if (yamlObject is Dictionary<object, object> yamlDictionary)
         {
-            if (yamlDictionary.TryGetValue("Tags", out var tags) && tags is List<string> tagsValues)
+            if (yamlDictionary.TryGetValue("Tags", out var tags) && tags is List<object> tagsValues)
             {
-                foreach (var tagName in tagsValues)
+                foreach (var tagObj in tagsValues)
                 {
+                    var tagName = (string)tagObj;
                     var contentTemplate = new BasicContent(
                         title: tagName,
                         section: "tags",
@@ -84,16 +118,16 @@ public partial class YAMLParser : IFrontmatterParser
                     _ = site.CreateAutomaticFrontmatter(contentTemplate, page);
                 }
             }
-            ParseParams(page, typeof(Frontmatter), frontmatter, yamlDictionary);
+            ParseParams(page, typeof(Frontmatter), yaml, yamlDictionary);
         }
         return page;
     }
 
     /// <inheritdoc/>
-    public Site ParseSiteSettings(string content)
+    public Site ParseSiteSettings(string yaml)
     {
-        var settings = yamlDeserializerRigid.Deserialize<Site>(content);
-        ParseParams(settings, typeof(Site), content);
+        var settings = yamlDeserializerRigid.Deserialize<Site>(yaml);
+        ParseParams(settings, typeof(Site), yaml);
         return settings;
     }
 
@@ -102,9 +136,9 @@ public partial class YAMLParser : IFrontmatterParser
     /// </summary>
     /// <param name="settings">Site or Frontmatter object, that implements IParams</param>
     /// <param name="type">The type (Site or Frontmatter)</param>
-    /// <param name="content">YAML content</param>
+    /// <param name="yaml">YAML content</param>
     /// <param name="yamlObject">yamlObject already parsed if available</param>
-    public void ParseParams(IParams settings, Type type, string content, object? yamlObject = null)
+    public void ParseParams(IParams settings, Type type, string yaml, object? yamlObject = null)
     {
         if (settings is null)
         {
@@ -115,7 +149,7 @@ public partial class YAMLParser : IFrontmatterParser
             throw new ArgumentNullException(nameof(type));
         }
 
-        yamlObject ??= yamlDeserializer.Deserialize(new StringReader(content));
+        yamlObject ??= yamlDeserializer.Deserialize(new StringReader(yaml));
         if (yamlObject is Dictionary<object, object> yamlDictionary)
         {
             foreach (var key in yamlDictionary.Keys.Cast<string>())

@@ -123,7 +123,7 @@ public class Site : IParams
     /// List of all content to be scanned and processed.
     /// </summary>
     [YamlIgnore]
-    public List<(string filePath, string content)> RawPages { get; set; } = new();
+    public List<string> ContentPaths { get; set; } = new();
 
     /// <summary>
     /// Command line options
@@ -218,22 +218,6 @@ public class Site : IParams
     }
 
     /// <summary>
-    /// Scans all markdown files in the source directory.
-    /// </summary>
-    public void ScanAllMarkdownFiles()
-    {
-        // Scan content files
-        var markdownFiles = FileUtils.GetAllMarkdownFiles(SourceContentPath);
-
-        foreach (var fileAbsolutePath in markdownFiles)
-        {
-            var content = File.ReadAllText(fileAbsolutePath);
-            var relativePath = Path.GetRelativePath(SourceContentPath, fileAbsolutePath);
-            RawPages.Add((relativePath, content));
-        }
-    }
-
-    /// <summary>
     /// Resets the template cache to force a reload of all templates.
     /// </summary>
     public void ResetCache()
@@ -321,11 +305,12 @@ public class Site : IParams
 
         // Process the source files, extracting the frontmatter
         var filesParsed = 0; // counter to keep track of the number of files processed
-        _ = Parallel.ForEach(RawPages, file =>
+        _ = Parallel.ForEach(ContentPaths, filePath =>
         {
             try
             {
-                var frontmatter = ReadSourceFrontmatter(file.filePath, file.content, frontmatterParser);
+                var frontmatter = frontmatterParser.ParseFrontmatterAndMarkdownFromFile(this, filePath, SourceContentPath)
+                   ?? throw new FormatException($"Error parsing frontmatter for {filePath}");
 
                 if (frontmatter.IsValidDate(options))
                 {
@@ -334,7 +319,7 @@ public class Site : IParams
             }
             catch (Exception ex)
             {
-                Logger?.Error(ex, "Error parsing file {file}", file.filePath);
+                Logger?.Error(ex, "Error parsing file {file}", filePath);
             }
 
             // Use interlocked to safely increment the counter in a multi-threaded environment
@@ -434,31 +419,5 @@ public class Site : IParams
             );
             CreateAutomaticFrontmatter(contentTemplate, frontmatter);
         }
-    }
-
-    /// <summary>
-    /// Reads the frontmatter from the source file.
-    /// </summary>
-    /// <param name="filePath">The file path.</param>
-    /// <param name="content">The file content.</param>
-    /// <param name="frontmatterParser">The frontmatter parser.</param>
-    /// <returns>The parsed frontmatter.</returns>
-    private Frontmatter ReadSourceFrontmatter(string filePath, string content, IFrontmatterParser frontmatterParser)
-    {
-        // test if filePath or config is null
-        if (filePath is null)
-        {
-            throw new ArgumentNullException(nameof(filePath));
-        }
-        if (frontmatterParser is null)
-        {
-            throw new ArgumentNullException(nameof(frontmatterParser));
-        }
-
-        // Separate the YAML frontmatter from the file content
-        var frontmatter = frontmatterParser.ParseFrontmatter(this, filePath, content)
-            ?? throw new FormatException($"Error parsing frontmatter for {filePath}");
-
-        return frontmatter;
     }
 }

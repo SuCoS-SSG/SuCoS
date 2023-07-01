@@ -11,10 +11,19 @@ public interface IFrontmatterParser
     /// Extract the frontmatter from the content file.
     /// </summary>
     /// <param name="site"></param>
+    /// <param name="filePath"></param>
+    /// <param name="sourceContentPath"></param>
+    /// <returns></returns>
+    Frontmatter? ParseFrontmatterAndMarkdownFromFile(Site site, in string filePath, in string sourceContentPath);
+
+    /// <summary>
+    /// Extract the frontmatter from the content.
+    /// </summary>
+    /// <param name="site"></param>
     /// <param name="fileContent"></param>
     /// <param name="filePath"></param>
     /// <returns></returns>
-    Frontmatter? ParseFrontmatter(Site site, in string filePath, in string fileContent);
+    Frontmatter? ParseFrontmatterAndMarkdown(Site site, in string filePath, in string fileContent);
 
     /// <summary>
     /// Parse the app config file.

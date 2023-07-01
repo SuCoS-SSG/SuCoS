@@ -207,36 +207,42 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         var fileAbsolutePath = Path.Combine(site.SourceStaticPath, requestPath.TrimStart('/'));
         var fileAbsoluteThemePath = Path.Combine(site.SourceThemeStaticPath, requestPath.TrimStart('/'));
 
-        logger.Debug("Request received for {RequestPath}", requestPath);
+        string? resultType;
 
         // Return the server startup timestamp as the response
         if (requestPath == "/ping")
         {
+            resultType = "ping";
             await HandlePingRequest(context);
         }
 
         // Check if it is one of the Static files (serve the actual file)
         else if (File.Exists(fileAbsolutePath))
         {
+            resultType = "static";
             await HandleStaticFileRequest(context, fileAbsolutePath);
         }
 
         // Check if it is one of the Static files (serve the actual file)
         else if (File.Exists(fileAbsoluteThemePath))
         {
+            resultType = "themestatic";
             await HandleStaticFileRequest(context, fileAbsoluteThemePath);
         }
 
         // Check if the requested file path corresponds to a registered page
         else if (site.PagesDict.TryGetValue(requestPath, out var frontmatter))
         {
+            resultType = "dict";
             await HandleRegisteredPageRequest(context, frontmatter);
         }
 
         else
         {
+            resultType = "404";
             await HandleNotFoundRequest(context);
         }
+        logger.Debug("Request {type}\tfor {RequestPath}", resultType, requestPath);
     }
 
     private Task HandlePingRequest(HttpContext context)
