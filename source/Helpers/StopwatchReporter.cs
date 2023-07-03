@@ -5,7 +5,7 @@ using System.Globalization;
 using System.Linq;
 using Serilog;
 
-namespace SuCoS.Helper;
+namespace SuCoS.Helpers;
 
 /// <summary>
 ///  This class is used to report the time taken to execute
@@ -70,11 +70,8 @@ public class StopwatchReporter
             ("Step", "Status", "Duration", 0)
         };
 
-        foreach (var stepEntry in stopwatches)
+        foreach (var (stepName, stopwatch) in stopwatches)
         {
-            var stepName = stepEntry.Key;
-            var stopwatch = stepEntry.Value;
-            // var itemCount = itemCounts.ContainsKey(stepName) ? itemCounts[stepName] : 0;
             _ = itemCounts.TryGetValue(stepName, out var itemCount);
             var duration = stopwatch.ElapsedMilliseconds;
             var durationString = $"{duration} ms";

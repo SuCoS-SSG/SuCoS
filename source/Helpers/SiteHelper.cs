@@ -6,13 +6,73 @@ using Serilog;
 using SuCoS.Models;
 using SuCoS.Parser;
 
-namespace SuCoS.Helper;
+namespace SuCoS.Helpers;
 
 /// <summary>
 /// Helper methods for scanning files.
 /// </summary>
 public static class SiteHelper
 {
+    /// <summary>
+    /// Creates the pages dictionary.
+    /// </summary>
+    /// <exception cref="FormatException"></exception>
+    public static Site Init(string configFile, IGenerateOptions options, IFrontmatterParser frontmatterParser, FilterDelegate whereParamsFilter, ILogger logger, StopwatchReporter stopwatch)
+    {
+        if (stopwatch is null)
+        {
+            throw new ArgumentNullException(nameof(stopwatch));
+        }
+
+        Site site;
+        try
+        {
+            site = ParseSettings(configFile, options, frontmatterParser, whereParamsFilter, logger);
+        }
+        catch
+        {
+            throw new FormatException("Error reading app config");
+        }
+
+        site.ResetCache();
+
+        // Scan content files
+        var markdownFiles = FileUtils.GetAllMarkdownFiles(site.SourceContentPath);
+        site.ContentPaths.AddRange(markdownFiles);
+
+        site.ParseSourceFiles(stopwatch);
+
+        site.TemplateOptions.FileProvider = new PhysicalFileProvider(Path.GetFullPath(site.SourceThemePath));
+
+        return site;
+    }
+
+    /// <summary>
+    /// Get the section name from a file path
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <returns></returns>
+    public static string GetSection(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+        {
+            return string.Empty;
+        }
+
+        // Split the path into individual folders
+        var folders = filePath.Split(Path.DirectorySeparatorChar);
+
+        // Retrieve the first folder
+        foreach (var folder in folders)
+        {
+            if (!string.IsNullOrEmpty(folder))
+            {
+                return folder;
+            }
+        }
+
+        return string.Empty;
+    }
 
     /// <summary>
     /// Reads the application settings.
@@ -23,7 +83,7 @@ public static class SiteHelper
     /// <param name="whereParamsFilter">The method to be used in the whereParams.</param>
     /// <param name="logger">The logger instance. Injectable for testing</param>
     /// <returns>The site settings.</returns>
-    public static Site ParseSettings(string configFile, IGenerateOptions options, IFrontmatterParser frontmatterParser, FilterDelegate whereParamsFilter, ILogger logger)
+    private static Site ParseSettings(string configFile, IGenerateOptions options, IFrontmatterParser frontmatterParser, FilterDelegate whereParamsFilter, ILogger logger)
     {
         if (options is null)
         {
@@ -65,62 +125,5 @@ public static class SiteHelper
         {
             throw new FormatException("Error reading app config");
         }
-    }
-
-
-    /// <summary>
-    /// Creates the pages dictionary.
-    /// </summary>
-    /// <exception cref="FormatException"></exception>
-    public static Site Init(string configFile, IGenerateOptions options, IFrontmatterParser frontmatterParser, FilterDelegate whereParamsFilter, ILogger logger, StopwatchReporter stopwatch)
-    {
-        if (stopwatch is null)
-        {
-            throw new ArgumentNullException(nameof(stopwatch));
-        }
-
-        Site site;
-        try
-        {
-            site = SiteHelper.ParseSettings(configFile, options, frontmatterParser, whereParamsFilter, logger);
-        }
-        catch
-        {
-            throw new FormatException("Error reading app config");
-        }
-
-        site.ResetCache();
-
-        // Scan content files
-        var markdownFiles = FileUtils.GetAllMarkdownFiles(site.SourceContentPath);
-        site.ContentPaths.AddRange(markdownFiles);
-
-        site.ParseSourceFiles(stopwatch);
-
-        site.TemplateOptions.FileProvider = new PhysicalFileProvider(Path.GetFullPath(site!.SourceThemePath));
-
-        return site;
-    }
-
-    /// <summary>
-    /// Get the section name from a file path
-    /// </summary>
-    /// <param name="filePath"></param>
-    /// <returns></returns>
-    public static string GetSection(string filePath)
-    {
-        // Split the path into individual folders
-        var folders = filePath?.Split(Path.DirectorySeparatorChar);
-
-        // Retrieve the first folder
-        for (var i = 0; i < folders?.Length; i++)
-        {
-            if (!string.IsNullOrEmpty(folders[i]))
-            {
-                return folders[i];
-            }
-        }
-
-        return string.Empty;
     }
 }

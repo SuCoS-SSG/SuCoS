@@ -1,24 +1,23 @@
 using System.Globalization;
 using Moq;
+using SuCoS;
 using SuCoS.Models;
 using Xunit;
 
-namespace SuCoS.Tests;
+namespace Test.Models;
 
 public class FrontmatterTests
 {
     private readonly ISystemClock clock;
-    private readonly Mock<ISystemClock> systemClockMock;
-    private readonly string title = "Test Title";
-    private readonly string sourcePath = "/path/to/file.md";
+    private readonly Mock<ISystemClock> systemClockMock = new();
     private readonly Site site;
+    private const string titleCONST = "Test Title";
+    private const string sourcePathCONST = "/path/to/file.md";
 
     public FrontmatterTests()
     {
-        systemClockMock = new Mock<ISystemClock>();
         var testDate = DateTime.Parse("2023-04-01", CultureInfo.InvariantCulture);
         systemClockMock.Setup(c => c.Now).Returns(testDate);
-
         clock = systemClockMock.Object;
         site = new(clock);
     }
@@ -67,17 +66,17 @@ public class FrontmatterTests
     [Fact]
     public void Aliases_ShouldParseAsUrls()
     {
-        var frontmatter = new Frontmatter(title, sourcePath, site)
+        var frontmatter = new Frontmatter(titleCONST, sourcePathCONST, site)
         {
             Title = "Title",
-            Aliases = new List<string>() { "v123", "{{ page.Title }}" }
+            Aliases = new() { "v123", "{{ page.Title }}" }
         };
 
         // Act
         site.PostProcessFrontMatter(frontmatter);
 
         // Assert
-        foreach (var url in new string[] { "/v123", "/title" })
+        foreach (var url in new[] { "/v123", "/title" })
         {
             site.PagesDict.TryGetValue(url, out var frontmatter1);
             Assert.NotNull(frontmatter1);
@@ -90,7 +89,7 @@ public class FrontmatterTests
     [InlineData(1, false)]
     public void IsDateExpired_ShouldReturnExpectedResult(int days, bool expected)
     {
-        var frontmatter = new Frontmatter(title, sourcePath, site)
+        var frontmatter = new Frontmatter(titleCONST, sourcePathCONST, site)
         {
             ExpiryDate = clock.Now.AddDays(days)
         };
@@ -107,7 +106,7 @@ public class FrontmatterTests
     [InlineData("2022-06-28", "2024-06-28", true)]
     public void IsDatePublishable_ShouldReturnCorrectValues(string? publishDate, string? date, bool expectedValue)
     {
-        var frontmatter = new Frontmatter(title, sourcePath, site)
+        var frontmatter = new Frontmatter(titleCONST, sourcePathCONST, site)
         {
             PublishDate = publishDate is null ? null : DateTime.Parse(publishDate, CultureInfo.InvariantCulture),
             Date = date is null ? null : DateTime.Parse(date, CultureInfo.InvariantCulture)
@@ -122,7 +121,7 @@ public class FrontmatterTests
     [InlineData(true, true)]
     public void IsValidDate_ShouldReturnExpectedResult(bool futureOption, bool expected)
     {
-        var frontmatter = new Frontmatter(title, sourcePath, site)
+        var frontmatter = new Frontmatter(titleCONST, sourcePathCONST, site)
         {
             Date = clock.Now.AddDays(1)
         };
@@ -140,7 +139,7 @@ public class FrontmatterTests
     [InlineData("/another/path", "/another/path/test-title")]
     public void CreatePermalink_ShouldReturnCorrectUrl_WhenUrlIsNull(string sourcePathDirectory, string expectedUrl)
     {
-        var frontmatter = new Frontmatter(title, sourcePath, site)
+        var frontmatter = new Frontmatter(titleCONST, sourcePathCONST, site)
         {
             SourcePathDirectory = sourcePathDirectory
         };
@@ -154,7 +153,7 @@ public class FrontmatterTests
     [InlineData("{{ page.Title }}/{{ page.SourceFileNameWithoutExtension }}", "/test-title/file")]
     public void Permalink_CreateWithDefaultOrCustomURLTemplate(string urlTemplate, string expectedPermalink)
     {
-        var frontmatter = new Frontmatter(title, sourcePath, site)
+        var frontmatter = new Frontmatter(titleCONST, sourcePathCONST, site)
         {
             URL = urlTemplate
         };
@@ -169,7 +168,7 @@ public class FrontmatterTests
     [InlineData(Kind.list, false)]
     public void RegularPages_ShouldReturnCorrectPages_WhenKindIsSingle(Kind kind, bool isExpectedPage)
     {
-        var page = new Frontmatter(title, sourcePath, site) { Kind = kind };
+        var page = new Frontmatter(titleCONST, sourcePathCONST, site) { Kind = kind };
 
         // Act
         site.PostProcessFrontMatter(page);

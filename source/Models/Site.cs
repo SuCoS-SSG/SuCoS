@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Fluid;
 using Markdig;
 using Serilog;
-using SuCoS.Helper;
+using SuCoS.Helpers;
 using SuCoS.Parser;
 using YamlDotNet.Serialization;
 
@@ -117,13 +117,13 @@ public class Site : IParams
     /// <summary>
     /// The frontmatter of the home page;
     /// </summary>
-    public Frontmatter? Home { get; set; }
+    public Frontmatter? Home { get; private set; }
 
     /// <summary>
     /// List of all content to be scanned and processed.
     /// </summary>
     [YamlIgnore]
-    public List<string> ContentPaths { get; set; } = new();
+    public List<string> ContentPaths { get; } = new();
 
     /// <summary>
     /// Command line options
@@ -158,7 +158,7 @@ public class Site : IParams
     /// <summary>
     /// The time that the older cache should be ignored.
     /// </summary>
-    public DateTime IgnoreCacheBefore { get; set; }
+    public DateTime IgnoreCacheBefore { get; private set; }
 
     /// <summary>
     /// Datetime wrapper
@@ -214,7 +214,7 @@ public class Site : IParams
         TemplateOptions.MemberAccessStrategy.Register<Frontmatter>();
         TemplateOptions.MemberAccessStrategy.Register<Site>();
 
-        this.Clock = clock;
+        Clock = clock;
     }
 
     /// <summary>
@@ -244,8 +244,8 @@ public class Site : IParams
             throw new ArgumentNullException(nameof(originalFrontmatter));
         }
 
-        var id = baseContent.URL ?? "";
-        Frontmatter? frontmatter = null;
+        var id = baseContent.URL;
+        Frontmatter? frontmatter;
         lock (syncLock)
         {
             if (!automaticContentCache.TryGetValue(id, out frontmatter))
@@ -276,18 +276,14 @@ public class Site : IParams
         }
 
         // TODO: still too hardcoded
-        if (frontmatter.Type == "tags")
-        {
-            lock (originalFrontmatter!)
-            {
-                if (frontmatter.Type == "tags")
-                {
-                    originalFrontmatter.Tags ??= new();
-                    originalFrontmatter.Tags!.Add(frontmatter);
-                }
-            }
-        }
+        if (frontmatter.Type != "tags")
+            return frontmatter;
 
+        lock (originalFrontmatter)
+        {
+            originalFrontmatter.Tags ??= new();
+            originalFrontmatter.Tags!.Add(frontmatter);
+        }
         return frontmatter;
     }
 
@@ -377,24 +373,21 @@ public class Site : IParams
         {
             if (!PagesDict.TryGetValue(frontmatter.Permalink, out var old) || overwrite)
             {
-                if (old is not null)
+                if (old?.PagesReferences is not null)
                 {
-                    if (old?.PagesReferences is not null)
+                    frontmatter.PagesReferences ??= new();
+                    foreach (var page in old.PagesReferences)
                     {
-                        frontmatter.PagesReferences ??= new();
-                        foreach (var page in old.PagesReferences)
-                        {
-                            frontmatter.PagesReferences.Add(page);
-                        }
+                        frontmatter.PagesReferences.Add(page);
                     }
                 }
 
                 if (frontmatter.Aliases is not null)
                 {
                     frontmatter.AliasesProcessed ??= new();
-                    for (var i = 0; i < frontmatter.Aliases.Count; i++)
+                    foreach (var alias in frontmatter.Aliases)
                     {
-                        frontmatter.AliasesProcessed.Add(frontmatter.CreatePermalink(frontmatter.Aliases[i]));
+                        frontmatter.AliasesProcessed.Add(frontmatter.CreatePermalink(alias));
                     }
                 }
 
@@ -407,17 +400,18 @@ public class Site : IParams
         }
 
         // Create a section page when due
-        if (frontmatter.Type != "section"
-            && !string.IsNullOrEmpty(frontmatter.Permalink)
-            && !string.IsNullOrEmpty(frontmatter.Section))
+        if (frontmatter.Type == "section"
+            || string.IsNullOrEmpty(frontmatter.Permalink)
+            || string.IsNullOrEmpty(frontmatter.Section))
         {
-            var contentTemplate = new BasicContent(
-                title: frontmatter.Section,
-                section: "section",
-                type: "section",
-                url: frontmatter.Section
-            );
-            CreateAutomaticFrontmatter(contentTemplate, frontmatter);
+            return;
         }
+        var contentTemplate = new BasicContent(
+            title: frontmatter.Section,
+            section: "section",
+            type: "section",
+            url: frontmatter.Section
+        );
+        CreateAutomaticFrontmatter(contentTemplate, frontmatter);
     }
 }

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Fluid;
 using Fluid.Values;
 using Serilog;
-using SuCoS.Helper;
+using SuCoS.Helpers;
 using SuCoS.Models;
 using SuCoS.Parser;
 
@@ -38,7 +38,7 @@ public abstract class BaseGeneratorCommand
     /// <summary>
     /// The logger (Serilog).
     /// </summary>
-    protected ILogger logger;
+    protected readonly ILogger logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseGeneratorCommand"/> class.
@@ -51,11 +51,8 @@ public abstract class BaseGeneratorCommand
         {
             throw new ArgumentNullException(nameof(options));
         }
-        if (logger is null)
-        {
-            throw new ArgumentNullException(nameof(logger));
-        }
-        this.logger = logger;
+
+        this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         stopwatch = new(logger);
 
         logger.Information("Source path: {source}", propertyValue: options.Source);
@@ -71,7 +68,7 @@ public abstract class BaseGeneratorCommand
     /// <param name="context"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
-    public static ValueTask<FluidValue> WhereParamsFilter(FluidValue input, FilterArguments arguments, TemplateContext context)
+    protected static ValueTask<FluidValue> WhereParamsFilter(FluidValue input, FilterArguments arguments, TemplateContext context)
     {
         if (input is null)
         {
@@ -94,35 +91,36 @@ public abstract class BaseGeneratorCommand
             }
         }
 
-        return new ValueTask<FluidValue>(new ArrayValue((IEnumerable<FluidValue>)result));
+        return new ArrayValue(result);
     }
 
-    static bool CheckValueInDictionary(string[] array, Dictionary<string, object> dictionary, string value)
+    private static bool CheckValueInDictionary(string[] array, IReadOnlyDictionary<string, object> dictionary, string value)
     {
         var key = array[0];
 
-        // Check if the key exists in the dictionary
-        if (dictionary.TryGetValue(key, out var dictionaryValue))
+        // If the key doesn't exist or the value is not a dictionary, return false
+        if (!dictionary.TryGetValue(key, out var dictionaryValue))
         {
-            // If it's the last element in the array, check if the dictionary value matches the value parameter
-            if (array.Length == 1)
-            {
-                return dictionaryValue.Equals(value);
-            }
-
-            // Check if the value is another dictionary
-            else if (dictionaryValue is Dictionary<string, object> nestedDictionary)
-            {
-                // Create a new array without the current key
-                var newArray = new string[array.Length - 1];
-                Array.Copy(array, 1, newArray, 0, newArray.Length);
-
-                // Recursively call the method with the nested dictionary and the new array
-                return CheckValueInDictionary(newArray, nestedDictionary, value);
-            }
+            return false;
         }
 
-        // If the key doesn't exist or the value is not a dictionary, return false
-        return false;
+        // If it's the last element in the array, check if the dictionary value matches the value parameter
+        if (array.Length == 1)
+        {
+            return dictionaryValue.Equals(value);
+        }
+
+        // Check if the value is another dictionary
+        if (dictionaryValue is not Dictionary<string, object> nestedDictionary)
+        {
+            return false;
+        }
+
+        // Create a new array without the current key
+        var newArray = new string[array.Length - 1];
+        Array.Copy(array, 1, newArray, 0, newArray.Length);
+
+        // Recursively call the method with the nested dictionary and the new array
+        return CheckValueInDictionary(newArray, nestedDictionary, value);
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using SuCoS.Helper;
+using SuCoS.Helpers;
 using SuCoS.Models;
 using YamlDotNet.Serialization;
 
@@ -12,12 +12,12 @@ namespace SuCoS.Parser;
 /// <summary>
 /// Responsible for parsing the content frontmatter using YAML
 /// </summary>
-public partial class YAMLParser : IFrontmatterParser
+public class YAMLParser : IFrontmatterParser
 {
     /// <summary>
     /// YamlDotNet parser, strictly set to allow automatically parse only known fields
     /// </summary>
-    readonly IDeserializer yamlDeserializerRigid = new DeserializerBuilder()
+    private readonly IDeserializer yamlDeserializerRigid = new DeserializerBuilder()
         .IgnoreUnmatchedProperties()
         .Build();
 
@@ -25,11 +25,11 @@ public partial class YAMLParser : IFrontmatterParser
     /// YamlDotNet parser to loosely parse the YAML file. Used to include all non-matching fields
     /// into Params.
     /// </summary>
-    readonly IDeserializer yamlDeserializer = new DeserializerBuilder()
+    private readonly IDeserializer yamlDeserializer = new DeserializerBuilder()
         .Build();
 
     /// <inheritdoc/>
-    public Frontmatter? ParseFrontmatterAndMarkdownFromFile(Site site, in string filePath, in string? sourceContentPath = null)
+    public Frontmatter ParseFrontmatterAndMarkdownFromFile(Site site, in string filePath, in string? sourceContentPath = null)
     {
         if (site is null)
         {
@@ -56,7 +56,7 @@ public partial class YAMLParser : IFrontmatterParser
     }
 
     /// <inheritdoc/>
-    public Frontmatter? ParseFrontmatterAndMarkdown(Site site, in string fileRelativePath, in string fileContent)
+    public Frontmatter ParseFrontmatterAndMarkdown(Site site, in string fileRelativePath, in string fileContent)
     {
         if (site is null)
         {
@@ -90,7 +90,7 @@ public partial class YAMLParser : IFrontmatterParser
     private Frontmatter ParseYAML(ref Site site, in string filePath, string yaml, in string rawContent)
     {
         var page = yamlDeserializerRigid.Deserialize<Frontmatter>(new StringReader(yaml)) ?? throw new FormatException("Error parsing frontmatter");
-        var sourceFileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath) ?? string.Empty;
+        var sourceFileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
         var section = SiteHelper.GetSection(filePath);
         page.RawContent = rawContent;
         page.Section = section;
@@ -102,24 +102,24 @@ public partial class YAMLParser : IFrontmatterParser
         page.Type ??= section;
 
         var yamlObject = yamlDeserializer.Deserialize(new StringReader(yaml));
-        if (yamlObject is Dictionary<object, object> yamlDictionary)
+        if (yamlObject is not Dictionary<object, object> yamlDictionary || !(yamlDictionary.TryGetValue("Tags", out var tags) && tags is List<object> tagsValues))
         {
-            if (yamlDictionary.TryGetValue("Tags", out var tags) && tags is List<object> tagsValues)
-            {
-                foreach (var tagObj in tagsValues)
-                {
-                    var tagName = (string)tagObj;
-                    var contentTemplate = new BasicContent(
-                        title: tagName,
-                        section: "tags",
-                        type: "tags",
-                        url: "tags/" + Urlizer.Urlize(tagName)
-                    );
-                    _ = site.CreateAutomaticFrontmatter(contentTemplate, page);
-                }
-            }
-            ParseParams(page, typeof(Frontmatter), yaml, yamlDictionary);
+            return page;
         }
+
+        foreach (var tagObj in tagsValues)
+        {
+            var tagName = (string)tagObj;
+            var contentTemplate = new BasicContent(
+                title: tagName,
+                section: "tags",
+                type: "tags",
+                url: "tags/" + Urlizer.Urlize(tagName)
+            );
+            _ = site.CreateAutomaticFrontmatter(contentTemplate, page);
+        }
+        ParseParams(page, typeof(Frontmatter), yaml, yamlDictionary);
+
         return page;
     }
 
@@ -150,23 +150,27 @@ public partial class YAMLParser : IFrontmatterParser
         }
 
         yamlObject ??= yamlDeserializer.Deserialize(new StringReader(yaml));
-        if (yamlObject is Dictionary<object, object> yamlDictionary)
+        if (yamlObject is not Dictionary<object, object> yamlDictionary)
         {
-            foreach (var key in yamlDictionary.Keys.Cast<string>())
+            return;
+        }
+
+        foreach (var key in yamlDictionary.Keys.Cast<string>())
+        {
+            // If the property is not a standard Frontmatter property
+            if (type.GetProperty(key) != null)
             {
-                // If the property is not a standard Frontmatter property
-                if (type.GetProperty(key) == null)
-                {
-                    // Recursively create a dictionary structure for the value
-                    if (yamlDictionary[key] is Dictionary<object, object> valueDictionary)
-                    {
-                        settings.Params[key] = valueDictionary;
-                    }
-                    else
-                    {
-                        settings.Params[key] = yamlDictionary[key];
-                    }
-                }
+                continue;
+            }
+
+            // Recursively create a dictionary structure for the value
+            if (yamlDictionary[key] is Dictionary<object, object> valueDictionary)
+            {
+                settings.Params[key] = valueDictionary;
+            }
+            else
+            {
+                settings.Params[key] = yamlDictionary[key];
             }
         }
     }

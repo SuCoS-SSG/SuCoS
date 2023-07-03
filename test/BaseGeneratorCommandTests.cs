@@ -1,10 +1,9 @@
 using System.Reflection;
-using Fluid;
-using Fluid.Values;
 using Serilog;
+using SuCoS;
 using Xunit;
 
-namespace SuCoS.Tests;
+namespace Test;
 
 public class BaseGeneratorCommandTests
 {
@@ -34,20 +33,6 @@ public class BaseGeneratorCommandTests
     }
 
     [Fact]
-    public async Task WhereParamsFilter_ShouldThrowArgumentNullException_WhenInputIsNull()
-    {
-        await Assert.ThrowsAsync<ArgumentNullException>(
-            () => BaseGeneratorCommand.WhereParamsFilter(null!, new FilterArguments(), new TemplateContext()).AsTask());
-    }
-
-    [Fact]
-    public async Task WhereParamsFilter_ShouldThrowArgumentNullException_WhenArgumentsIsNull()
-    {
-        await Assert.ThrowsAsync<ArgumentNullException>(
-            () => BaseGeneratorCommand.WhereParamsFilter(new ArrayValue(new FluidValue[0]), null!, new TemplateContext()).AsTask());
-    }
-
-    [Fact]
     public void CheckValueInDictionary_ShouldWorkCorrectly()
     {
         var type = typeof(BaseGeneratorCommand);
@@ -58,6 +43,6 @@ public class BaseGeneratorCommandTests
         var result = method.Invoke(null, parameters);
 
         Assert.NotNull(result);
-        Assert.True((bool)result!);
+        Assert.True((bool)result);
     }
 }

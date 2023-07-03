@@ -40,7 +40,7 @@ sealed partial class Build : NukeBuild
                 .SetFormat(CoverletOutputFormat.cobertura));
         });
 
-    public Target TestReport => _ => _
+    Target TestReport => _ => _
         .DependsOn(Test)
         .Executes(() =>
         {

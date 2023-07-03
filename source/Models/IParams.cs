@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace SuCoS;
+namespace SuCoS.Models;
 
 /// <summary>
 /// Interface for all classes that will implement a catch-all YAML

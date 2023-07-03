@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace SuCoS.Helper;
+namespace SuCoS.Helpers;
 
 /// <summary>
 /// Helper class to convert a string to a URL-friendly string.
@@ -23,10 +23,9 @@ public static partial class Urlizer
     /// <param name="options"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
-    public static string Urlize(string title, UrlizerOptions? options = null)
+    public static string Urlize(string? title, UrlizerOptions? options = null)
     {
         title ??= "";
-
         options ??= new UrlizerOptions(); // Use default options if not provided
 
         var cleanedTitle = !options.LowerCase ? title : title.ToLower(CultureInfo.CurrentCulture);
@@ -48,19 +47,19 @@ public static partial class Urlizer
     /// <param name="path"></param>
     /// <param name="options"></param>
     /// <returns></returns>
-    public static string UrlizePath(string path, UrlizerOptions? options = null)
+    public static string UrlizePath(string? path, UrlizerOptions? options = null)
     {
-        var pathString = (path ?? string.Empty);
-        var items = pathString.Split("/");
+        path ??= string.Empty;
+        var items = path.Split("/");
         var result = new List<string>();
-        for (var i = 0; i < items.Length; i++)
+        foreach (var item in items)
         {
-            if (!string.IsNullOrEmpty(items[i]))
+            if (!string.IsNullOrEmpty(item))
             {
-                result.Add(Urlize(items[i], options));
+                result.Add(Urlize(item, options));
             }
         }
-        return (pathString.StartsWith('/') ? '/' : string.Empty) + string.Join('/', result);
+        return (path.StartsWith('/') ? '/' : string.Empty) + string.Join('/', result);
     }
 }
 
@@ -73,16 +72,16 @@ public class UrlizerOptions
     /// <summary>
     /// Force to generate lowercase URLs.
     /// </summary>
-    public bool LowerCase { get; set; } = true;
+    public bool LowerCase { get; init; } = true;
 
     /// <summary>
     /// The character that will be used to replace spaces and other invalid characters.
     /// </summary>
-    public char? ReplacementChar { get; set; } = '-';
+    public char? ReplacementChar { get; init; } = '-';
 
     /// <summary>
     /// Replace dots with the replacement character.
     /// Note that it will break file paths and domain names.
     /// </summary>
-    public bool ReplaceDot { get; set; }
+    public bool ReplaceDot { get; init; }
 }
