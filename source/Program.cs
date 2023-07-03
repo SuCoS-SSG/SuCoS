@@ -16,7 +16,7 @@ public class Program
     /// <summary>
     /// Constructor
     /// </summary>
-    public Program(ILogger logger)
+    private Program(ILogger logger)
     {
         this.logger = logger;
     }
@@ -56,14 +56,14 @@ public class Program
         // BuildCommand setup
         var buildOutputOption = new Option<string>(new[] { "--output", "-o" }, () => "./public", "Output directory path");
 
-        Command buildCommand = new("build", "Builds the site")
+        Command buildCommandHandler = new("build", "Builds the site")
         {
             sourceOption,
             buildOutputOption,
             futureOption,
             verboseOption
         };
-        buildCommand.SetHandler((source, output, future, verbose) =>
+        buildCommandHandler.SetHandler((source, output, future, verbose) =>
         {
             BuildOptions buildOptions = new()
             {
@@ -80,13 +80,13 @@ public class Program
         sourceOption, buildOutputOption, futureOption, verboseOption);
 
         // ServerCommand setup
-        Command serveCommand = new("serve", "Starts the server")
+        Command serveCommandHandler = new("serve", "Starts the server")
         {
             sourceOption,
             futureOption,
             verboseOption
         };
-        serveCommand.SetHandler(async (source, future, verbose) =>
+        serveCommandHandler.SetHandler(async (source, future, verbose) =>
         {
             ServeOptions serverOptions = new()
             {
@@ -106,8 +106,8 @@ public class Program
 
         RootCommand rootCommand = new("SuCoS commands")
         {
-            buildCommand,
-            serveCommand
+            buildCommandHandler,
+            serveCommandHandler
         };
 
         return rootCommand.Invoke(args);

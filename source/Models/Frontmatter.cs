@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using Fluid;
 using Markdig;
-using SuCoS.Helper;
+using SuCoS.Helpers;
 using YamlDotNet.Serialization;
 
 namespace SuCoS.Models;
@@ -27,10 +27,10 @@ public class Frontmatter : IBaseContent, IParams
     public Kind Kind { get; set; } = Kind.single;
 
     /// <inheritdoc/>
-    public string Type { get; set; } = "page";
+    public string? Type { get; set; } = "page";
 
     /// <inheritdoc/>
-    public string? URL { get; set; }
+    public string? URL { get; init; }
 
     #endregion IBaseContent
 
@@ -171,11 +171,12 @@ public class Frontmatter : IBaseContent, IParams
     {
         get
         {
-            if (contentCacheTime is null || Site.IgnoreCacheBefore > contentCacheTime)
+            if (contentCacheTime is not null && !(Site.IgnoreCacheBefore > contentCacheTime))
             {
-                contentCache = CreateContent();
-                contentCacheTime = clock.UtcNow;
+                return contentCache!;
             }
+            contentCache = CreateContent();
+            contentCacheTime = clock.UtcNow;
             return contentCache!;
         }
     }
@@ -184,7 +185,7 @@ public class Frontmatter : IBaseContent, IParams
     /// Other content that mention this content.
     /// Used to create the tags list and Related Posts section.
     /// </summary>
-    public List<Frontmatter> Pages
+    public IEnumerable<Frontmatter> Pages
     {
         get
         {
@@ -193,16 +194,15 @@ public class Frontmatter : IBaseContent, IParams
                 return new List<Frontmatter>();
             }
 
-            if (pagesCached is null)
+            if (pagesCached is not null)
             {
-                pagesCached ??= new();
-                foreach (var permalink in PagesReferences)
-                {
-                    if (permalink is not null)
-                    {
-                        pagesCached.Add(Site.PagesDict[permalink]);
-                    }
-                }
+                return pagesCached;
+            }
+
+            pagesCached ??= new();
+            foreach (var permalink in PagesReferences)
+            {
+                pagesCached.Add(Site.PagesDict[permalink]);
             }
             return pagesCached;
         }
@@ -211,7 +211,7 @@ public class Frontmatter : IBaseContent, IParams
     /// <summary>
     /// List of pages from the content folder.
     /// </summary>
-    public List<Frontmatter> RegularPages
+    public IEnumerable<Frontmatter> RegularPages
     {
         get
         {
@@ -234,13 +234,13 @@ public class Frontmatter : IBaseContent, IParams
             {
                 urls.Add(Permalink);
             }
+
             if (AliasesProcessed is not null)
             {
-                foreach (var aliases in AliasesProcessed)
-                {
-                    urls.Add(aliases);
-                }
+                urls.AddRange(from aliases in AliasesProcessed
+                              select aliases);
             }
+
             return urls;
         }
     }
@@ -349,9 +349,6 @@ public class Frontmatter : IBaseContent, IParams
     /// <returns>The processed output file content.</returns>
     public string CreateOutputFile()
     {
-        // Theme content
-        string result;
-
         // Process the theme base template
         // If the theme base template file is available, parse and render the template using the frontmatter data
         // Otherwise, use the processed content as the final result
@@ -360,21 +357,18 @@ public class Frontmatter : IBaseContent, IParams
         var fileContents = FileUtils.GetTemplate(Site.SourceThemePath, this, Site, true);
         if (string.IsNullOrEmpty(fileContents))
         {
-            result = Content;
+            return Content;
         }
-        else if (Site.FluidParser.TryParse(fileContents, out var template, out var error))
+
+        if (Site.FluidParser.TryParse(fileContents, out var template, out var error))
         {
             var context = new TemplateContext(Site.TemplateOptions);
             _ = context.SetValue("page", this);
-            result = template.Render(context);
-        }
-        else
-        {
-            Site.Logger?.Error("Error parsing theme template: {Error}", error);
-            return string.Empty;
+            return template.Render(context);
         }
 
-        return result;
+        Site.Logger?.Error("Error parsing theme template: {Error}", error);
+        return string.Empty;
     }
 
     /// <summary>
@@ -389,7 +383,8 @@ public class Frontmatter : IBaseContent, IParams
         {
             return ContentPreRendered;
         }
-        else if (Site.FluidParser.TryParse(fileContents, out var template, out var error))
+
+        if (Site.FluidParser.TryParse(fileContents, out var template, out var error))
         {
             var context = new TemplateContext(Site.TemplateOptions)
                 .SetValue("page", this);
@@ -404,10 +399,9 @@ public class Frontmatter : IBaseContent, IParams
                 return string.Empty;
             }
         }
-        else
-        {
-            Site.Logger?.Error("Error parsing theme template: {Error}", error);
-            return string.Empty;
-        }
+
+        Site.Logger?.Error("Error parsing theme template: {Error}", error);
+        return string.Empty;
+
     }
 }

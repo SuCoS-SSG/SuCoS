@@ -11,14 +11,14 @@ var pingInterval = setInterval(function () {
         .then(function (timestamp) {
             if (currentTimestamp == null) {
                 currentTimestamp = timestamp;
-            } else if (timestamp != currentTimestamp) {
+            } else if (timestamp !== currentTimestamp) {
                 currentTimestamp = timestamp;
                 clearInterval(pingInterval);
                 showReloadWarning();
                 setTimeout(reloadPage, 100);
             }
         })
-        .catch(function (error) {
+        .catch(function () {
             showStatusWarning();
         });
 }, 1000);

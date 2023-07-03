@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using SuCoS.Models;
 
-namespace SuCoS.Helper;
+namespace SuCoS.Helpers;
 
 /// <summary>
 /// Helper methods for scanning files.
@@ -17,7 +17,7 @@ public static class FileUtils
     /// <param name="directory">The directory path.</param>
     /// <param name="basePath">The initial directory path.</param>
     /// <returns>The list of Markdown file paths.</returns>
-    public static List<string> GetAllMarkdownFiles(string directory, string? basePath = null)
+    public static IEnumerable<string> GetAllMarkdownFiles(string directory, string? basePath = null)
     {
         basePath ??= directory;
         var files = Directory.GetFiles(directory, "*.md").ToList();
@@ -55,16 +55,16 @@ public static class FileUtils
         var cache = isBaseTemplate ? site.baseTemplateCache : site.contentTemplateCache;
 
         // Check if the template content is already cached
-        if (!cache.TryGetValue(index, out var content))
-        {
-            var templatePaths = GetTemplateLookupOrder(themePath, frontmatter, isBaseTemplate);
-            content = GetTemplate(templatePaths);
+        if (cache.TryGetValue(index, out var content))
+            return content;
 
-            // Cache the template content for future use
-            lock (cache)
-            {
-                _ = cache.TryAdd(index, content);
-            }
+        var templatePaths = GetTemplateLookupOrder(themePath, frontmatter, isBaseTemplate);
+        content = GetTemplate(templatePaths);
+
+        // Cache the template content for future use
+        lock (cache)
+        {
+            _ = cache.TryAdd(index, content);
         }
 
         return content;
@@ -83,12 +83,9 @@ public static class FileUtils
         }
 
         // Iterate through the template paths and return the content of the first existing file
-        foreach (var templatePath in templatePaths)
+        foreach (var templatePath in templatePaths.Where(File.Exists))
         {
-            if (File.Exists(templatePath))
-            {
-                return File.ReadAllText(templatePath);
-            }
+            return File.ReadAllText(templatePath);
         }
 
         return string.Empty;
@@ -101,7 +98,7 @@ public static class FileUtils
     /// <param name="frontmatter">The frontmatter to determine the template index.</param>
     /// <param name="isBaseTemplate">Indicates whether the template is a base template.</param>
     /// <returns>The list of template paths in the lookup order.</returns>
-    public static List<string> GetTemplateLookupOrder(string themePath, Frontmatter frontmatter, bool isBaseTemplate)
+    private static List<string> GetTemplateLookupOrder(string themePath, Frontmatter frontmatter, bool isBaseTemplate)
     {
         if (frontmatter is null)
         {
@@ -109,23 +106,17 @@ public static class FileUtils
         }
 
         // Generate the lookup order for template files based on the theme path, frontmatter section, type, and kind
-        var sections = frontmatter.Section is not null ? new string[] { frontmatter.Section.ToString(), string.Empty } : new string[] { string.Empty };
-        var types = new string[] { frontmatter.Type.ToString(), "_default" };
+        var sections = frontmatter.Section is not null ? new[] { frontmatter.Section, string.Empty } : new[] { string.Empty };
+        var types = new[] { frontmatter.Type, "_default" };
         var kinds = isBaseTemplate
-            ? new string[] { frontmatter.Kind.ToString() + "-baseof", "baseof" }
-            : new string[] { frontmatter.Kind.ToString() };
-        var templatePaths = new List<string>();
-        foreach (var section in sections)
-        {
-            foreach (var type in types)
-            {
-                foreach (var kind in kinds)
-                {
-                    var path = Path.Combine(themePath, section, type, kind) + ".liquid";
-                    templatePaths.Add(path);
-                }
-            }
-        }
-        return templatePaths;
+            ? new[] { frontmatter.Kind + "-baseof", "baseof" }
+            : new[] { frontmatter.Kind.ToString() };
+
+        // for each section, each type and each kind
+        return (from section in sections
+                from type in types
+                from kind in kinds
+                let path = Path.Combine(themePath, section, type!, kind) + ".liquid"
+                select path).ToList();
     }
 }

@@ -1,10 +1,10 @@
 using Xunit;
 using Moq;
-using SuCoS.Models;
 using System.Globalization;
-using SuCoS.Helper;
+using SuCoS.Helpers;
+using SuCoS.Models;
 
-namespace SuCoS.Tests;
+namespace Test.Models;
 
 /// <summary>
 /// Unit tests for the Site class.
@@ -12,16 +12,15 @@ namespace SuCoS.Tests;
 public class SiteTests
 {
     private readonly Site site;
-    private readonly Mock<ISystemClock> systemClockMock;
-    readonly string testSite1Path = ".TestSites/01";
+    private readonly Mock<ISystemClock> systemClockMock = new();
+    private const string testSite1PathCONST = ".TestSites/01";
 
     // based on the compiled test.dll path
     // that is typically "bin/Debug/netX.0/test.dll"
-    readonly string testSitesPath = "../../..";
+    private const string testSitesPath = "../../..";
 
     public SiteTests()
     {
-        systemClockMock = new Mock<ISystemClock>();
         var testDate = DateTime.Parse("2023-04-01", CultureInfo.InvariantCulture);
         systemClockMock.Setup(c => c.Now).Returns(testDate);
         site = new Site(systemClockMock.Object);
@@ -32,7 +31,7 @@ public class SiteTests
     [InlineData("test02.md")]
     public void Test_ScanAllMarkdownFiles(string fileName)
     {
-        var siteFullPath = Path.GetFullPath(Path.Combine(testSitesPath, testSite1Path));
+        var siteFullPath = Path.GetFullPath(Path.Combine(testSitesPath, testSite1PathCONST));
 
         // Act
         var ContentPaths = FileUtils.GetAllMarkdownFiles(Path.Combine(siteFullPath, "content"));

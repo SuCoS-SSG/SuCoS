@@ -1,7 +1,7 @@
 using Xunit;
-using SuCoS.Helper;
+using SuCoS.Helpers;
 
-namespace SuCoSTests;
+namespace Test.Helpers;
 
 public class UrlizerTests
 {
@@ -56,7 +56,7 @@ public class UrlizerTests
     [Fact]
     public void Urlize_WithoutOptions_ReturnsExpectedResult()
     {
-        var text = "Hello, World!";
+        const string text = "Hello, World!";
         var result = Urlizer.Urlize(text);
 
         Assert.Equal("hello-world", result);
@@ -65,7 +65,7 @@ public class UrlizerTests
     [Fact]
     public void UrlizePath_WithoutOptions_ReturnsExpectedResult()
     {
-        var path = "Documents/My Report.docx";
+        const string path = "Documents/My Report.docx";
         var result = Urlizer.UrlizePath(path);
 
         Assert.Equal("documents/my-report.docx", result);
@@ -74,7 +74,7 @@ public class UrlizerTests
     [Fact]
     public void Urlize_SpecialCharsInText_ReturnsOnlyHyphens()
     {
-        var text = "!@#$%^&*()";
+        const string text = "!@#$%^&*()";
         var result = Urlizer.Urlize(text);
 
         Assert.Equal("", result);
@@ -83,7 +83,7 @@ public class UrlizerTests
     [Fact]
     public void UrlizePath_SpecialCharsInPath_ReturnsOnlyHyphens()
     {
-        var path = "/!@#$%^&*()/";
+        const string path = "/!@#$%^&*()/";
         var result = Urlizer.UrlizePath(path);
 
         Assert.Equal("/", result);

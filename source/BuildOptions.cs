@@ -12,5 +12,5 @@ public class BuildOptions : IGenerateOptions
     public string Output { get; set; } = "./public";
 
     /// <inheritdoc/>
-    public bool Future { get; set; } = false;
+    public bool Future { get; set; }
 }

@@ -1,7 +1,7 @@
-namespace SuCoS.Models.Tests;
-
-using Xunit;
 using SuCoS.Models;
+using Xunit;
+
+namespace Test.Models;
 
 public class BasicContentTests
 {
@@ -26,13 +26,12 @@ public class BasicContentTests
     public void Constructor_Sets_Kind_To_List_If_Not_Provided()
     {
         // Arrange
-        string title = "Title1", section = "Section1", type = "Type1", url = "URL1";
-        var kind = Kind.list;
+        const string title = "Title1", section = "Section1", type = "Type1", url = "URL1";
 
         // Act
         var basicContent = new BasicContent(title, section, type, url);
 
         // Assert
-        Assert.Equal(kind, basicContent.Kind);
+        Assert.Equal(Kind.list, basicContent.Kind);
     }
 }

@@ -7,9 +7,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using SuCoS.Helper;
+using SuCoS.Helpers;
 using SuCoS.Models;
 
 namespace SuCoS;
@@ -19,6 +18,9 @@ namespace SuCoS;
 /// </summary>
 public class ServeCommand : BaseGeneratorCommand, IDisposable
 {
+    private const string baseURLDefault = "http://localhost";
+    private const int portDefault = 1122;
+
     /// <summary>
     /// The ServeOptions object containing the configuration parameters for the server.
     /// This includes settings such as the source directory to watch for file changes, 
@@ -62,7 +64,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// A boolean flag indicating whether a server restart is currently in progress. 
     /// This is used to prevent overlapping restarts when file changes are detected in quick succession.
     /// </summary>
-    private volatile bool restartInProgress = false;
+    private volatile bool restartInProgress;
 
     /// <summary>
     /// A SemaphoreSlim used to ensure that server restarts due to file changes occur sequentially, 
@@ -89,7 +91,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <param name="baseURL">The base URL for the server.</param>
     /// <param name="port">The port number for the server.</param>
     /// <returns>A Task representing the asynchronous operation.</returns>
-    public async Task StartServer(string baseURL, int port)
+    private async Task StartServer(string baseURL, int port)
     {
         logger.Information("Starting server...");
 
@@ -118,7 +120,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     public void Dispose()
     {
         host?.Dispose();
-        sourceFileWatcher?.Dispose();
+        sourceFileWatcher.Dispose();
         debounceTimer?.Dispose();
         GC.SuppressFinalize(this);
     }
@@ -131,9 +133,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     public ServeCommand(ServeOptions options, ILogger logger) : base(options, logger)
     {
         this.options = options ?? throw new ArgumentNullException(nameof(options));
-        var baseURL = "http://localhost";
-        var port = 1122;
-        baseURLGlobal = $"{baseURL}:{port}";
+        baseURLGlobal = $"{baseURLDefault}:{portDefault}";
 
         // Watch for file changes in the specified path
         sourceFileWatcher = StartFileWatcher(options.Source);
@@ -199,7 +199,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     private async Task HandleRequest(HttpContext context)
     {
         var requestPath = context.Request.Path.Value;
-        if (string.IsNullOrEmpty(Path.GetExtension(context.Request.Path.Value)) && (requestPath.Length > 1))
+        if (string.IsNullOrEmpty(Path.GetExtension(context.Request.Path.Value)) && requestPath.Length > 1)
         {
             requestPath = requestPath.TrimEnd('/');
         }
@@ -251,10 +251,10 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         return context.Response.WriteAsync(content);
     }
 
-    private async Task HandleStaticFileRequest(HttpContext context, string fileAbsolutePath)
+    private static async Task HandleStaticFileRequest(HttpContext context, string fileAbsolutePath)
     {
         context.Response.ContentType = GetContentType(fileAbsolutePath);
-        using var fileStream = new FileStream(fileAbsolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        await using var fileStream = new FileStream(fileAbsolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         await fileStream.CopyToAsync(context.Response.Body);
     }
 
@@ -265,7 +265,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         await context.Response.WriteAsync(content);
     }
 
-    private async Task HandleNotFoundRequest(HttpContext context)
+    private static async Task HandleNotFoundRequest(HttpContext context)
     {
         context.Response.StatusCode = 404;
         await context.Response.WriteAsync("404 - File Not Found");
@@ -332,14 +332,16 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         debounceTimer?.Dispose();
         debounceTimer = new Timer(async _ =>
         {
-            if (!restartInProgress)
+            if (restartInProgress)
             {
-                logger.Information("File change detected: {FullPath}", e.FullPath);
-
-                restartInProgress = true;
-                await RestartServer();
-                restartInProgress = false;
+                return;
             }
+
+            logger.Information("File change detected: {FullPath}", e.FullPath);
+
+            restartInProgress = true;
+            await RestartServer();
+            restartInProgress = false;
         }, null, TimeSpan.FromMilliseconds(1), Timeout.InfiniteTimeSpan);
     }
 }

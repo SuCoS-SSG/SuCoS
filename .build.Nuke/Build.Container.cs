@@ -27,7 +27,7 @@ sealed partial class Build : NukeBuild
         .OnlyWhenStatic(() => runtimeIdentifier != "win-x64")
         .Executes(() =>
         {
-            var tagsOriginal = new string[] { "latest", Version, VersionMajorMinor, VersionMajor };
+            var tagsOriginal = new[] { "latest", Version, VersionMajorMinor, VersionMajor };
             var tags = tagsOriginal.Select(tag => $"{runtimeIdentifier}-{tag}").ToList();
             if (containerDefaultRID == runtimeIdentifier)
             {
@@ -39,7 +39,7 @@ sealed partial class Build : NukeBuild
                 .SetPath(PublishDirectory)
                 .SetFile($"./Dockerfile")
                 .SetTag(tags.Select(tag => $"{ContainerRegistryImage}:{tag}").ToArray())
-                .SetBuildArg(new string[] { $"BASE_IMAGE={BaseImage}", $"COPY_PATH={PublishDirectory}" })
+                .SetBuildArg(new[] { $"BASE_IMAGE={BaseImage}", $"COPY_PATH={PublishDirectory}" })
                 .SetProcessLogger((outputType, output) =>
                 {
                     // A bug this log type value
