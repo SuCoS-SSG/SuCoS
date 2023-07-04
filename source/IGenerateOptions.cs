@@ -8,15 +8,15 @@ public interface IGenerateOptions
     /// <summary>
     /// The path of the source files.
     /// </summary>
-    string Source { get; set; }
+    string Source { get; }
 
     /// <summary>
     /// The path of the output files.
     /// </summary>
-    public string Output { get; set; }
+    public string? Output { get; }
 
     /// <summary>
     /// Consider 
     /// </summary>
-    bool Future { get; set; }
+    bool Future { get; }
 }

@@ -9,7 +9,7 @@ public class ServeOptions : IGenerateOptions
     public string Source { get; set; } = ".";
 
     /// <inheritdoc/>
-    public string Output { get; set; } = "./public";
+    public string? Output { get; set; }
 
     /// <inheritdoc/>
     public bool Future { get; set; }

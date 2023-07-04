@@ -1,4 +1,5 @@
 ﻿using System.CommandLine;
+using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Serilog;
@@ -50,11 +51,11 @@ public class Program
 
         // Shared options between the commands
         var sourceOption = new Option<string>(new[] { "--source", "-s" }, () => ".", "Source directory path");
-        var futureOption = new Option<bool>(new[] { "--future", "-f" }, () => false, "Include content with dates in the future");
-        var verboseOption = new Option<bool>(new[] { "--verbose", "-v" }, () => false, "Verbose output");
+        var futureOption = new Option<bool>(new[] { "--future", "-f" }, "Include content with dates in the future");
+        var verboseOption = new Option<bool>(new[] { "--verbose", "-v" }, "Verbose output");
 
         // BuildCommand setup
-        var buildOutputOption = new Option<string>(new[] { "--output", "-o" }, () => "./public", "Output directory path");
+        var buildOutputOption = new Option<string>(new[] { "--output", "-o" }, "Output directory path");
 
         Command buildCommandHandler = new("build", "Builds the site")
         {
@@ -68,7 +69,7 @@ public class Program
             BuildOptions buildOptions = new()
             {
                 Source = source,
-                Output = output,
+                Output = string.IsNullOrEmpty(output) ? Path.Combine(source, "public") : output,
                 Future = future
             };
             logger = new LoggerConfiguration()

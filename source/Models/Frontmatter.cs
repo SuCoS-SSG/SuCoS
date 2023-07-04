@@ -314,8 +314,15 @@ public class Frontmatter : IBaseContent, IParams
         var permaLink = string.Empty;
 
         URLforce ??= URL
-            ?? (isIndex ? "{{ page.SourcePathDirectory }}" : "{{ page.SourcePathDirectory }}/{{ page.Title }}");
-
+            ?? (isIndex 
+            ? "{{ page.SourcePathDirectory }}" 
+            : @"{{ page.SourcePathDirectory }}/{%- liquid 
+if page.Title != ''
+echo page.Title
+else
+echo page.SourceFileNameWithoutExtension
+endif
+-%}");
 
         try
         {
