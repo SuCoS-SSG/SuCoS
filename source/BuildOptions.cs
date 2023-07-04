@@ -9,7 +9,7 @@ public class BuildOptions : IGenerateOptions
     public string Source { get; set; } = ".";
 
     /// <inheritdoc/>
-    public string Output { get; set; } = "./public";
+    public string? Output { get; init; }
 
     /// <inheritdoc/>
     public bool Future { get; set; }
