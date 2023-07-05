@@ -90,6 +90,12 @@ public class Frontmatter : IBaseContent, IParams
     public string? SourcePathDirectory { get; set; }
 
     /// <summary>
+    /// The source directory of the file.
+    /// </summary>
+    [YamlIgnore]
+    public string? SourcePathLastDirectory => Path.GetDirectoryName(SourcePathDirectory ?? string.Empty);
+
+    /// <summary>
     /// Point to the site configuration.
     /// </summary>
     [YamlIgnore]
@@ -119,6 +125,13 @@ public class Frontmatter : IBaseContent, IParams
     /// </summary>
     [YamlIgnore]
     public ConcurrentBag<string>? PagesReferences { get; set; }
+
+    /// <summary>
+    /// Other content that mention this content.
+    /// Used to create the tags list and Related Posts section.
+    /// </summary>
+    [YamlIgnore]
+    public Frontmatter? Parent { get; set; }
 
     /// <summary>
     /// A list of tags, if any.
@@ -315,8 +328,22 @@ public class Frontmatter : IBaseContent, IParams
 
         URLforce ??= URL
             ?? (isIndex 
-            ? "{{ page.SourcePathDirectory }}" 
-            : @"{{ page.SourcePathDirectory }}/{%- liquid 
+            ? @"{%- liquid 
+if page.Parent
+echo page.Parent.Permalink
+echo '/'
+endif
+if page.Title != ''
+echo page.Title
+else
+echo page.SourcePathLastDirectory
+endif
+-%}" 
+            : @"{%- liquid 
+if page.Parent
+echo page.Parent.Permalink
+echo '/'
+endif
 if page.Title != ''
 echo page.Title
 else

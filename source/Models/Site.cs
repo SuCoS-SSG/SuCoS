@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -7,7 +8,6 @@ using System.Threading.Tasks;
 using Fluid;
 using Markdig;
 using Serilog;
-using SuCoS.Helpers;
 using SuCoS.Parser;
 using YamlDotNet.Serialization;
 
@@ -120,12 +120,6 @@ public class Site : IParams
     public Frontmatter? Home { get; private set; }
 
     /// <summary>
-    /// List of all content to be scanned and processed.
-    /// </summary>
-    [YamlIgnore]
-    public List<string> ContentPaths { get; } = new();
-
-    /// <summary>
     /// Command line options
     /// </summary>
     public IGenerateOptions? options;
@@ -190,6 +184,11 @@ public class Site : IParams
     private List<Frontmatter>? regularPagesCache;
 
     /// <summary>
+    /// Number of files parsed, used in the report.
+    /// </summary>
+    public int filesParsedToReport;
+
+    /// <summary>
     /// Markdig 20+ built-in extensions
     /// </summary>
     /// https://github.com/xoofx/markdig
@@ -230,18 +229,97 @@ public class Site : IParams
     }
 
     /// <summary>
+    /// Search recursively for all markdown files in the content folder, then
+    /// parse their content for front matter meta data and markdown.
+    /// </summary>
+    /// <param name="directory">Folder to scan</param>
+    /// <param name="level">Folder recursive level</param>
+    /// <param name="pageParent">Page of the upper directory</param>
+    /// <returns></returns>
+    public void ParseAndScanSourceFiles(string directory, int level = 0, Frontmatter? pageParent = null)
+    {
+        directory ??= SourceContentPath;
+
+        var markdownFiles = Directory.GetFiles(directory, "*.md");
+
+        var indexPath = markdownFiles.FirstOrDefault(file => Path.GetFileName(file).ToUpperInvariant() == "INDEX.MD");
+        if (indexPath != null)
+        {
+            markdownFiles = markdownFiles.Where(file => file != indexPath).ToArray();
+            var frontmatter = ParseSourceFile(pageParent, indexPath);
+            if (level == 0)
+            {
+                Home = frontmatter;
+                frontmatter!.Permalink = "/";
+                PagesDict.Remove(frontmatter.Permalink);
+                PagesDict.Add(frontmatter.Permalink, frontmatter);
+            }
+            else
+            {
+                pageParent = frontmatter;
+            }
+        }
+        else if (level == 0)
+        {
+            Home = CreateIndexPage(string.Empty);
+        }
+        else if (level == 1)
+        {
+            var section = directory;
+            var contentTemplate = new BasicContent(
+                title: section,
+                section: "section",
+                type: "section",
+                url: section
+            );
+            pageParent = CreateAutomaticFrontmatter(contentTemplate, null);
+        }
+
+        _ = Parallel.ForEach(markdownFiles, filePath =>
+        {
+            ParseSourceFile(pageParent, filePath);
+        });
+
+        var subdirectories = Directory.GetDirectories(directory);
+        foreach (var subdirectory in subdirectories)
+        {
+            ParseAndScanSourceFiles(subdirectory, level + 1, pageParent);
+        }
+    }
+
+    private Frontmatter? ParseSourceFile(Frontmatter? pageParent, string filePath)
+    {
+        Frontmatter? frontmatter = null;
+        try
+        {
+            frontmatter = frontmatterParser.ParseFrontmatterAndMarkdownFromFile(this, filePath, SourceContentPath)
+                ?? throw new FormatException($"Error parsing frontmatter for {filePath}");
+
+            if (frontmatter.IsValidDate(options))
+            {
+                PostProcessFrontMatter(frontmatter, pageParent, true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger?.Error(ex, "Error parsing file {file}", filePath);
+        }
+
+        // Use interlocked to safely increment the counter in a multi-threaded environment
+        _ = Interlocked.Increment(ref filesParsedToReport);
+
+        return frontmatter;
+    }
+
+    /// <summary>
     /// Create a page not from the content folder, but as part of the process.
     /// It's used to create tag pages, section list pages, etc.
     /// </summary>
-    public Frontmatter CreateAutomaticFrontmatter(BasicContent baseContent, Frontmatter originalFrontmatter)
+    public Frontmatter CreateAutomaticFrontmatter(BasicContent baseContent, Frontmatter? originalFrontmatter)
     {
         if (baseContent is null)
         {
             throw new ArgumentNullException(nameof(baseContent));
-        }
-        if (originalFrontmatter is null)
-        {
-            throw new ArgumentNullException(nameof(originalFrontmatter));
         }
 
         var id = baseContent.URL;
@@ -270,67 +348,23 @@ public class Site : IParams
             }
         }
 
-        if (frontmatter.Kind != Kind.index && originalFrontmatter.Permalink is not null)
+        if (frontmatter.Kind != Kind.index && originalFrontmatter?.Permalink is not null)
         {
             frontmatter.PagesReferences!.Add(originalFrontmatter.Permalink!);
         }
 
-        // TODO: still too hardcoded
-        if (frontmatter.Type != "tags")
-            return frontmatter;
 
+        // TODO: still too hardcoded
+        if (frontmatter.Type != "tags" || originalFrontmatter is null)
+        {
+            return frontmatter;
+        }
         lock (originalFrontmatter)
         {
             originalFrontmatter.Tags ??= new();
             originalFrontmatter.Tags!.Add(frontmatter);
         }
         return frontmatter;
-    }
-
-    /// <summary>
-    /// Parses the source files and extracts the frontmatter.
-    /// </summary>
-    public void ParseSourceFiles(StopwatchReporter stopwatch)
-    {
-        if (stopwatch is null)
-        {
-            throw new ArgumentNullException(nameof(stopwatch));
-        }
-
-        stopwatch.Start("Parse");
-
-        // Process the source files, extracting the frontmatter
-        var filesParsed = 0; // counter to keep track of the number of files processed
-        _ = Parallel.ForEach(ContentPaths, filePath =>
-        {
-            try
-            {
-                var frontmatter = frontmatterParser.ParseFrontmatterAndMarkdownFromFile(this, filePath, SourceContentPath)
-                   ?? throw new FormatException($"Error parsing frontmatter for {filePath}");
-
-                if (frontmatter.IsValidDate(options))
-                {
-                    PostProcessFrontMatter(frontmatter, true);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger?.Error(ex, "Error parsing file {file}", filePath);
-            }
-
-            // Use interlocked to safely increment the counter in a multi-threaded environment
-            _ = Interlocked.Increment(ref filesParsed);
-        });
-
-        // If the home page is not yet created, create it!
-        if (!PagesDict.TryGetValue("/", out var home))
-        {
-            home = CreateIndexPage(string.Empty);
-        }
-        Home = home;
-        home.Kind = Kind.index;
-
-        stopwatch.Stop("Parse", filesParsed);
     }
 
     /// <summary>
@@ -359,15 +393,17 @@ public class Site : IParams
     /// <summary>
     /// Extra calculation and automatic data for each frontmatter.
     /// </summary>
-    /// <param name="frontmatter"></param>
+    /// <param name="frontmatter">The given page to be processed</param>
+    /// <param name="pageParent">The parent page, if any</param>
     /// <param name="overwrite"></param>
-    public void PostProcessFrontMatter(Frontmatter frontmatter, bool overwrite = false)
+    public void PostProcessFrontMatter(Frontmatter frontmatter, Frontmatter? pageParent = null, bool overwrite = false)
     {
         if (frontmatter is null)
         {
             throw new ArgumentNullException(nameof(frontmatter));
         }
 
+        frontmatter.Parent = pageParent;
         frontmatter.Permalink = frontmatter.CreatePermalink();
         lock (syncLockPostProcess)
         {
@@ -398,20 +434,5 @@ public class Site : IParams
                 }
             }
         }
-
-        // Create a section page when due
-        if (frontmatter.Type == "section"
-            || string.IsNullOrEmpty(frontmatter.Permalink)
-            || string.IsNullOrEmpty(frontmatter.Section))
-        {
-            return;
-        }
-        var contentTemplate = new BasicContent(
-            title: frontmatter.Section,
-            section: "section",
-            type: "section",
-            url: frontmatter.Section
-        );
-        CreateAutomaticFrontmatter(contentTemplate, frontmatter);
     }
 }

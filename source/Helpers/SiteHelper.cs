@@ -36,11 +36,11 @@ public static class SiteHelper
 
         site.ResetCache();
 
-        // Scan content files
-        var markdownFiles = FileUtils.GetAllMarkdownFiles(site.SourceContentPath);
-        site.ContentPaths.AddRange(markdownFiles);
+        stopwatch.Start("Parse");
 
-        site.ParseSourceFiles(stopwatch);
+        site.ParseAndScanSourceFiles(site.SourceContentPath);
+
+        stopwatch.Stop("Parse", site.filesParsedToReport);
 
         site.TemplateOptions.FileProvider = new PhysicalFileProvider(Path.GetFullPath(site.SourceThemePath));
 
@@ -109,7 +109,7 @@ public static class SiteHelper
             site.Logger = logger;
             site.options = options;
             site.SourceDirectoryPath = options.Source;
-            site.OutputPath = options.Output;
+            site.OutputPath = options.Output!;
 
             // Liquid template options, needed to theme the content 
             // but also parse URLs

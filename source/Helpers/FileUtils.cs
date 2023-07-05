@@ -12,26 +12,6 @@ namespace SuCoS.Helpers;
 public static class FileUtils
 {
     /// <summary>
-    /// Gets all Markdown files in the specified directory.
-    /// </summary>
-    /// <param name="directory">The directory path.</param>
-    /// <param name="basePath">The initial directory path.</param>
-    /// <returns>The list of Markdown file paths.</returns>
-    public static IEnumerable<string> GetAllMarkdownFiles(string directory, string? basePath = null)
-    {
-        basePath ??= directory;
-        var files = Directory.GetFiles(directory, "*.md").ToList();
-
-        var subdirectories = Directory.GetDirectories(directory);
-        foreach (var subdirectory in subdirectories)
-        {
-            files.AddRange(GetAllMarkdownFiles(subdirectory, basePath));
-        }
-
-        return files;
-    }
-
-    /// <summary>
     /// Gets the content of a template file based on the frontmatter and the theme path.
     /// </summary>
     /// <param name="themePath">The theme path.</param>

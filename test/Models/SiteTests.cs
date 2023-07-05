@@ -31,14 +31,15 @@ public class SiteTests
     [InlineData("test02.md")]
     public void Test_ScanAllMarkdownFiles(string fileName)
     {
+        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
         var siteFullPath = Path.GetFullPath(Path.Combine(testSitesPath, testSite1PathCONST));
 
         // Act
-        var ContentPaths = FileUtils.GetAllMarkdownFiles(Path.Combine(siteFullPath, "content"));
-        var fileFullPath = Path.Combine(siteFullPath, "content", fileName);
+        site.ParseAndScanSourceFiles(siteFullPath);
 
         // Assert
-        Assert.Contains(ContentPaths, rp => rp == fileFullPath);
+        Assert.Contains(site.Pages, page => page.SourcePathDirectory?.Length == 0);
+        Assert.Contains(site.Pages, page => page.SourceFileNameWithoutExtension == fileNameWithoutExtension);
     }
 
     [Theory]
