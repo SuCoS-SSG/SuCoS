@@ -135,8 +135,8 @@ public class FrontmatterTests
     }
 
     [Theory]
-    [InlineData("/test/path", "/test/path/test-title")]
-    [InlineData("/another/path", "/another/path/test-title")]
+    [InlineData("/test/path", "/test-title")]
+    [InlineData("/another/path", "/test-title")]
     public void CreatePermalink_ShouldReturnCorrectUrl_WhenUrlIsNull(string sourcePathDirectory, string expectedUrl)
     {
         var frontmatter = new Frontmatter(titleCONST, sourcePathCONST, site)
@@ -149,7 +149,7 @@ public class FrontmatterTests
     }
 
     [Theory]
-    [InlineData(null, "/path/to/test-title")]
+    [InlineData(null, "/test-title")]
     [InlineData("{{ page.Title }}/{{ page.SourceFileNameWithoutExtension }}", "/test-title/file")]
     public void Permalink_CreateWithDefaultOrCustomURLTemplate(string urlTemplate, string expectedPermalink)
     {
