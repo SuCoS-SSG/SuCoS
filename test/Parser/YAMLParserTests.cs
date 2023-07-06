@@ -4,6 +4,7 @@ using SuCoS.Parser;
 using System.Globalization;
 using SuCoS.Helpers;
 using SuCoS.Models;
+using Microsoft.VisualBasic;
 
 namespace Test.Parser;
 
@@ -186,10 +187,12 @@ Title
     [Fact]
     public void ParseFrontmatter_ShouldCreateTags()
     {
+        // Act
         var frontmatter = parser.ParseFrontmatterAndMarkdown(siteDefault.Object, "", pageContent);
+        siteDefault.Object.PostProcessFrontMatter(frontmatter);
 
         // Asset
-        Assert.Equal(2, frontmatter.Tags?.Count);
+        Assert.Equal(2, frontmatter.TagsReference?.Count);
     }
 
     [Fact]

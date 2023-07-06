@@ -50,12 +50,12 @@ public class SiteTests
         var key = (firstKeyPart, secondKeyPart, thirdKeyPart);
         site.baseTemplateCache.Add(key, value);
         site.contentTemplateCache.Add(key, value);
-        site.PagesDict.Add("test", new Frontmatter("Test Title", "sourcePath", site));
+        site.PagesReferences.Add("test", new Frontmatter("Test Title", "sourcePath", site));
 
         site.ResetCache();
 
         Assert.Empty(site.baseTemplateCache);
         Assert.Empty(site.contentTemplateCache);
-        Assert.Empty(site.PagesDict);
+        Assert.Empty(site.PagesReferences);
     }
 }
