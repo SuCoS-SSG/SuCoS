@@ -251,6 +251,7 @@ public class Site : IParams
             {
                 Home = frontmatter;
                 frontmatter!.Permalink = "/";
+                frontmatter.Kind = Kind.index;
                 PagesDict.Remove(frontmatter.Permalink);
                 PagesDict.Add(frontmatter.Permalink, frontmatter);
             }
@@ -261,6 +262,7 @@ public class Site : IParams
         }
         else if (level == 0)
         {
+            // TODO: unify the with section creation process
             Home = CreateIndexPage(string.Empty);
         }
         else if (level == 1)
