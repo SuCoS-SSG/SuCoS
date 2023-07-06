@@ -93,7 +93,7 @@ public class Frontmatter : IBaseContent, IParams
     /// The source directory of the file.
     /// </summary>
     [YamlIgnore]
-    public string? SourcePathLastDirectory => Path.GetDirectoryName(SourcePathDirectory ?? string.Empty);
+    public string? SourcePathLastDirectory => new DirectoryInfo(SourcePathDirectory ?? string.Empty).Name;
 
     /// <summary>
     /// Point to the site configuration.
@@ -136,8 +136,13 @@ public class Frontmatter : IBaseContent, IParams
     /// <summary>
     /// A list of tags, if any.
     /// </summary>
+    public List<string>? Tags { get; set; }
+
+    /// <summary>
+    /// A list of tags, if any.
+    /// </summary>
     [YamlIgnore]
-    public List<Frontmatter>? Tags { get; set; }
+    public List<Frontmatter>? TagsReference { get; set; }
 
     /// <summary>
     /// Check if the page is expired
@@ -215,7 +220,7 @@ public class Frontmatter : IBaseContent, IParams
             pagesCached ??= new();
             foreach (var permalink in PagesReferences)
             {
-                pagesCached.Add(Site.PagesDict[permalink]);
+                pagesCached.Add(Site.PagesReferences[permalink]);
             }
             return pagesCached;
         }
@@ -273,6 +278,29 @@ public class Frontmatter : IBaseContent, IParams
     /// </summary>
     private DateTime? contentCacheTime { get; set; }
 
+    private const string urlForIndex = @"{%- liquid 
+if page.Parent
+echo page.Parent.Permalink
+echo '/'
+endif
+if page.Title != ''
+echo page.Title
+else
+echo page.SourcePathLastDirectory
+endif
+-%}";
+    private const string urlForNonIndex = @"{%- liquid 
+if page.Parent
+echo page.Parent.Permalink
+echo '/'
+endif
+if page.Title != ''
+echo page.Title
+else
+echo page.SourceFileNameWithoutExtension
+endif
+-%}";
+
     private List<Frontmatter>? regularPagesCache;
 
     private List<Frontmatter>? pagesCached { get; set; }
@@ -326,30 +354,7 @@ public class Frontmatter : IBaseContent, IParams
 
         var permaLink = string.Empty;
 
-        URLforce ??= URL
-            ?? (isIndex 
-            ? @"{%- liquid 
-if page.Parent
-echo page.Parent.Permalink
-echo '/'
-endif
-if page.Title != ''
-echo page.Title
-else
-echo page.SourcePathLastDirectory
-endif
--%}" 
-            : @"{%- liquid 
-if page.Parent
-echo page.Parent.Permalink
-echo '/'
-endif
-if page.Title != ''
-echo page.Title
-else
-echo page.SourceFileNameWithoutExtension
-endif
--%}");
+        URLforce ??= URL ?? (isIndex ? urlForIndex : urlForNonIndex);
 
         try
         {

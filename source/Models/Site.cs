@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -8,6 +7,7 @@ using System.Threading.Tasks;
 using Fluid;
 using Markdig;
 using Serilog;
+using SuCoS.Helpers;
 using SuCoS.Parser;
 using YamlDotNet.Serialization;
 
@@ -79,7 +79,7 @@ public class Site : IParams
     {
         get
         {
-            pagesCache ??= PagesDict.Values.ToList();
+            pagesCache ??= PagesReferences.Values.ToList();
             return pagesCache!;
         }
     }
@@ -91,13 +91,13 @@ public class Site : IParams
     /// <returns></returns>
     public Frontmatter? GetPage(string permalink)
     {
-        return PagesDict.TryGetValue(permalink, out var page) ? page : null;
+        return PagesReferences.TryGetValue(permalink, out var page) ? page : null;
     }
 
     /// <summary>
     /// List of all pages, including generated, by their permalink.
     /// </summary>
-    public Dictionary<string, Frontmatter> PagesDict { get; } = new();
+    public Dictionary<string, Frontmatter> PagesReferences { get; } = new();
 
     /// <summary>
     /// List of pages from the content folder.
@@ -106,8 +106,8 @@ public class Site : IParams
     {
         get
         {
-            regularPagesCache ??= PagesDict
-                    .Where(pair => pair.Value.Kind == Kind.single)
+            regularPagesCache ??= PagesReferences
+                    .Where(pair => pair.Value.Kind == Kind.single && pair.Key == pair.Value.Permalink)
                     .Select(pair => pair.Value)
                     .ToList();
             return regularPagesCache;
@@ -224,7 +224,7 @@ public class Site : IParams
         baseTemplateCache.Clear();
         contentTemplateCache.Clear();
         automaticContentCache.Clear();
-        PagesDict.Clear();
+        PagesReferences.Clear();
         IgnoreCacheBefore = DateTime.Now;
     }
 
@@ -252,8 +252,8 @@ public class Site : IParams
                 Home = frontmatter;
                 frontmatter!.Permalink = "/";
                 frontmatter.Kind = Kind.index;
-                PagesDict.Remove(frontmatter.Permalink);
-                PagesDict.Add(frontmatter.Permalink, frontmatter);
+                PagesReferences.Remove(frontmatter.Permalink);
+                PagesReferences.Add(frontmatter.Permalink, frontmatter);
             }
             else
             {
@@ -267,7 +267,7 @@ public class Site : IParams
         }
         else if (level == 1)
         {
-            var section = directory;
+            var section = new DirectoryInfo(directory).Name;
             var contentTemplate = new BasicContent(
                 title: section,
                 section: "section",
@@ -344,7 +344,6 @@ public class Site : IParams
                     URL = baseContent.URL,
                     PagesReferences = new()
                 };
-
                 automaticContentCache.Add(id, frontmatter);
                 PostProcessFrontMatter(frontmatter);
             }
@@ -355,7 +354,6 @@ public class Site : IParams
             frontmatter.PagesReferences!.Add(originalFrontmatter.Permalink!);
         }
 
-
         // TODO: still too hardcoded
         if (frontmatter.Type != "tags" || originalFrontmatter is null)
         {
@@ -363,8 +361,8 @@ public class Site : IParams
         }
         lock (originalFrontmatter)
         {
-            originalFrontmatter.Tags ??= new();
-            originalFrontmatter.Tags!.Add(frontmatter);
+            originalFrontmatter.TagsReference ??= new();
+            originalFrontmatter.TagsReference!.Add(frontmatter);
         }
         return frontmatter;
     }
@@ -396,20 +394,20 @@ public class Site : IParams
     /// Extra calculation and automatic data for each frontmatter.
     /// </summary>
     /// <param name="frontmatter">The given page to be processed</param>
-    /// <param name="pageParent">The parent page, if any</param>
+    /// <param name="parent">The parent page, if any</param>
     /// <param name="overwrite"></param>
-    public void PostProcessFrontMatter(Frontmatter frontmatter, Frontmatter? pageParent = null, bool overwrite = false)
+    public void PostProcessFrontMatter(Frontmatter frontmatter, Frontmatter? parent = null, bool overwrite = false)
     {
         if (frontmatter is null)
         {
             throw new ArgumentNullException(nameof(frontmatter));
         }
 
-        frontmatter.Parent = pageParent;
+        frontmatter.Parent = parent;
         frontmatter.Permalink = frontmatter.CreatePermalink();
         lock (syncLockPostProcess)
         {
-            if (!PagesDict.TryGetValue(frontmatter.Permalink, out var old) || overwrite)
+            if (!PagesReferences.TryGetValue(frontmatter.Permalink, out var old) || overwrite)
             {
                 if (old?.PagesReferences is not null)
                 {
@@ -432,9 +430,30 @@ public class Site : IParams
                 // Register the page for all urls
                 foreach (var url in frontmatter.Urls)
                 {
-                    PagesDict[url] = frontmatter;
+                    PagesReferences[url] = frontmatter;
                 }
             }
+        }
+
+        if (frontmatter.Tags is not null)
+        {
+            foreach (var tagName in frontmatter.Tags)
+            {
+                var contentTemplate = new BasicContent(
+                    title: tagName,
+                    section: "tags",
+                    type: "tags",
+                    url: "tags/" + Urlizer.Urlize(tagName)
+                );
+                _ = CreateAutomaticFrontmatter(contentTemplate, frontmatter);
+            }
+        }
+
+        if (!string.IsNullOrEmpty(frontmatter.Section)
+            && PagesReferences.TryGetValue('/' + frontmatter.Section!, out var section))
+        {
+            section.PagesReferences ??= new();
+            section.PagesReferences.Add(frontmatter.Permalink!);
         }
     }
 }

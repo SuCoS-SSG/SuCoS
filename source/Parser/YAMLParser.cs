@@ -106,18 +106,6 @@ public class YAMLParser : IFrontmatterParser
         {
             return page;
         }
-
-        foreach (var tagObj in tagsValues)
-        {
-            var tagName = (string)tagObj;
-            var contentTemplate = new BasicContent(
-                title: tagName,
-                section: "tags",
-                type: "tags",
-                url: "tags/" + Urlizer.Urlize(tagName)
-            );
-            _ = site.CreateAutomaticFrontmatter(contentTemplate, page);
-        }
         ParseParams(page, typeof(Frontmatter), yaml, yamlDictionary);
 
         return page;

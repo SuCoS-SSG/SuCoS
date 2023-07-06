@@ -56,7 +56,7 @@ public class FrontmatterTests
         Assert.Null(frontmatter.Permalink);
         Assert.Empty(frontmatter.Urls);
         Assert.Equal(string.Empty, frontmatter.RawContent);
-        Assert.Null(frontmatter.Tags);
+        Assert.Null(frontmatter.TagsReference);
         Assert.Null(frontmatter.PagesReferences);
         Assert.Empty(frontmatter.RegularPages);
         Assert.False(frontmatter.IsDateExpired);
@@ -78,7 +78,7 @@ public class FrontmatterTests
         // Assert
         foreach (var url in new[] { "/v123", "/title" })
         {
-            site.PagesDict.TryGetValue(url, out var frontmatter1);
+            site.PagesReferences.TryGetValue(url, out var frontmatter1);
             Assert.NotNull(frontmatter1);
             Assert.Same(frontmatter, frontmatter1);
         }

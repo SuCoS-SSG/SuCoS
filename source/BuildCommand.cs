@@ -45,7 +45,7 @@ public class BuildCommand : BaseGeneratorCommand
 
         // Print each page
         var pagesCreated = 0; // counter to keep track of the number of pages created
-        _ = Parallel.ForEach(site.PagesDict, pair =>
+        _ = Parallel.ForEach(site.PagesReferences, pair =>
         {
             var (url, frontmatter) = pair;
             var result = frontmatter.CreateOutputFile();

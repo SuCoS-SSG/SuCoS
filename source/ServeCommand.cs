@@ -231,7 +231,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         }
 
         // Check if the requested file path corresponds to a registered page
-        else if (site.PagesDict.TryGetValue(requestPath, out var frontmatter))
+        else if (site.PagesReferences.TryGetValue(requestPath, out var frontmatter))
         {
             resultType = "dict";
             await HandleRegisteredPageRequest(context, frontmatter);
