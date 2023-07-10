@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Fluid;
 using Markdig;
 using SuCoS.Helpers;
@@ -78,6 +79,11 @@ public class Frontmatter : IBaseContent, IParams
     public int Weight { get; set; } = 0;
 
     /// <summary>
+    /// A list of tags, if any.
+    /// </summary>
+    public List<string>? Tags { get; set; }
+
+    /// <summary>
     /// The source filename, without the extension. ;)
     /// </summary>
     [YamlIgnore]
@@ -134,9 +140,10 @@ public class Frontmatter : IBaseContent, IParams
     public Frontmatter? Parent { get; set; }
 
     /// <summary>
-    /// A list of tags, if any.
+    /// Plain markdown content, without HTML.
     /// </summary>
-    public List<string>? Tags { get; set; }
+    [YamlIgnore]
+    public string Plain => Markdown.ToPlainText(RawContent, Site.MarkdownPipeline);
 
     /// <summary>
     /// A list of tags, if any.
@@ -147,6 +154,7 @@ public class Frontmatter : IBaseContent, IParams
     /// <summary>
     /// Check if the page is expired
     /// </summary>
+    [YamlIgnore]
     public bool IsDateExpired => ExpiryDate is not null && ExpiryDate <= clock.Now;
 
     /// <summary>
@@ -158,17 +166,28 @@ public class Frontmatter : IBaseContent, IParams
     /// <summary>
     /// Just a simple check if the current page is the home page
     /// </summary>
+    [YamlIgnore]
     public bool IsHome => Site.Home == this;
 
     /// <summary>
     /// Just a simple check if the current page is a section page
     /// </summary>
+    [YamlIgnore]
     public bool IsSection => Type == "section";
 
     /// <summary>
     /// Just a simple check if the current page is a "page"
     /// </summary>
+    [YamlIgnore]
     public bool IsPage => Type == "page";
+
+    /// <summary>
+    /// The number of words in the main content
+    /// </summary>
+    [YamlIgnore]
+    public int WordCount =>
+        Plain.Split(new char[] { ' ', ',', ';', '.', '!', '"', '(', ')', '?' },
+        StringSplitOptions.RemoveEmptyEntries).Length;
 
     /// <summary>
     /// The markdown content converted to HTML
