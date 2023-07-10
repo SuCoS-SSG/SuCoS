@@ -383,7 +383,8 @@ public class Site : IParams
         )
         {
             Kind = string.IsNullOrEmpty(relativePath) ? Kind.index : Kind.list,
-            Section = (string.IsNullOrEmpty(relativePath) ? Kind.index : Kind.list).ToString()
+            Section = (string.IsNullOrEmpty(relativePath) ? Kind.index : Kind.list).ToString(),
+            URL = "/"
         };
 
         PostProcessFrontMatter(frontmatter);
