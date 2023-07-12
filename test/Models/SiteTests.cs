@@ -1,8 +1,10 @@
 using Xunit;
 using Moq;
 using System.Globalization;
-using SuCoS.Helpers;
 using SuCoS.Models;
+using Serilog;
+using SuCoS.Models.CommandLineOptions;
+using SuCoS.Parser;
 
 namespace Test.Models;
 
@@ -12,8 +14,18 @@ namespace Test.Models;
 public class SiteTests
 {
     private readonly Site site;
+    private readonly Mock<IGenerateOptions> generateOptionsMock = new();
+    private readonly Mock<SiteSettings> siteSettingsMock = new();
+    private readonly Mock<ILogger> loggerMock = new();
+    private readonly IFrontMatterParser frontMatterParser = new YAMLParser();
     private readonly Mock<ISystemClock> systemClockMock = new();
-    private const string testSite1PathCONST = ".TestSites/01";
+    private const string testSitePathCONST01 = ".TestSites/01";
+    private const string testSitePathCONST02 = ".TestSites/02-have-index";
+    private const string testSitePathCONST03 = ".TestSites/03-section";
+    private const string testSitePathCONST04 = ".TestSites/04-tags";
+    private const string testSitePathCONST05 = ".TestSites/05-theme-no-baseof";
+    private const string testSitePathCONST06 = ".TestSites/06-theme";
+    private const string testSitePathCONST07 = ".TestSites/07-theme-no-baseof-error";
 
     // based on the compiled test.dll path
     // that is typically "bin/Debug/netX.0/test.dll"
@@ -23,39 +35,301 @@ public class SiteTests
     {
         var testDate = DateTime.Parse("2023-04-01", CultureInfo.InvariantCulture);
         systemClockMock.Setup(c => c.Now).Returns(testDate);
-        site = new Site(systemClockMock.Object);
+        site = new Site(generateOptionsMock.Object, siteSettingsMock.Object, frontMatterParser, loggerMock.Object, systemClockMock.Object);
     }
 
     [Theory]
     [InlineData("test01.md")]
-    [InlineData("test02.md")]
-    public void Test_ScanAllMarkdownFiles(string fileName)
+    [InlineData("date-ok.md")]
+    public void ScanAllMarkdownFiles_ShouldCountainFilenames(string fileName)
     {
         var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
-        var siteFullPath = Path.GetFullPath(Path.Combine(testSitesPath, testSite1PathCONST));
+        var siteFullPath = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST01));
+        site.Options = new GenerateOptions
+        {
+            Source = siteFullPath
+        };
 
         // Act
-        site.ParseAndScanSourceFiles(siteFullPath);
+        site.ParseAndScanSourceFiles(Path.Combine(siteFullPath, "content"));
 
         // Assert
-        Assert.Contains(site.Pages, page => page.SourcePathDirectory?.Length == 0);
+        Assert.Contains(site.Pages, page => page.SourcePathDirectory!.Length == 0);
         Assert.Contains(site.Pages, page => page.SourceFileNameWithoutExtension == fileNameWithoutExtension);
     }
 
     [Theory]
-    [InlineData("test1", Kind.index, "base", "Test Content 1")]
-    [InlineData("test2", Kind.single, "content", "Test Content 2")]
-    public void Test_ResetCache(string firstKeyPart, Kind secondKeyPart, string thirdKeyPart, string value)
+    [InlineData(testSitePathCONST01)]
+    [InlineData(testSitePathCONST02)]
+    public void Home_ShouldReturnAHomePage(string sitePath)
     {
-        var key = (firstKeyPart, secondKeyPart, thirdKeyPart);
-        site.baseTemplateCache.Add(key, value);
-        site.contentTemplateCache.Add(key, value);
-        site.PagesReferences.Add("test", new Frontmatter("Test Title", "sourcePath", site));
+        GenerateOptions options = new()
+        {
+            Source = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
+        };
+        site.Options = options;
 
-        site.ResetCache();
+        // Act
+        site.ParseAndScanSourceFiles(site.SourceContentPath);
 
-        Assert.Empty(site.baseTemplateCache);
-        Assert.Empty(site.contentTemplateCache);
-        Assert.Empty(site.PagesReferences);
+        // Assert
+        Assert.NotNull(site.Home);
+        Assert.True(site.Home.IsHome);
+        Assert.Single(site.PagesReferences.Values.Where(page => page.IsHome));
+    }
+
+    [Theory]
+    [InlineData(testSitePathCONST01, 0)]
+    [InlineData(testSitePathCONST02, 0)]
+    [InlineData(testSitePathCONST03, 1)]
+    public void Page_IsSection_ShouldReturnExpectedQuantityOfPages(string sitePath, int expectedQuantity)
+    {
+        GenerateOptions options = new()
+        {
+            Source = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
+        };
+        site.Options = options;
+
+        // Act
+        site.ParseAndScanSourceFiles(null);
+
+        // Assert
+        Assert.Equal(expectedQuantity, site.PagesReferences.Values.Where(page => page.IsSection).Count());
+    }
+
+    [Theory]
+    [InlineData(testSitePathCONST01, 5)]
+    [InlineData(testSitePathCONST02, 8)]
+    [InlineData(testSitePathCONST03, 13)]
+    public void PagesReference_ShouldReturnExpectedQuantityOfPages(string sitePath, int expectedQuantity)
+    {
+        GenerateOptions options = new()
+        {
+            Source = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
+        };
+        site.Options = options;
+
+        // Act
+        site.ParseAndScanSourceFiles(null);
+
+        // Assert
+        Assert.Equal(expectedQuantity, site.PagesReferences.Count);
+    }
+
+    [Theory]
+    [InlineData(testSitePathCONST01, 4)]
+    [InlineData(testSitePathCONST02, 7)]
+    [InlineData(testSitePathCONST03, 11)]
+    public void Page_IsPage_ShouldReturnExpectedQuantityOfPages(string sitePath, int expectedQuantity)
+    {
+        GenerateOptions options = new()
+        {
+            Source = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
+        };
+        site.Options = options;
+
+        // Act
+        site.ParseAndScanSourceFiles(null);
+
+        // Assert
+        Assert.Equal(expectedQuantity, site.PagesReferences.Values.Where(page => page.IsPage).Count());
+    }
+
+    [Fact]
+    public void Page_Weight_ShouldReturnTheRightOrder()
+    {
+        GenerateOptions options = new()
+        {
+            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST03))
+        };
+        site.Options = options;
+
+        // Act
+        site.ParseAndScanSourceFiles(null);
+
+        // Assert
+        Assert.Equal(100, site.RegularPages.First().Weight);
+        Assert.Equal(-100, site.RegularPages.Last().Weight);
+    }
+
+    [Fact]
+    public void Page_Weight_ShouldReturnZeroWeight()
+    {
+        GenerateOptions options = new()
+        {
+            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST02))
+        };
+        site.Options = options;
+
+        // Act
+        site.ParseAndScanSourceFiles(null);
+
+        // Assert
+        Assert.Equal(0, site.RegularPages.First().Weight);
+        Assert.Equal(0, site.RegularPages.Last().Weight);
+    }
+
+    [Fact]
+    public void TagSectionPage_Pages_ShouldReturnNumberTagPages()
+    {
+        GenerateOptions options = new()
+        {
+            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST04))
+        };
+        site.Options = options;
+
+        // Act
+        site.ParseAndScanSourceFiles(null);
+
+        // Assert
+        site.PagesReferences.TryGetValue("/tags", out var tagSectionPage);
+        Assert.NotNull(tagSectionPage);
+        Assert.Equal(2, tagSectionPage.Pages.Count());
+        Assert.Empty(tagSectionPage.RegularPages);
+        Assert.Equal("tags/index.md", tagSectionPage.SourcePath);
+        Assert.Equal("tags", tagSectionPage.SourcePathDirectory);
+        Assert.Equal("tags", tagSectionPage.SourcePathLastDirectory);
+    }
+
+    [Fact]
+    public void TagPage_Pages_ShouldReturnNumberReferences()
+    {
+        GenerateOptions options = new()
+        {
+            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST04))
+        };
+        site.Options = options;
+
+        // Act
+        site.ParseAndScanSourceFiles(null);
+
+        // Assert
+        site.PagesReferences.TryGetValue("/tags/tag1", out var page);
+        Assert.NotNull(page);
+        Assert.Equal(10, page.Pages.Count());
+        Assert.Equal(10, page.RegularPages.Count());
+    }
+
+    [Theory]
+    [InlineData("/", "<p>Index Content</p>\n")]
+    [InlineData("/blog", "")]
+    [InlineData("/tags", "")]
+    [InlineData("/tags/tag1", "")]
+    [InlineData("/blog/test-content-1", "<p>Test Content 1</p>\n")]
+    public void Page_Content_ShouldReturnNullThemeContent(string url, string expectedContent)
+    {
+        GenerateOptions options = new()
+        {
+            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST04))
+        };
+        site.Options = options;
+
+        // Act
+        site.ParseAndScanSourceFiles(null);
+
+        // Assert
+        site.PagesReferences.TryGetValue(url, out var page);
+        Assert.NotNull(page);
+        Assert.Equal(expectedContent, page.Content);
+        Assert.Equal(page.ContentPreRendered, page.Content);
+    }
+
+    [Theory]
+    [InlineData("/",
+    "<p>Index Content</p>\n",
+    "INDEX-<p>Index Content</p>\n")]
+    [InlineData("/blog",
+    "",
+    "LIST-")]
+    [InlineData("/tags",
+    "",
+    "LIST-")]
+    [InlineData("/tags/tag1",
+    "",
+    "LIST-")]
+    [InlineData("/blog/test-content-1",
+    "<p>Test Content 1</p>\n",
+    "SINGLE-<p>Test Content 1</p>\n")]
+    public void Page_Content_ShouldReturnNullThemeBaseofContent(string url, string expectedContentPreRendered, string expectedContent)
+    {
+        GenerateOptions options = new()
+        {
+            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST05))
+        };
+        site.Options = options;
+
+        // Act
+        site.ParseAndScanSourceFiles(null);
+
+        // Assert
+        site.PagesReferences.TryGetValue(url, out var page);
+        Assert.NotNull(page);
+        Assert.Equal(expectedContentPreRendered, page.ContentPreRendered);
+        Assert.Equal(expectedContent, page.Content);
+        Assert.Equal(expectedContent, page.CompleteContent);
+    }
+
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/blog")]
+    [InlineData("/tags")]
+    [InlineData("/tags/tag1")]
+    [InlineData("/blog/test-content-1")]
+    public void Page_Content_ShouldReturnThrowNullThemeBaseofContent(string url)
+    {
+        GenerateOptions options = new()
+        {
+            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST07))
+        };
+        site.Options = options;
+
+        // Act
+        site.ParseAndScanSourceFiles(null);
+
+        // Assert
+        site.PagesReferences.TryGetValue(url, out var page);
+        Assert.NotNull(page);
+        Assert.Equal(string.Empty, page.Content);
+        Assert.Equal(string.Empty, page.CompleteContent);
+    }
+
+    [Theory]
+    [InlineData("/",
+    "<p>Index Content</p>\n",
+    "INDEX-<p>Index Content</p>\n",
+    "BASEOF-INDEX-<p>Index Content</p>\n")]
+    [InlineData("/blog",
+    "",
+    "LIST-",
+    "BASEOF-LIST-")]
+    [InlineData("/tags",
+    "",
+    "LIST-",
+    "BASEOF-LIST-")]
+    [InlineData("/tags/tag1",
+    "",
+    "LIST-",
+    "BASEOF-LIST-")]
+    [InlineData("/blog/test-content-1",
+    "<p>Test Content 1</p>\n",
+    "SINGLE-<p>Test Content 1</p>\n",
+    "BASEOF-SINGLE-<p>Test Content 1</p>\n")]
+    public void Page_Content_ShouldReturnThemeContent(string url, string expectedContentPreRendered, string expectedContent, string expectedOutputfile)
+    {
+        GenerateOptions options = new()
+        {
+            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST06))
+        };
+        site.Options = options;
+
+        // Act
+        site.ParseAndScanSourceFiles(null);
+
+        // Assert
+        site.PagesReferences.TryGetValue(url, out var page);
+        Assert.NotNull(page);
+        Assert.Equal(expectedContentPreRendered, page.ContentPreRendered);
+        Assert.Equal(expectedContent, page.Content);
+        Assert.Equal(expectedOutputfile, page.CompleteContent);
     }
 }

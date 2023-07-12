@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.StaticFiles;
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models;
+using SuCoS.Models.CommandLineOptions;
 
 namespace SuCoS;
 
@@ -176,7 +177,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
 
         try
         {
-            site = SiteHelper.Init(configFile, options, frontmatterParser, WhereParamsFilter, logger, stopwatch);
+            site = SiteHelper.Init(configFile, options, frontMatterParser, WhereParamsFilter, logger, stopwatch);
 
             // Stop the server
             if (host != null)
@@ -231,10 +232,10 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         }
 
         // Check if the requested file path corresponds to a registered page
-        else if (site.PagesReferences.TryGetValue(requestPath, out var frontmatter))
+        else if (site.PagesReferences.TryGetValue(requestPath, out var page))
         {
             resultType = "dict";
-            await HandleRegisteredPageRequest(context, frontmatter);
+            await HandleRegisteredPageRequest(context, page);
         }
 
         else
@@ -258,9 +259,9 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         await fileStream.CopyToAsync(context.Response.Body);
     }
 
-    private async Task HandleRegisteredPageRequest(HttpContext context, Frontmatter frontmatter)
+    private async Task HandleRegisteredPageRequest(HttpContext context, Page page)
     {
-        var content = frontmatter.CreateOutputFile();
+        var content = page.CompleteContent;
         content = InjectReloadScript(content);
         await context.Response.WriteAsync(content);
     }
@@ -330,18 +331,40 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         // File changes are firing multiple events in a short time.
         // Debounce the event handler to prevent multiple events from firing in a short time
         debounceTimer?.Dispose();
-        debounceTimer = new Timer(async _ =>
+        debounceTimer = new Timer(DebounceCallback, e, TimeSpan.FromMilliseconds(1), Timeout.InfiniteTimeSpan);
+    }
+
+    private void DebounceCallback(object? state)
+    {
+        if (state is not FileSystemEventArgs e)
         {
-            if (restartInProgress)
-            {
-                return;
-            }
+            return;
+        }
+        HandleFileChangeAsync(e).GetAwaiter().GetResult();
+    }
 
-            logger.Information("File change detected: {FullPath}", e.FullPath);
+    private async Task HandleFileChangeAsync(FileSystemEventArgs e)
+    {
+        if (restartInProgress)
+        {
+            return;
+        }
 
-            restartInProgress = true;
+        logger.Information("File change detected: {FullPath}", e.FullPath);
+
+        restartInProgress = true;
+        try
+        {
             await RestartServer();
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex, "Failed to restart server.");
+            throw;
+        }
+        finally
+        {
             restartInProgress = false;
-        }, null, TimeSpan.FromMilliseconds(1), Timeout.InfiniteTimeSpan);
+        }
     }
 }

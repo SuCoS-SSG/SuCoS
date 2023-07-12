@@ -1,13 +1,14 @@
 using System.Reflection;
 using Serilog;
 using SuCoS;
+using SuCoS.Models.CommandLineOptions;
 using Xunit;
 
 namespace Test;
 
 public class BaseGeneratorCommandTests
 {
-    private static readonly IGenerateOptions testOptions = new BuildOptions
+    private static readonly IGenerateOptions testOptions = new GenerateOptions
     {
         Source = "test_source"
     };

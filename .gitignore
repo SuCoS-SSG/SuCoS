@@ -48,3 +48,5 @@ output/
 project.fragment.lock.json
 project.lock.json
 **/coverage-results/
+.idea/
+qodana.yaml

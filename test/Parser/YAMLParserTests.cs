@@ -4,14 +4,19 @@ using SuCoS.Parser;
 using System.Globalization;
 using SuCoS.Helpers;
 using SuCoS.Models;
-using Microsoft.VisualBasic;
+using Serilog;
+using SuCoS.Models.CommandLineOptions;
 
 namespace Test.Parser;
 
 public class YAMLParserTests
 {
     private readonly YAMLParser parser;
-    private readonly Mock<Site> siteDefault;
+    private readonly Site siteDefault;
+    private readonly Mock<IGenerateOptions> generateOptionsMock = new();
+    private readonly Mock<SiteSettings> siteSettingsMock = new();
+    private readonly Mock<ILogger> loggerMock = new();
+    private readonly Mock<ISystemClock> systemClockMock = new();
 
     private const string pageFrontmaterCONST = @"Title: Test Title
 Type: post
@@ -51,7 +56,7 @@ NestedData:
     public YAMLParserTests()
     {
         parser = new YAMLParser();
-        siteDefault = new Mock<Site>();
+        siteDefault = new Site(generateOptionsMock.Object, siteSettingsMock.Object, parser, loggerMock.Object, systemClockMock.Object);
         pageContent = @$"---
 {pageFrontmaterCONST}
 ---
@@ -82,17 +87,10 @@ Date: 2023-04-01
     public void ParseFrontmatter_ShouldParseTitleCorrectly(string fileContent, string expectedTitle)
     {
         // Act
-        var frontmatter = parser.ParseFrontmatterAndMarkdown(siteDefault.Object, filePathCONST, fileContent);
+        var frontMatter = parser.ParseFrontmatterAndMarkdown(filePathCONST, fileContent);
 
         // Asset
-        Assert.Equal(expectedTitle, frontmatter.Title);
-    }
-
-    [Fact]
-    public void ParseFrontmatter_ShouldThrowException_WhenSiteIsNull()
-    {
-        // Asset
-        Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdown(null!, filePathCONST, pageContent));
+        Assert.Equal(expectedTitle, frontMatter.Title);
     }
 
     [Theory]
@@ -109,10 +107,10 @@ Date: 2023/01/01
         var expectedDate = DateTime.Parse(expectedDateString, CultureInfo.InvariantCulture);
 
         // Act
-        var frontmatter = parser.ParseFrontmatterAndMarkdown(siteDefault.Object, filePathCONST, fileContent);
+        var frontMatter = parser.ParseFrontmatterAndMarkdown(filePathCONST, fileContent);
 
         // Asset
-        Assert.Equal(expectedDate, frontmatter.Date);
+        Assert.Equal(expectedDate, frontMatter.Date);
     }
 
     [Fact]
@@ -124,15 +122,15 @@ Date: 2023/01/01
         var expectedExpiryDate = DateTime.Parse("2024-06-01", CultureInfo.InvariantCulture);
 
         // Act
-        var frontmatter = parser.ParseFrontmatterAndMarkdown(siteDefault.Object, filePathCONST, pageContent);
+        var frontMatter = parser.ParseFrontmatterAndMarkdown(filePathCONST, pageContent);
 
         // Asset
-        Assert.Equal("Test Title", frontmatter.Title);
-        Assert.Equal("post", frontmatter.Type);
-        Assert.Equal(expectedDate, frontmatter.Date);
-        Assert.Equal(expectedLastMod, frontmatter.LastMod);
-        Assert.Equal(expectedPublishDate, frontmatter.PublishDate);
-        Assert.Equal(expectedExpiryDate, frontmatter.ExpiryDate);
+        Assert.Equal("Test Title", frontMatter.Title);
+        Assert.Equal("post", frontMatter.Type);
+        Assert.Equal(expectedDate, frontMatter.Date);
+        Assert.Equal(expectedLastMod, frontMatter.LastMod);
+        Assert.Equal(expectedPublishDate, frontMatter.PublishDate);
+        Assert.Equal(expectedExpiryDate, frontMatter.ExpiryDate);
     }
 
     [Fact]
@@ -144,7 +142,7 @@ Title
 ";
 
         // Asset
-        Assert.Throws<YamlDotNet.Core.YamlException>(() => parser.ParseFrontmatterAndMarkdown(siteDefault.Object, filePathCONST, fileContent));
+        Assert.Throws<YamlDotNet.Core.YamlException>(() => parser.ParseFrontmatterAndMarkdown(filePathCONST, fileContent));
     }
 
     [Fact]
@@ -161,10 +159,14 @@ Title
     [Fact]
     public void ParseParams_ShouldFillParamsWithNonMatchingFields()
     {
-        var page = new Frontmatter("Test Title", "/test.md", siteDefault.Object);
+        var page = new Page(new FrontMatter
+        {
+            Title = "Test Title",
+            SourcePath = "/test.md"
+        }, siteDefault);
 
         // Act
-        parser.ParseParams(page, typeof(Frontmatter), pageFrontmaterCONST);
+        parser.ParseParams(page, typeof(Page), pageFrontmaterCONST);
 
         // Asset
         Assert.True(page.Params.ContainsKey("customParam"));
@@ -175,35 +177,39 @@ Title
     public void ParseFrontmatter_ShouldParseContentInSiteFolder()
     {
         var date = DateTime.Parse("2023-07-01", CultureInfo.InvariantCulture);
-        var frontmatter = parser.ParseFrontmatterAndMarkdown(siteDefault.Object, "", pageContent);
+        var frontMatter = parser.ParseFrontmatterAndMarkdown("", pageContent);
+        Page page = new(frontMatter, siteDefault);
 
         // Act
-        siteDefault.Object.PostProcessFrontMatter(frontmatter);
+        siteDefault.PostProcessPage(page);
 
         // Asset
-        Assert.Equal(date, frontmatter.Date);
+        Assert.Equal(date, frontMatter.Date);
     }
 
     [Fact]
     public void ParseFrontmatter_ShouldCreateTags()
     {
         // Act
-        var frontmatter = parser.ParseFrontmatterAndMarkdown(siteDefault.Object, "", pageContent);
-        siteDefault.Object.PostProcessFrontMatter(frontmatter);
+        var frontMatter = parser.ParseFrontmatterAndMarkdown("", pageContent);
+        Page page = new(frontMatter, siteDefault);
+
+        // Act
+        siteDefault.PostProcessPage(page);
 
         // Asset
-        Assert.Equal(2, frontmatter.TagsReference?.Count);
+        Assert.Equal(2, page.TagsReference.Count);
     }
 
     [Fact]
     public void ParseFrontmatter_ShouldParseCategoriesCorrectly()
     {
-        var frontmatter = parser.ParseFrontmatterAndMarkdown(siteDefault.Object, "fakeFilePath", pageContent);
+        var frontMatter = parser.ParseFrontmatterAndMarkdown("fakeFilePath", pageContent);
 
         // Asset
-        Assert.Equal(new[] { "Test", "Real Data" }, frontmatter.Params["Categories"]);
-        Assert.Equal(new[] { "Test", "Real Data" }, (frontmatter.Params["NestedData"] as Dictionary<object, object>)?["Level2"]);
-        Assert.Equal("Test", ((frontmatter.Params["NestedData"] as Dictionary<object, object>)?["Level2"] as List<object>)?[0]);
+        Assert.Equal(new[] { "Test", "Real Data" }, frontMatter.Params["Categories"]);
+        Assert.Equal(new[] { "Test", "Real Data" }, (frontMatter.Params["NestedData"] as Dictionary<object, object>)?["Level2"]);
+        Assert.Equal("Test", ((frontMatter.Params["NestedData"] as Dictionary<object, object>)?["Level2"] as List<object>)?[0]);
     }
 
     [Fact]
@@ -215,31 +221,31 @@ Title
     [Fact]
     public void ParseFrontmatter_ShouldThrowExceptionWhenFilePathIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdownFromFile(siteDefault.Object, null!));
+        Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdownFromFile(null!));
     }
 
     [Fact]
     public void ParseFrontmatter_ShouldThrowExceptionWhenFilePathDoesNotExist()
     {
-        Assert.Throws<FileNotFoundException>(() => parser.ParseFrontmatterAndMarkdownFromFile(siteDefault.Object, "fakePath"));
+        Assert.Throws<FileNotFoundException>(() => parser.ParseFrontmatterAndMarkdownFromFile("fakePath"));
     }
 
     [Fact]
     public void ParseFrontmatter_ShouldThrowExceptionWhenFilePathDoesNotExist2()
     {
-        Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdown(siteDefault.Object, null!, "fakeContent"));
+        Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdown(null!, "fakeContent"));
     }
 
     [Fact]
     public void ParseFrontmatter_ShouldHandleEmptyFileContent()
     {
-        Assert.Throws<FormatException>(() => parser.ParseFrontmatterAndMarkdown(siteDefault.Object, "fakeFilePath", ""));
+        Assert.Throws<FormatException>(() => parser.ParseFrontmatterAndMarkdown("fakeFilePath", ""));
     }
 
     [Fact]
     public void ParseYAML_ShouldThrowExceptionWhenFrontmatterIsInvalid()
     {
-        Assert.Throws<FormatException>(() => parser.ParseFrontmatterAndMarkdown(siteDefault.Object, "fakeFilePath", "invalidFrontmatter"));
+        Assert.Throws<FormatException>(() => parser.ParseFrontmatterAndMarkdown("fakeFilePath", "invalidFrontmatter"));
     }
 
     [Fact]
@@ -254,9 +260,9 @@ Title
     [Fact]
     public void ParseSiteSettings_ShouldReturnContent()
     {
-        var frontmatter = parser.ParseFrontmatterAndMarkdown(siteDefault.Object, "fakeFilePath", pageContent);
+        var frontMatter = parser.ParseFrontmatterAndMarkdown("fakeFilePath", pageContent);
 
-        Assert.Equal(pageMarkdownCONST, frontmatter.RawContent);
+        Assert.Equal(pageMarkdownCONST, frontMatter.RawContent);
     }
 
     [Fact]
@@ -268,24 +274,24 @@ Title
     [Fact]
     public void SiteParams_ShouldThrowExceptionWhenTypeIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => parser.ParseParams(siteDefault.Object, null!, siteContentCONST));
+        Assert.Throws<ArgumentNullException>(() => parser.ParseParams(siteDefault, null!, siteContentCONST));
     }
 
     [Fact]
     public void SiteParams_ShouldHandleEmptyContent()
     {
-        parser.ParseParams(siteDefault.Object, typeof(Site), string.Empty);
-        Assert.Empty(siteDefault.Object.Params);
+        parser.ParseParams(siteDefault, typeof(Site), string.Empty);
+        Assert.Empty(siteDefault.Params);
     }
 
     [Fact]
     public void SiteParams_ShouldPopulateParamsWithExtraFields()
     {
-        parser.ParseParams(siteDefault.Object, typeof(Site), siteContentCONST);
-        Assert.NotEmpty(siteDefault.Object.Params);
-        Assert.True(siteDefault.Object.Params.ContainsKey("customParam"));
-        Assert.Equal("Custom Value", siteDefault.Object.Params["customParam"]);
-        Assert.Equal(new[] { "Test", "Real Data" }, ((Dictionary<object, object>)siteDefault.Object.Params["NestedData"])["Level2"]);
-        Assert.Equal("Test", ((siteDefault.Object?.Params["NestedData"] as Dictionary<object, object>)?["Level2"] as List<object>)?[0]);
+        parser.ParseParams(siteDefault, typeof(Site), siteContentCONST);
+        Assert.NotEmpty(siteDefault.Params);
+        Assert.True(siteDefault.Params.ContainsKey("customParam"));
+        Assert.Equal("Custom Value", siteDefault.Params["customParam"]);
+        Assert.Equal(new[] { "Test", "Real Data" }, ((Dictionary<object, object>)siteDefault.Params["NestedData"])["Level2"]);
+        Assert.Equal("Test", ((siteDefault.Params["NestedData"] as Dictionary<object, object>)?["Level2"] as List<object>)?[0]);
     }
 }
