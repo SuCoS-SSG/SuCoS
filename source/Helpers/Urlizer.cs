@@ -12,6 +12,7 @@ public static partial class Urlizer
 {
     [GeneratedRegex(@"[^a-zA-Z0-9]+")]
     private static partial Regex UrlizeRegexAlpha();
+
     [GeneratedRegex(@"[^a-zA-Z0-9.]+")]
     private static partial Regex UrlizeRegexAlphaDot();
 

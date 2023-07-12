@@ -10,9 +10,9 @@ using YamlDotNet.Serialization;
 namespace SuCoS.Parser;
 
 /// <summary>
-/// Responsible for parsing the content frontmatter using YAML
+/// Responsible for parsing the content front matter using YAML
 /// </summary>
-public class YAMLParser : IFrontmatterParser
+public class YAMLParser : IFrontMatterParser
 {
     /// <summary>
     /// YamlDotNet parser, strictly set to allow automatically parse only known fields
@@ -29,12 +29,8 @@ public class YAMLParser : IFrontmatterParser
         .Build();
 
     /// <inheritdoc/>
-    public Frontmatter ParseFrontmatterAndMarkdownFromFile(Site site, in string filePath, in string? sourceContentPath = null)
+    public FrontMatter ParseFrontmatterAndMarkdownFromFile( in string filePath, in string? sourceContentPath = null)
     {
-        if (site is null)
-        {
-            throw new ArgumentNullException(nameof(site));
-        }
         if (filePath is null)
         {
             throw new ArgumentNullException(nameof(filePath));
@@ -52,70 +48,61 @@ public class YAMLParser : IFrontmatterParser
             throw new FileNotFoundException(filePath, ex);
         }
 
-        return ParseFrontmatterAndMarkdown(site, fileRelativePath, fileContent);
+        return ParseFrontmatterAndMarkdown(fileRelativePath, fileContent);
     }
 
     /// <inheritdoc/>
-    public Frontmatter ParseFrontmatterAndMarkdown(Site site, in string fileRelativePath, in string fileContent)
+    public FrontMatter ParseFrontmatterAndMarkdown(in string fileRelativePath, in string fileContent)
     {
-        if (site is null)
-        {
-            throw new ArgumentNullException(nameof(site));
-        }
         if (fileRelativePath is null)
         {
             throw new ArgumentNullException(nameof(fileRelativePath));
         }
 
         using var content = new StringReader(fileContent);
-        var frontmatterBuilder = new StringBuilder();
+        var frontMatterBuilder = new StringBuilder();
         string? line;
 
         while ((line = content.ReadLine()) != null && line != "---") { }
         while ((line = content.ReadLine()) != null && line != "---")
         {
-            frontmatterBuilder.AppendLine(line);
+            frontMatterBuilder.AppendLine(line);
         }
 
-        // Join the read lines to form the frontmatter
-        var yaml = frontmatterBuilder.ToString();
+        // Join the read lines to form the front matter
+        var yaml = frontMatterBuilder.ToString();
         var rawContent = content.ReadToEnd();
 
-        // Now, you can parse the YAML frontmatter
-        var page = ParseYAML(ref site, fileRelativePath, yaml, rawContent);
+        // Now, you can parse the YAML front matter
+        var page = ParseYAML(fileRelativePath, yaml, rawContent);
 
         return page;
     }
 
-    private Frontmatter ParseYAML(ref Site site, in string filePath, string yaml, in string rawContent)
+    private FrontMatter ParseYAML(in string filePath, string yaml, in string rawContent)
     {
-        var page = yamlDeserializerRigid.Deserialize<Frontmatter>(new StringReader(yaml)) ?? throw new FormatException("Error parsing frontmatter");
-        var sourceFileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
+        var frontMatter = yamlDeserializerRigid.Deserialize<FrontMatter>(new StringReader(yaml)) ?? throw new FormatException("Error parsing front matter");
         var section = SiteHelper.GetSection(filePath);
-        page.RawContent = rawContent;
-        page.Section = section;
-        page.Site = site;
-        page.SourceFileNameWithoutExtension = sourceFileNameWithoutExtension;
-        page.SourcePath = filePath;
-        page.SourcePathDirectory = Path.GetDirectoryName(filePath);
-        page.Title ??= sourceFileNameWithoutExtension;
-        page.Type ??= section;
+        frontMatter.RawContent = rawContent;
+        frontMatter.Section = section;
+        frontMatter.SourcePath = filePath;
+        frontMatter.Type ??= section;
 
         var yamlObject = yamlDeserializer.Deserialize(new StringReader(yaml));
-        if (yamlObject is not Dictionary<object, object> yamlDictionary || !(yamlDictionary.TryGetValue("Tags", out var tags) && tags is List<object> tagsValues))
+        if (yamlObject is not Dictionary<object, object> yamlDictionary)
         {
-            return page;
+            return frontMatter;
         }
-        ParseParams(page, typeof(Frontmatter), yaml, yamlDictionary);
+        ParseParams(frontMatter, typeof(Page), yaml, yamlDictionary);
 
-        return page;
+        return frontMatter;
     }
 
     /// <inheritdoc/>
-    public Site ParseSiteSettings(string yaml)
+    public SiteSettings ParseSiteSettings(string yaml)
     {
-        var settings = yamlDeserializerRigid.Deserialize<Site>(yaml);
-        ParseParams(settings, typeof(Site), yaml);
+        var settings = yamlDeserializerRigid.Deserialize<SiteSettings>(yaml);
+        ParseParams(settings, typeof(SiteSettings), yaml);
         return settings;
     }
 

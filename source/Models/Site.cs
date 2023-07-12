@@ -1,15 +1,14 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Fluid;
-using Markdig;
 using Serilog;
-using SuCoS.Helpers;
+using SuCoS.Models.CommandLineOptions;
 using SuCoS.Parser;
-using YamlDotNet.Serialization;
 
 namespace SuCoS.Models;
 
@@ -21,46 +20,48 @@ public class Site : IParams
     #region IParams
 
     /// <inheritdoc/>
-    [YamlIgnore]
-    public Dictionary<string, object> Params { get; set; } = new();
+    /// <inheritdoc/>
+    public Dictionary<string, object> Params
+    {
+        get => settings.Params;
+        set => settings.Params = value;
+    }
 
     #endregion IParams
 
     /// <summary>
-    /// Site Title.
+    /// Command line options
     /// </summary>
-    public string Title { get; set; } = string.Empty;
+    public IGenerateOptions Options;
+
+    #region SiteSettings
 
     /// <summary>
-    /// The base URL that will be used to build internal links.
+    /// Site Title.
     /// </summary>
-    public string BaseUrl { get; set; } = "./";
+    public string Title => settings.Title;
 
     /// <summary>
     /// The appearance of a URL is either ugly or pretty.
     /// </summary>
-    public bool UglyURLs { get; set; } = false;
+    public bool UglyURLs => settings.UglyURLs;
 
-    /// <summary>
-    /// The base path of the source site files.
-    /// </summary>
-    [YamlIgnore]
-    public string SourceDirectoryPath { get; set; } = "./";
+    #endregion SiteSettings
 
     /// <summary>
     /// The path of the content, based on the source path.
     /// </summary>
-    public string SourceContentPath => Path.Combine(SourceDirectoryPath, "content");
+    public string SourceContentPath => Path.Combine(Options.Source, "content");
 
     /// <summary>
     /// The path of the static content (that will be copied as is), based on the source path.
     /// </summary>
-    public string SourceStaticPath => Path.Combine(SourceDirectoryPath, "static");
+    public string SourceStaticPath => Path.Combine(Options.Source, "static");
 
     /// <summary>
     /// The path theme.
     /// </summary>
-    public string SourceThemePath => Path.Combine(SourceDirectoryPath, "theme");
+    public string SourceThemePath => Path.Combine(Options.Source, "theme");
 
     /// <summary>
     /// The path of the static content (that will be copied as is), based on the theme path.
@@ -68,71 +69,49 @@ public class Site : IParams
     public string SourceThemeStaticPath => Path.Combine(SourceThemePath, "static");
 
     /// <summary>
-    /// The path where the generated site files will be saved.
-    /// </summary>
-    public string OutputPath { get; set; } = "./";
-
-    /// <summary>
     /// List of all pages, including generated.
     /// </summary>
-    public List<Frontmatter> Pages
+    public IEnumerable<Page> Pages
     {
         get
         {
-            pagesCache ??= PagesReferences.Values.ToList();
+            pagesCache ??= PagesReferences.Values
+                .OrderBy(page => -page.Weight)
+                .ToList();
             return pagesCache!;
         }
     }
 
     /// <summary>
-    /// Expose a page getter to templates.
-    /// </summary>
-    /// <param name="permalink"></param>
-    /// <returns></returns>
-    public Frontmatter? GetPage(string permalink)
-    {
-        return PagesReferences.TryGetValue(permalink, out var page) ? page : null;
-    }
-
-    /// <summary>
     /// List of all pages, including generated, by their permalink.
     /// </summary>
-    public Dictionary<string, Frontmatter> PagesReferences { get; } = new();
+    public ConcurrentDictionary<string, Page> PagesReferences { get; } = new();
 
     /// <summary>
     /// List of pages from the content folder.
     /// </summary>
-    public List<Frontmatter> RegularPages
+    public List<Page> RegularPages
     {
         get
         {
             regularPagesCache ??= PagesReferences
-                    .Where(pair => pair.Value.Kind == Kind.single && pair.Key == pair.Value.Permalink)
+                    .Where(pair => pair.Value.IsPage && pair.Key == pair.Value.Permalink)
                     .Select(pair => pair.Value)
+                    .OrderBy(page => -page.Weight)
                     .ToList();
             return regularPagesCache;
         }
     }
 
     /// <summary>
-    /// The frontmatter of the home page;
+    /// The page of the home page;
     /// </summary>
-    public Frontmatter? Home { get; private set; }
+    public Page? Home { get; private set; }
 
     /// <summary>
-    /// Command line options
+    /// Manage all caching lists for the site
     /// </summary>
-    public IGenerateOptions? options;
-
-    /// <summary>
-    /// Cache for content templates.
-    /// </summary>
-    public readonly Dictionary<(string?, Kind?, string?), string> contentTemplateCache = new();
-
-    /// <summary>
-    /// Cache for base templates.
-    /// </summary>
-    public readonly Dictionary<(string?, Kind?, string?), string> baseTemplateCache = new();
+    public readonly SiteCacheManager CacheManager = new();
 
     /// <summary>
     /// The Fluid parser instance.
@@ -147,27 +126,16 @@ public class Site : IParams
     /// <summary>
     /// The logger instance.
     /// </summary>
-    public ILogger? Logger;
+    public ILogger Logger { get; }
 
     /// <summary>
-    /// The time that the older cache should be ignored.
+    /// Number of files parsed, used in the report.
     /// </summary>
-    public DateTime IgnoreCacheBefore { get; private set; }
+    public int filesParsedToReport;
 
-    /// <summary>
-    /// Datetime wrapper
-    /// </summary>
-    public readonly ISystemClock Clock;
+    private const string indexFileConst = "index.md";
 
-    /// <summary>
-    /// Cache for tag frontmatter.
-    /// </summary>
-    private readonly Dictionary<string, Frontmatter> automaticContentCache = new();
-
-    /// <summary>
-    /// The synchronization lock object.
-    /// </summary>
-    private readonly object syncLock = new();
+    private const string indexFileUpperConst = "INDEX.MD";
 
     /// <summary>
     /// The synchronization lock object during ProstProcess.
@@ -175,45 +143,41 @@ public class Site : IParams
     private readonly object syncLockPostProcess = new();
 
     /// <summary>
-    /// The frontmatter parser instance. The default is YAML.
+    /// The front matter parser instance. The default is YAML.
     /// </summary>
-    private readonly IFrontmatterParser frontmatterParser = new YAMLParser();
+    private readonly IFrontMatterParser frontMatterParser;
 
-    private List<Frontmatter>? pagesCache;
+    private List<Page>? pagesCache;
 
-    private List<Frontmatter>? regularPagesCache;
+    private List<Page>? regularPagesCache;
+
+    private readonly SiteSettings settings;
 
     /// <summary>
-    /// Number of files parsed, used in the report.
+    /// Datetime wrapper
     /// </summary>
-    public int filesParsedToReport;
-
-    /// <summary>
-    /// Markdig 20+ built-in extensions
-    /// </summary>
-    /// https://github.com/xoofx/markdig
-    public readonly MarkdownPipeline MarkdownPipeline = new MarkdownPipelineBuilder()
-            .UseAdvancedExtensions()
-            .Build();
+    private readonly ISystemClock clock;
 
     /// <summary>
     /// Constructor
     /// </summary>
-    public Site() : this(new SystemClock())
+    public Site(
+        in IGenerateOptions options,
+        in SiteSettings settings, 
+        in IFrontMatterParser frontMatterParser, 
+        in ILogger logger, ISystemClock? clock)
     {
-    }
+        Options = options;
+        this.settings = settings;
+        Logger = logger;
+        this.frontMatterParser = frontMatterParser;
 
-    /// <summary>
-    /// Constructor
-    /// </summary>
-    public Site(ISystemClock clock)
-    {
         // Liquid template options, needed to theme the content 
         // but also parse URLs
-        TemplateOptions.MemberAccessStrategy.Register<Frontmatter>();
+        TemplateOptions.MemberAccessStrategy.Register<Page>();
         TemplateOptions.MemberAccessStrategy.Register<Site>();
 
-        Clock = clock;
+        this.clock = clock ?? new SystemClock();
     }
 
     /// <summary>
@@ -221,11 +185,8 @@ public class Site : IParams
     /// </summary>
     public void ResetCache()
     {
-        baseTemplateCache.Clear();
-        contentTemplateCache.Clear();
-        automaticContentCache.Clear();
+        CacheManager.ResetCache();
         PagesReferences.Clear();
-        IgnoreCacheBefore = DateTime.Now;
     }
 
     /// <summary>
@@ -234,227 +195,246 @@ public class Site : IParams
     /// </summary>
     /// <param name="directory">Folder to scan</param>
     /// <param name="level">Folder recursive level</param>
-    /// <param name="pageParent">Page of the upper directory</param>
+    /// <param name="parent">Page of the upper directory</param>
     /// <returns></returns>
-    public void ParseAndScanSourceFiles(string directory, int level = 0, Frontmatter? pageParent = null)
+    public void ParseAndScanSourceFiles(string? directory, int level = 0, Page? parent = null)
     {
         directory ??= SourceContentPath;
 
         var markdownFiles = Directory.GetFiles(directory, "*.md");
 
-        var indexPath = markdownFiles.FirstOrDefault(file => Path.GetFileName(file).ToUpperInvariant() == "INDEX.MD");
-        if (indexPath != null)
-        {
-            markdownFiles = markdownFiles.Where(file => file != indexPath).ToArray();
-            var frontmatter = ParseSourceFile(pageParent, indexPath);
-            if (level == 0)
-            {
-                Home = frontmatter;
-                frontmatter!.Permalink = "/";
-                frontmatter.Kind = Kind.index;
-                PagesReferences.Remove(frontmatter.Permalink);
-                PagesReferences.Add(frontmatter.Permalink, frontmatter);
-            }
-            else
-            {
-                pageParent = frontmatter;
-            }
-        }
-        else if (level == 0)
-        {
-            // TODO: unify the with section creation process
-            Home = CreateIndexPage(string.Empty);
-        }
-        else if (level == 1)
-        {
-            var section = new DirectoryInfo(directory).Name;
-            var contentTemplate = new BasicContent(
-                title: section,
-                section: "section",
-                type: "section",
-                url: section
-            );
-            pageParent = CreateAutomaticFrontmatter(contentTemplate, null);
-        }
+        ParseIndexPage(directory, level, ref parent, ref markdownFiles);
 
         _ = Parallel.ForEach(markdownFiles, filePath =>
         {
-            ParseSourceFile(pageParent, filePath);
+            ParseSourceFile(parent, filePath);
         });
 
         var subdirectories = Directory.GetDirectories(directory);
-        foreach (var subdirectory in subdirectories)
+        _ = Parallel.ForEach(subdirectories, subdirectory =>
         {
-            ParseAndScanSourceFiles(subdirectory, level + 1, pageParent);
+            ParseAndScanSourceFiles(subdirectory, level + 1, parent);
+        });
+    }
+
+    private void ParseIndexPage(in string? directory, int level, ref Page? parent, ref string[] markdownFiles)
+    {
+        // Check if the index.md file exists in the current directory
+        var indexPage = markdownFiles.FirstOrDefault(file => Path.GetFileName(file).ToUpperInvariant() == indexFileUpperConst);
+        if (indexPage is not null)
+        {
+            markdownFiles = markdownFiles.Where(file => file != indexPage).ToArray();
+            var page = ParseSourceFile(parent, indexPage);
+            if (level == 0)
+            {
+                PagesReferences.TryRemove(page!.Permalink!, out _);
+                Home = page;
+                page.Permalink = "/";
+                page.Kind = Kind.index;
+                PagesReferences.GetOrAdd(page.Permalink, page);
+            }
+            else
+            {
+                parent = page;
+            }
+        }
+
+        // If it's the home page
+        else if (level == 0)
+        {
+            Home = CreateSystemPage(string.Empty, Title);
+        }
+
+        // Or a section page, which must be used as the parent for the next sub folder
+        else if (level == 1)
+        {
+            var section = new DirectoryInfo(directory!).Name;
+            parent = CreateSystemPage(section, section);
         }
     }
 
-    private Frontmatter? ParseSourceFile(Frontmatter? pageParent, string filePath)
+    private Page? ParseSourceFile(in Page? parent, in string filePath)
     {
-        Frontmatter? frontmatter = null;
+        Page? page = null;
         try
         {
-            frontmatter = frontmatterParser.ParseFrontmatterAndMarkdownFromFile(this, filePath, SourceContentPath)
-                ?? throw new FormatException($"Error parsing frontmatter for {filePath}");
+            var frontMatter = frontMatterParser.ParseFrontmatterAndMarkdownFromFile(filePath, SourceContentPath)
+                ?? throw new FormatException($"Error parsing front matter for {filePath}");
 
-            if (frontmatter.IsValidDate(options))
+            if (IsValidDate(frontMatter, Options))
             {
-                PostProcessFrontMatter(frontmatter, pageParent, true);
+                page = new(frontMatter, this);
+                PostProcessPage(page, parent, true);
             }
         }
         catch (Exception ex)
         {
-            Logger?.Error(ex, "Error parsing file {file}", filePath);
+            Logger.Error(ex, "Error parsing file {file}", filePath);
         }
 
         // Use interlocked to safely increment the counter in a multi-threaded environment
         _ = Interlocked.Increment(ref filesParsedToReport);
 
-        return frontmatter;
+        return page;
     }
 
     /// <summary>
-    /// Create a page not from the content folder, but as part of the process.
-    /// It's used to create tag pages, section list pages, etc.
-    /// </summary>
-    public Frontmatter CreateAutomaticFrontmatter(BasicContent baseContent, Frontmatter? originalFrontmatter)
-    {
-        if (baseContent is null)
-        {
-            throw new ArgumentNullException(nameof(baseContent));
-        }
-
-        var id = baseContent.URL;
-        Frontmatter? frontmatter;
-        lock (syncLock)
-        {
-            if (!automaticContentCache.TryGetValue(id, out frontmatter))
-            {
-                frontmatter = new(
-                    site: this,
-                    title: baseContent.Title,
-                    sourcePath: string.Empty,
-                    sourceFileNameWithoutExtension: string.Empty,
-                    sourcePathDirectory: null
-                )
-                {
-                    Section = baseContent.Section,
-                    Kind = baseContent.Kind,
-                    Type = baseContent.Type,
-                    URL = baseContent.URL,
-                    PagesReferences = new()
-                };
-                automaticContentCache.Add(id, frontmatter);
-                PostProcessFrontMatter(frontmatter);
-            }
-        }
-
-        if (frontmatter.Kind != Kind.index && originalFrontmatter?.Permalink is not null)
-        {
-            frontmatter.PagesReferences!.Add(originalFrontmatter.Permalink!);
-        }
-
-        // TODO: still too hardcoded
-        if (frontmatter.Type != "tags" || originalFrontmatter is null)
-        {
-            return frontmatter;
-        }
-        lock (originalFrontmatter)
-        {
-            originalFrontmatter.TagsReference ??= new();
-            originalFrontmatter.TagsReference!.Add(frontmatter);
-        }
-        return frontmatter;
-    }
-
-    /// <summary>
-    /// Creates the frontmatter for the index page.
+    /// Creates the page for the site index.
     /// </summary>
     /// <param name="relativePath">The relative path of the page.</param>
-    /// <returns>The created frontmatter for the index page.</returns>
-    private Frontmatter CreateIndexPage(string relativePath)
+    /// <param name="title"></param>
+    /// <param name="sectionName"></param>
+    /// <param name="originalPage"></param>
+    /// <returns>The created page for the index.</returns>
+    private Page CreateSystemPage(string relativePath, string title, string? sectionName = null, Page? originalPage = null)
     {
-        Frontmatter frontmatter = new(
-            title: Title,
-            site: this,
-            sourcePath: Path.Combine(relativePath, "index.md"),
-            sourceFileNameWithoutExtension: "index",
-            sourcePathDirectory: "/"
-        )
+        sectionName ??= "section";
+        var isIndex = string.IsNullOrEmpty(relativePath);
+        FrontMatter frontMatter = new()
         {
-            Kind = string.IsNullOrEmpty(relativePath) ? Kind.index : Kind.list,
-            Section = (string.IsNullOrEmpty(relativePath) ? Kind.index : Kind.list).ToString(),
-            URL = "/"
+            Kind = isIndex ? Kind.index : Kind.list,
+            Section = isIndex ? "index" : sectionName,
+            SourcePath = Path.Combine(relativePath, indexFileConst),
+            Title = title,
+            Type = isIndex ? "index" : sectionName,
+            URL = relativePath
         };
 
-        PostProcessFrontMatter(frontmatter);
-        return frontmatter;
+        var id = frontMatter.URL;
+
+        // Get or create the page
+        var lazyPage = CacheManager.automaticContentCache.GetOrAdd(id, new Lazy<Page>(() =>
+        {
+            Page? parent = null;
+            // Check if we need to create a section, even
+            var sections = (frontMatter.SourcePathDirectory ?? string.Empty).Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (sections.Length > 1)
+            {
+                parent = CreateSystemPage(sections[0], sections[0]);
+            }
+
+            var newPage = new Page(frontMatter, this);
+            PostProcessPage(newPage, parent);
+            return newPage;
+        }));
+
+        // get the page from the lazy object
+        var page = lazyPage.Value;
+
+        if (originalPage is null || string.IsNullOrEmpty(originalPage.Permalink))
+        {
+            return page;
+        }
+
+        if (page.Kind != Kind.index)
+        {
+            page.PagesReferences.Add(originalPage.Permalink);
+        }
+
+        // TODO: still too hardcoded to add the tags reference
+        if (page.Type != "tags")
+        {
+            return page;
+        }
+        originalPage.TagsReference.Add(page);
+        return page;
     }
 
     /// <summary>
-    /// Extra calculation and automatic data for each frontmatter.
+    /// Extra calculation and automatic data for each page.
     /// </summary>
-    /// <param name="frontmatter">The given page to be processed</param>
+    /// <param name="page">The given page to be processed</param>
     /// <param name="parent">The parent page, if any</param>
     /// <param name="overwrite"></param>
-    public void PostProcessFrontMatter(Frontmatter frontmatter, Frontmatter? parent = null, bool overwrite = false)
+    public void PostProcessPage(in Page page, Page? parent = null, bool overwrite = false)
     {
-        if (frontmatter is null)
+        if (page is null)
         {
-            throw new ArgumentNullException(nameof(frontmatter));
+            throw new ArgumentNullException(nameof(page));
         }
 
-        frontmatter.Parent = parent;
-        frontmatter.Permalink = frontmatter.CreatePermalink();
+        page.Parent = parent;
+        page.Permalink = page.CreatePermalink();
         lock (syncLockPostProcess)
         {
-            if (!PagesReferences.TryGetValue(frontmatter.Permalink, out var old) || overwrite)
+            if (!PagesReferences.TryGetValue(page.Permalink, out var old) || overwrite)
             {
                 if (old?.PagesReferences is not null)
                 {
-                    frontmatter.PagesReferences ??= new();
-                    foreach (var page in old.PagesReferences)
+                    foreach (var pageOld in old.PagesReferences)
                     {
-                        frontmatter.PagesReferences.Add(page);
+                        page.PagesReferences.Add(pageOld);
                     }
                 }
 
-                if (frontmatter.Aliases is not null)
+                if (page.Aliases is not null)
                 {
-                    frontmatter.AliasesProcessed ??= new();
-                    foreach (var alias in frontmatter.Aliases)
+                    page.AliasesProcessed ??= new();
+                    foreach (var alias in page.Aliases)
                     {
-                        frontmatter.AliasesProcessed.Add(frontmatter.CreatePermalink(alias));
+                        page.AliasesProcessed.Add(page.CreatePermalink(alias));
                     }
                 }
 
                 // Register the page for all urls
-                foreach (var url in frontmatter.Urls)
+                foreach (var url in page.Urls)
                 {
-                    PagesReferences[url] = frontmatter;
+                    PagesReferences.TryAdd(url, page);
                 }
             }
         }
 
-        if (frontmatter.Tags is not null)
+        if (page.Tags is not null)
         {
-            foreach (var tagName in frontmatter.Tags)
+            foreach (var tagName in page.Tags)
             {
-                var contentTemplate = new BasicContent(
-                    title: tagName,
-                    section: "tags",
-                    type: "tags",
-                    url: "tags/" + Urlizer.Urlize(tagName)
-                );
-                _ = CreateAutomaticFrontmatter(contentTemplate, frontmatter);
+                CreateSystemPage(Path.Combine("tags", tagName), tagName, "tags", page);
             }
         }
 
-        if (!string.IsNullOrEmpty(frontmatter.Section)
-            && PagesReferences.TryGetValue('/' + frontmatter.Section!, out var section))
+        if (!string.IsNullOrEmpty(page.Section)
+            && PagesReferences.TryGetValue('/' + page.Section!, out var section))
         {
-            section.PagesReferences ??= new();
-            section.PagesReferences.Add(frontmatter.Permalink!);
+            section.PagesReferences.Add(page.Permalink!);
         }
+    }
+
+    /// <summary>
+    /// Check if the page have a publishing date from the past.
+    /// </summary>
+    /// <param name="frontMatter">Page or front matter</param>
+    /// <param name="options">options</param>
+    /// <returns></returns>
+    public bool IsValidDate(in IFrontMatter frontMatter, IGenerateOptions? options)
+    {
+        if (frontMatter is null)
+        {
+            throw new ArgumentNullException(nameof(frontMatter));
+        }
+        return !IsDateExpired(frontMatter) && (IsDatePublishable(frontMatter) || (options?.Future ?? false));
+    }
+
+    /// <summary>
+    /// Check if the page is expired
+    /// </summary>
+    public bool IsDateExpired(in IFrontMatter frontMatter)
+    {
+        if (frontMatter is null)
+        {
+            throw new ArgumentNullException(nameof(frontMatter));
+        }
+        return frontMatter.ExpiryDate is not null && frontMatter.ExpiryDate <= clock.Now;
+    }
+
+    /// <summary>
+    /// Check if the page is publishable
+    /// </summary>
+    public bool IsDatePublishable(in IFrontMatter frontMatter)
+    {
+        if (frontMatter is null)
+        {
+            throw new ArgumentNullException(nameof(frontMatter));
+        }
+        return frontMatter.GetPublishDate is null || frontMatter.GetPublishDate <= clock.Now;
     }
 }

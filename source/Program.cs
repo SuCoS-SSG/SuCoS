@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Serilog;
 using Serilog.Events;
+using SuCoS.Models.CommandLineOptions;
 
 namespace SuCoS;
 
@@ -66,10 +67,10 @@ public class Program
         };
         buildCommandHandler.SetHandler((source, output, future, verbose) =>
         {
-            BuildOptions buildOptions = new()
+            BuildOptions buildOptions = new(
+                output: string.IsNullOrEmpty(output) ? Path.Combine(source, "public") : output)
             {
                 Source = source,
-                Output = string.IsNullOrEmpty(output) ? Path.Combine(source, "public") : output,
                 Future = future
             };
             logger = new LoggerConfiguration()

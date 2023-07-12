@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
+using SuCoS.Models.CommandLineOptions;
 
 namespace SuCoS;
 
@@ -11,6 +12,8 @@ namespace SuCoS;
 /// </summary>
 public class BuildCommand : BaseGeneratorCommand
 {
+    private readonly BuildOptions options;
+
     /// <summary>
     /// Entry point of the build command. It will be called by the main program
     /// in case the build command is invoked (which is by default).
@@ -19,10 +22,7 @@ public class BuildCommand : BaseGeneratorCommand
     /// <param name="logger">The logger instance. Injectable for testing</param>
     public BuildCommand(BuildOptions options, ILogger logger) : base(options, logger)
     {
-        if (options is null)
-        {
-            throw new ArgumentNullException(nameof(options));
-        }
+        this.options = options ?? throw new ArgumentNullException(nameof(options));
 
         logger.Information("Output path: {output}", options.Output);
 
@@ -30,10 +30,10 @@ public class BuildCommand : BaseGeneratorCommand
         CreateOutputFiles();
 
         // Copy theme static folder files into the root of the output folder
-        CopyFolder(site.SourceThemeStaticPath, site.OutputPath);
+        CopyFolder(site.SourceThemeStaticPath, options.Output);
 
         // Copy static folder files into the root of the output folder
-        CopyFolder(site.SourceStaticPath, site.OutputPath);
+        CopyFolder(site.SourceStaticPath, options.Output);
 
         // Generate the build report
         stopwatch.LogReport(site.Title);
@@ -47,13 +47,13 @@ public class BuildCommand : BaseGeneratorCommand
         var pagesCreated = 0; // counter to keep track of the number of pages created
         _ = Parallel.ForEach(site.PagesReferences, pair =>
         {
-            var (url, frontmatter) = pair;
-            var result = frontmatter.CreateOutputFile();
+            var (url, page) = pair;
+            var result = page.CompleteContent;
 
             var path = (url + (site.UglyURLs ? "" : "/index.html")).TrimStart('/');
 
             // Generate the output path
-            var outputAbsolutePath = Path.Combine(site.OutputPath, path);
+            var outputAbsolutePath = Path.Combine(options.Output, path);
 
             var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
             if (!Directory.Exists(outputDirectory))

@@ -6,6 +6,7 @@ using Fluid.Values;
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models;
+using SuCoS.Models.CommandLineOptions;
 using SuCoS.Parser;
 
 namespace SuCoS;
@@ -26,9 +27,9 @@ public abstract class BaseGeneratorCommand
     protected Site site;
 
     /// <summary>
-    /// The frontmatter parser instance. The default is YAML.
+    /// The front matter parser instance. The default is YAML.
     /// </summary>
-    protected readonly IFrontmatterParser frontmatterParser = new YAMLParser();
+    protected readonly IFrontMatterParser frontMatterParser = new YAMLParser();
 
     /// <summary>
     /// The stopwatch reporter.
@@ -57,7 +58,7 @@ public abstract class BaseGeneratorCommand
 
         logger.Information("Source path: {source}", propertyValue: options.Source);
 
-        site = SiteHelper.Init(configFile, options, frontmatterParser, WhereParamsFilter, logger, stopwatch);
+        site = SiteHelper.Init(configFile, options, frontMatterParser, WhereParamsFilter, logger, stopwatch);
     }
 
     /// <summary>
@@ -96,31 +97,29 @@ public abstract class BaseGeneratorCommand
 
     private static bool CheckValueInDictionary(string[] array, IReadOnlyDictionary<string, object> dictionary, string value)
     {
-        var key = array[0];
-
-        // If the key doesn't exist or the value is not a dictionary, return false
-        if (!dictionary.TryGetValue(key, out var dictionaryValue))
+        var currentDictionary = dictionary;
+        for (var i = 0; i < array.Length; i++)
         {
-            return false;
+            var key = array[i];
+
+            if (!currentDictionary.TryGetValue(key, out var dictionaryValue))
+            {
+                return false;
+            }
+
+            if (i == array.Length - 1)
+            {
+                return dictionaryValue.Equals(value);
+            }
+
+            if (dictionaryValue is not Dictionary<string, object> nestedDictionary)
+            {
+                return false;
+            }
+
+            currentDictionary = nestedDictionary;
         }
-
-        // If it's the last element in the array, check if the dictionary value matches the value parameter
-        if (array.Length == 1)
-        {
-            return dictionaryValue.Equals(value);
-        }
-
-        // Check if the value is another dictionary
-        if (dictionaryValue is not Dictionary<string, object> nestedDictionary)
-        {
-            return false;
-        }
-
-        // Create a new array without the current key
-        var newArray = new string[array.Length - 1];
-        Array.Copy(array, 1, newArray, 0, newArray.Length);
-
-        // Recursively call the method with the nested dictionary and the new array
-        return CheckValueInDictionary(newArray, nestedDictionary, value);
+        return false;
     }
+
 }

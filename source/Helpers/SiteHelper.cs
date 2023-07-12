@@ -1,9 +1,11 @@
 using System;
 using System.IO;
 using Fluid;
+using Markdig;
 using Microsoft.Extensions.FileProviders;
 using Serilog;
 using SuCoS.Models;
+using SuCoS.Models.CommandLineOptions;
 using SuCoS.Parser;
 
 namespace SuCoS.Helpers;
@@ -14,25 +16,39 @@ namespace SuCoS.Helpers;
 public static class SiteHelper
 {
     /// <summary>
+    /// Markdig 20+ built-in extensions
+    /// </summary>
+    /// https://github.com/xoofx/markdig
+    public static readonly MarkdownPipeline MarkdownPipeline = new MarkdownPipelineBuilder()
+            .UseAdvancedExtensions()
+            .Build();
+
+    /// <summary>
     /// Creates the pages dictionary.
     /// </summary>
     /// <exception cref="FormatException"></exception>
-    public static Site Init(string configFile, IGenerateOptions options, IFrontmatterParser frontmatterParser, FilterDelegate whereParamsFilter, ILogger logger, StopwatchReporter stopwatch)
+    public static Site Init(string configFile, IGenerateOptions options, IFrontMatterParser frontMatterParser, FilterDelegate whereParamsFilter, ILogger logger, StopwatchReporter stopwatch)
     {
         if (stopwatch is null)
         {
             throw new ArgumentNullException(nameof(stopwatch));
         }
 
-        Site site;
+        SiteSettings siteSettings;
         try
         {
-            site = ParseSettings(configFile, options, frontmatterParser, whereParamsFilter, logger);
+            siteSettings = ParseSettings(configFile, options, frontMatterParser);
         }
         catch
         {
             throw new FormatException("Error reading app config");
         }
+
+        var site = new Site(options, siteSettings, frontMatterParser, logger, null);
+
+        // Liquid template options, needed to theme the content 
+        // but also parse URLs
+        site.TemplateOptions.Filters.AddFilter("whereParams", whereParamsFilter);
 
         site.ResetCache();
 
@@ -78,20 +94,18 @@ public static class SiteHelper
     /// Reads the application settings.
     /// </summary>
     /// <param name="options">The generate options.</param>
-    /// <param name="frontmatterParser">The frontmatter parser.</param>
+    /// <param name="frontMatterParser">The front matter parser.</param>
     /// <param name="configFile">The site settings file.</param>
-    /// <param name="whereParamsFilter">The method to be used in the whereParams.</param>
-    /// <param name="logger">The logger instance. Injectable for testing</param>
     /// <returns>The site settings.</returns>
-    private static Site ParseSettings(string configFile, IGenerateOptions options, IFrontmatterParser frontmatterParser, FilterDelegate whereParamsFilter, ILogger logger)
+    private static SiteSettings ParseSettings(string configFile, IGenerateOptions options, IFrontMatterParser frontMatterParser)
     {
         if (options is null)
         {
             throw new ArgumentNullException(nameof(options));
         }
-        if (frontmatterParser is null)
+        if (frontMatterParser is null)
         {
-            throw new ArgumentNullException(nameof(frontmatterParser));
+            throw new ArgumentNullException(nameof(frontMatterParser));
         }
 
         try
@@ -104,22 +118,8 @@ public static class SiteHelper
             }
 
             var fileContent = File.ReadAllText(filePath);
-            var site = frontmatterParser.ParseSiteSettings(fileContent);
-
-            site.Logger = logger;
-            site.options = options;
-            site.SourceDirectoryPath = options.Source;
-            site.OutputPath = options.Output!;
-
-            // Liquid template options, needed to theme the content 
-            // but also parse URLs
-            site.TemplateOptions.Filters.AddFilter("whereParams", whereParamsFilter);
-
-            if (site is null)
-            {
-                throw new FormatException("Error reading app config");
-            }
-            return site;
+            var siteSettings = frontMatterParser.ParseSiteSettings(fileContent) ?? throw new FormatException("Error reading app config");
+            return siteSettings;
         }
         catch
         {
