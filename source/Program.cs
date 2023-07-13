@@ -53,6 +53,7 @@ internal class Program
         // Shared options between the commands
         var sourceOption = new Option<string>(new[] { "--source", "-s" }, () => ".", "Source directory path");
         var futureOption = new Option<bool>(new[] { "--future", "-f" }, "Include content with dates in the future");
+        var expiredOption = new Option<bool>(new[] { "--expired", "-e" }, "Include content with ExpiredDate dates from the past");
         var verboseOption = new Option<bool>(new[] { "--verbose", "-v" }, "Verbose output");
 
         // BuildCommand setup
@@ -63,9 +64,10 @@ internal class Program
             sourceOption,
             buildOutputOption,
             futureOption,
+            expiredOption,
             verboseOption
         };
-        buildCommandHandler.SetHandler((source, output, future, verbose) =>
+        buildCommandHandler.SetHandler((source, output, future, expired, verbose) =>
         {
             logger = CreateLogger(verbose);
 
@@ -73,34 +75,37 @@ internal class Program
                 source: source,
                 output: output)
             {
-                Future = future
+                Future = future,
+                Expired = expired
             };
             _ = new BuildCommand(buildOptions, logger);
         },
-        sourceOption, buildOutputOption, futureOption, verboseOption);
+        sourceOption, buildOutputOption, futureOption, expiredOption, verboseOption);
 
         // ServerCommand setup
         Command serveCommandHandler = new("serve", "Starts the server")
         {
             sourceOption,
             futureOption,
+            expiredOption,
             verboseOption
         };
-        serveCommandHandler.SetHandler(async (source, future, verbose) =>
+        serveCommandHandler.SetHandler(async (source, future, expired, verbose) =>
         {
             logger = CreateLogger(verbose);
 
             ServeOptions serverOptions = new()
             {
                 Source = source,
-                Future = future
+                Future = future,
+                Expired = expired
             };
 
             var serveCommand = new ServeCommand(serverOptions, logger, new SourceFileWatcher());
             await serveCommand.RunServer();
             await Task.Delay(-1);  // Wait forever.
         },
-        sourceOption, futureOption, verboseOption);
+        sourceOption, futureOption, expiredOption, verboseOption);
 
         RootCommand rootCommand = new("SuCoS commands")
         {

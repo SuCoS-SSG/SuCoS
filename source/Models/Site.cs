@@ -411,7 +411,8 @@ internal class Site : ISite
         {
             throw new ArgumentNullException(nameof(frontMatter));
         }
-        return !IsDateExpired(frontMatter) && (IsDatePublishable(frontMatter) || (options?.Future ?? false));
+        return (!IsDateExpired(frontMatter) || (options?.Expired ?? false))
+            && (IsDatePublishable(frontMatter) || (options?.Future ?? false));
     }
 
     /// <summary>

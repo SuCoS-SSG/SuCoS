@@ -10,4 +10,7 @@ internal class GenerateOptions : IGenerateOptions
 
     /// <inheritdoc/>
     public bool Future { get; init; }
+
+    /// <inheritdoc/>
+    public bool Expired { get; init; }
 }
