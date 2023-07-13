@@ -12,7 +12,7 @@ namespace SuCoS.ServerHandlers;
 internal class StaticFileRequest : IServerHandlers
 {
     private readonly string basePath;
-    private bool inTheme;
+    private readonly bool inTheme;
 
     /// <summary>
     /// Constructor

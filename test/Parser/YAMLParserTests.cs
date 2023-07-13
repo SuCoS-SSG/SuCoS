@@ -43,7 +43,9 @@ This is a test using real data. Real Data Test
 ";
     private const string siteContentCONST = @"
 Title: My Site
-BaseUrl: https://www.example.com/
+BaseURL: https://www.example.com/
+Description: Tastiest C# Static Site Generator of the World
+Copyright: Copyright message
 customParam: Custom Value
 NestedData:
   Level2:
@@ -151,9 +153,12 @@ Title
         // Act
         var site = parser.ParseSiteSettings(siteContentCONST);
 
+
         // Asset
-        Assert.Equal("https://www.example.com/", site.BaseUrl);
         Assert.Equal("My Site", site.Title);
+        Assert.Equal("https://www.example.com/", site.BaseURL);
+        Assert.Equal("Tastiest C# Static Site Generator of the World", site.Description);
+        Assert.Equal("Copyright message", site.Copyright);
     }
 
     [Fact]
@@ -254,7 +259,7 @@ Title
         var site = parser.ParseSiteSettings(siteContentCONST);
         Assert.NotNull(site);
         Assert.Equal("My Site", site.Title);
-        Assert.Equal("https://www.example.com/", site.BaseUrl);
+        Assert.Equal("https://www.example.com/", site.BaseURL);
     }
 
     [Fact]

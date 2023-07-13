@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Fluid;
 using Serilog;
+using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.Parser;
 
@@ -37,9 +38,24 @@ internal class Site : ISite
     #region SiteSettings
 
     /// <summary>
-    /// Site Title.
+    /// Site Title/Name
     /// </summary>
     public string Title => settings.Title;
+
+    /// <summary>
+    /// Site description
+    /// </summary>
+    public string? Description  => settings.Description;
+
+    /// <summary>
+    /// Copyright information
+    /// </summary>
+    public string? Copyright  => settings.Copyright;
+
+    /// <summary>
+    /// The base URL that will be used to build internal links.
+    /// </summary>
+    public string BaseURL  => settings.BaseURL;
 
     /// <summary>
     /// The appearance of a URL is either ugly or pretty.
