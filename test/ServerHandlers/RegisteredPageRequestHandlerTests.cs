@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Http;
-using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.ServerHandlers;
 using Xunit;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Fluid;
 using Serilog;
+using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
 
 namespace SuCoS.Models;

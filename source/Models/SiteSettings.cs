@@ -9,19 +9,29 @@ namespace SuCoS.Models;
 public class SiteSettings : IParams
 {
     /// <summary>
-    /// Site Title.
+    /// Site Title/Name.
     /// </summary>
     public string Title { get; set; } = string.Empty;
 
     /// <summary>
+    /// Site description
+    /// </summary>
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// Copyright information
+    /// </summary>
+    public string? Copyright { get; set; }
+
+    /// <summary>
     /// The base URL that will be used to build internal links.
     /// </summary>
-    public string BaseUrl { get; set; } = "./";
+    public string BaseURL { get; set; } = string.Empty;
 
     /// <summary>
     /// The appearance of a URL is either ugly or pretty.
     /// </summary>
-    public bool UglyURLs { get; set; } = false;
+    public bool UglyURLs { get; set; }
 
     #region IParams
 

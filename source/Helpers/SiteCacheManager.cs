@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using SuCoS.Models;
 
-namespace SuCoS.Models;
+namespace SuCoS.Helpers;
 
 /// <summary>
 /// Manages all the lists and dictionaries used for cache for the site
