@@ -11,7 +11,12 @@ public interface IGenerateOptions
     string Source { get; }
 
     /// <summary>
-    /// Consider 
+    /// Consider future content
     /// </summary>
     bool Future { get; }
+
+    /// <summary>
+    /// Consider expired content
+    /// </summary>
+    bool Expired { get; }
 }
