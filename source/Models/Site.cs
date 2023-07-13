@@ -15,7 +15,7 @@ namespace SuCoS.Models;
 /// <summary>
 /// The main configuration of the program, primarily extracted from the app.yaml file.
 /// </summary>
-public class Site : IParams
+internal class Site : ISite
 {
     #region IParams
 
@@ -32,7 +32,7 @@ public class Site : IParams
     /// <summary>
     /// Command line options
     /// </summary>
-    public IGenerateOptions Options;
+    public IGenerateOptions Options { get; set; }
 
     #region SiteSettings
 
@@ -71,7 +71,7 @@ public class Site : IParams
     /// <summary>
     /// List of all pages, including generated.
     /// </summary>
-    public IEnumerable<Page> Pages
+    public IEnumerable<IPage> Pages
     {
         get
         {
@@ -85,12 +85,12 @@ public class Site : IParams
     /// <summary>
     /// List of all pages, including generated, by their permalink.
     /// </summary>
-    public ConcurrentDictionary<string, Page> PagesReferences { get; } = new();
+    public ConcurrentDictionary<string, IPage> PagesReferences { get; } = new();
 
     /// <summary>
     /// List of pages from the content folder.
     /// </summary>
-    public List<Page> RegularPages
+    public List<IPage> RegularPages
     {
         get
         {
@@ -106,22 +106,22 @@ public class Site : IParams
     /// <summary>
     /// The page of the home page;
     /// </summary>
-    public Page? Home { get; private set; }
+    public IPage? Home { get; private set; }
 
     /// <summary>
     /// Manage all caching lists for the site
     /// </summary>
-    public readonly SiteCacheManager CacheManager = new();
+    public SiteCacheManager CacheManager { get; } = new();
 
     /// <summary>
     /// The Fluid parser instance.
     /// </summary>
-    public readonly FluidParser FluidParser = new();
+    public FluidParser FluidParser { get; } = new();
 
     /// <summary>
     /// The Fluid/Liquid template options.
     /// </summary>
-    public readonly TemplateOptions TemplateOptions = new();
+    public TemplateOptions TemplateOptions { get; } = new();
 
     /// <summary>
     /// The logger instance.
@@ -147,9 +147,9 @@ public class Site : IParams
     /// </summary>
     private readonly IFrontMatterParser frontMatterParser;
 
-    private List<Page>? pagesCache;
+    private List<IPage>? pagesCache;
 
-    private List<Page>? regularPagesCache;
+    private List<IPage>? regularPagesCache;
 
     private readonly SiteSettings settings;
 
@@ -163,8 +163,8 @@ public class Site : IParams
     /// </summary>
     public Site(
         in IGenerateOptions options,
-        in SiteSettings settings, 
-        in IFrontMatterParser frontMatterParser, 
+        in SiteSettings settings,
+        in IFrontMatterParser frontMatterParser,
         in ILogger logger, ISystemClock? clock)
     {
         Options = options;
@@ -197,7 +197,7 @@ public class Site : IParams
     /// <param name="level">Folder recursive level</param>
     /// <param name="parent">Page of the upper directory</param>
     /// <returns></returns>
-    public void ParseAndScanSourceFiles(string? directory, int level = 0, Page? parent = null)
+    public void ParseAndScanSourceFiles(string? directory, int level = 0, IPage? parent = null)
     {
         directory ??= SourceContentPath;
 
@@ -217,7 +217,7 @@ public class Site : IParams
         });
     }
 
-    private void ParseIndexPage(in string? directory, int level, ref Page? parent, ref string[] markdownFiles)
+    private void ParseIndexPage(in string? directory, int level, ref IPage? parent, ref string[] markdownFiles)
     {
         // Check if the index.md file exists in the current directory
         var indexPage = markdownFiles.FirstOrDefault(file => Path.GetFileName(file).ToUpperInvariant() == indexFileUpperConst);
@@ -253,7 +253,7 @@ public class Site : IParams
         }
     }
 
-    private Page? ParseSourceFile(in Page? parent, in string filePath)
+    private IPage? ParseSourceFile(in IPage? parent, in string filePath)
     {
         Page? page = null;
         try
@@ -286,7 +286,7 @@ public class Site : IParams
     /// <param name="sectionName"></param>
     /// <param name="originalPage"></param>
     /// <returns>The created page for the index.</returns>
-    private Page CreateSystemPage(string relativePath, string title, string? sectionName = null, Page? originalPage = null)
+    private IPage CreateSystemPage(string relativePath, string title, string? sectionName = null, IPage? originalPage = null)
     {
         sectionName ??= "section";
         var isIndex = string.IsNullOrEmpty(relativePath);
@@ -303,9 +303,9 @@ public class Site : IParams
         var id = frontMatter.URL;
 
         // Get or create the page
-        var lazyPage = CacheManager.automaticContentCache.GetOrAdd(id, new Lazy<Page>(() =>
+        var lazyPage = CacheManager.automaticContentCache.GetOrAdd(id, new Lazy<IPage>(() =>
         {
-            Page? parent = null;
+            IPage? parent = null;
             // Check if we need to create a section, even
             var sections = (frontMatter.SourcePathDirectory ?? string.Empty).Split('/', StringSplitOptions.RemoveEmptyEntries);
             if (sections.Length > 1)
@@ -346,7 +346,7 @@ public class Site : IParams
     /// <param name="page">The given page to be processed</param>
     /// <param name="parent">The parent page, if any</param>
     /// <param name="overwrite"></param>
-    public void PostProcessPage(in Page page, Page? parent = null, bool overwrite = false)
+    public void PostProcessPage(in IPage page, IPage? parent = null, bool overwrite = false)
     {
         if (page is null)
         {

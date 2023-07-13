@@ -13,7 +13,7 @@ public interface IFrontMatterParser
     /// <param name="filePath"></param>
     /// <param name="sourceContentPath"></param>
     /// <returns></returns>
-    FrontMatter? ParseFrontmatterAndMarkdownFromFile(in string filePath, in string sourceContentPath);
+    IFrontMatter? ParseFrontmatterAndMarkdownFromFile(in string filePath, in string sourceContentPath);
 
     /// <summary>
     /// Extract the front matter from the content.
@@ -21,7 +21,7 @@ public interface IFrontMatterParser
     /// <param name="fileContent"></param>
     /// <param name="filePath"></param>
     /// <returns></returns>
-    FrontMatter? ParseFrontmatterAndMarkdown(in string filePath, in string fileContent);
+    IFrontMatter? ParseFrontmatterAndMarkdown(in string filePath, in string fileContent);
 
     /// <summary>
     /// Parse the app config file.

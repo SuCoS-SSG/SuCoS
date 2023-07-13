@@ -12,7 +12,7 @@ namespace SuCoS.Helpers;
 ///  The stopwatch is started
 ///  and stopped around parts of the code that we want to measure.
 /// </summary>
-public class StopwatchReporter
+internal class StopwatchReporter
 {
     private readonly ILogger logger;
     private readonly Dictionary<string, Stopwatch> stopwatches;

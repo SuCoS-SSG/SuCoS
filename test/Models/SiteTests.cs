@@ -1,43 +1,13 @@
 using Xunit;
-using Moq;
-using System.Globalization;
-using SuCoS.Models;
-using Serilog;
 using SuCoS.Models.CommandLineOptions;
-using SuCoS.Parser;
 
 namespace Test.Models;
 
 /// <summary>
 /// Unit tests for the Site class.
 /// </summary>
-public class SiteTests
+public class SiteTests : TestSetup
 {
-    private readonly Site site;
-    private readonly Mock<IGenerateOptions> generateOptionsMock = new();
-    private readonly Mock<SiteSettings> siteSettingsMock = new();
-    private readonly Mock<ILogger> loggerMock = new();
-    private readonly IFrontMatterParser frontMatterParser = new YAMLParser();
-    private readonly Mock<ISystemClock> systemClockMock = new();
-    private const string testSitePathCONST01 = ".TestSites/01";
-    private const string testSitePathCONST02 = ".TestSites/02-have-index";
-    private const string testSitePathCONST03 = ".TestSites/03-section";
-    private const string testSitePathCONST04 = ".TestSites/04-tags";
-    private const string testSitePathCONST05 = ".TestSites/05-theme-no-baseof";
-    private const string testSitePathCONST06 = ".TestSites/06-theme";
-    private const string testSitePathCONST07 = ".TestSites/07-theme-no-baseof-error";
-
-    // based on the compiled test.dll path
-    // that is typically "bin/Debug/netX.0/test.dll"
-    private const string testSitesPath = "../../..";
-
-    public SiteTests()
-    {
-        var testDate = DateTime.Parse("2023-04-01", CultureInfo.InvariantCulture);
-        systemClockMock.Setup(c => c.Now).Returns(testDate);
-        site = new Site(generateOptionsMock.Object, siteSettingsMock.Object, frontMatterParser, loggerMock.Object, systemClockMock.Object);
-    }
-
     [Theory]
     [InlineData("test01.md")]
     [InlineData("date-ok.md")]

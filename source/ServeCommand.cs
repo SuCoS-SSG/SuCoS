@@ -1,23 +1,21 @@
 using System;
 using System.IO;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.StaticFiles;
 using Serilog;
 using SuCoS.Helpers;
-using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
+using SuCoS.ServerHandlers;
 
 namespace SuCoS;
 
 /// <summary>
 /// Serve Command will live serve the site and watch any changes.
 /// </summary>
-public class ServeCommand : BaseGeneratorCommand, IDisposable
+internal class ServeCommand : BaseGeneratorCommand, IDisposable
 {
     private const string baseURLDefault = "http://localhost";
     private const int portDefault = 1122;
@@ -45,13 +43,15 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// </summary>
     private IWebHost? host;
 
+    private IServerHandlers[]? handlers;
+
     /// <summary>
     /// The FileSystemWatcher object that monitors the source directory for file changes.
     /// When a change is detected, this triggers a server restart to ensure the served content 
     /// remains up-to-date. The FileSystemWatcher is configured with the source directory 
     /// at construction and starts watching immediately.
     /// </summary>
-    private readonly FileSystemWatcher sourceFileWatcher;
+    private readonly IFileWatcher fileWatcher;
 
     /// <summary>
     /// A Timer that helps to manage the frequency of server restarts.
@@ -101,6 +101,13 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
 
         serverStartTime = DateTime.UtcNow;
 
+        handlers = new IServerHandlers[]{
+            new PingRequests(),
+            new StaticFileRequest(site.SourceStaticPath, false),
+            new StaticFileRequest(site.SourceThemeStaticPath, true),
+            new RegisteredPageRequest(site)
+        };
+
         host = new WebHostBuilder()
             .UseKestrel()
             .UseUrls(baseURLGlobal)
@@ -121,7 +128,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     public void Dispose()
     {
         host?.Dispose();
-        sourceFileWatcher.Dispose();
+        fileWatcher.Stop();
         debounceTimer?.Dispose();
         GC.SuppressFinalize(this);
     }
@@ -131,40 +138,17 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// </summary>
     /// <param name="options">ServeOptions object specifying the serve options.</param>
     /// <param name="logger">The logger instance. Injectable for testing</param>
-    public ServeCommand(ServeOptions options, ILogger logger) : base(options, logger)
+    /// <param name="fileWatcher"></param>
+    public ServeCommand(ServeOptions options, ILogger logger, IFileWatcher fileWatcher) : base(options, logger)
     {
         this.options = options ?? throw new ArgumentNullException(nameof(options));
+        this.fileWatcher = fileWatcher ?? throw new ArgumentNullException(nameof(fileWatcher));
         baseURLGlobal = $"{baseURLDefault}:{portDefault}";
 
         // Watch for file changes in the specified path
-        sourceFileWatcher = StartFileWatcher(options.Source);
-    }
-
-    /// <summary>
-    /// Starts the file watcher to monitor file changes in the specified source path.
-    /// </summary>
-    /// <param name="SourcePath">The path to the source directory.</param>
-    /// <returns>The created FileSystemWatcher object.</returns>
-    private FileSystemWatcher StartFileWatcher(string SourcePath)
-    {
-        var SourceAbsolutePath = Path.GetFullPath(SourcePath);
-
+        var SourceAbsolutePath = Path.GetFullPath(options.Source);
         logger.Information("Watching for file changes in {SourceAbsolutePath}", SourceAbsolutePath);
-
-        var fileWatcher = new FileSystemWatcher
-        {
-            Path = SourceAbsolutePath,
-            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
-            IncludeSubdirectories = true,
-            EnableRaisingEvents = true
-        };
-
-        // Subscribe to the desired events
-        fileWatcher.Changed += OnSourceFileChanged;
-        fileWatcher.Created += OnSourceFileChanged;
-        fileWatcher.Deleted += OnSourceFileChanged;
-        fileWatcher.Renamed += OnSourceFileChanged;
-        return fileWatcher;
+        fileWatcher.Start(SourceAbsolutePath, OnSourceFileChanged);
     }
 
     /// <summary>
@@ -205,40 +189,20 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
             requestPath = requestPath.TrimEnd('/');
         }
 
-        var fileAbsolutePath = Path.Combine(site.SourceStaticPath, requestPath.TrimStart('/'));
-        var fileAbsoluteThemePath = Path.Combine(site.SourceThemeStaticPath, requestPath.TrimStart('/'));
-
-        string? resultType;
-
-        // Return the server startup timestamp as the response
-        if (requestPath == "/ping")
+        string? resultType = null;
+        if (handlers is not null)
         {
-            resultType = "ping";
-            await HandlePingRequest(context);
+            foreach (var item in handlers)
+            {
+                if (item.Check(requestPath))
+                {
+                    resultType = await item.Handle(context, requestPath, serverStartTime);
+                    break;
+                }
+            }
         }
 
-        // Check if it is one of the Static files (serve the actual file)
-        else if (File.Exists(fileAbsolutePath))
-        {
-            resultType = "static";
-            await HandleStaticFileRequest(context, fileAbsolutePath);
-        }
-
-        // Check if it is one of the Static files (serve the actual file)
-        else if (File.Exists(fileAbsoluteThemePath))
-        {
-            resultType = "themestatic";
-            await HandleStaticFileRequest(context, fileAbsoluteThemePath);
-        }
-
-        // Check if the requested file path corresponds to a registered page
-        else if (site.PagesReferences.TryGetValue(requestPath, out var page))
-        {
-            resultType = "dict";
-            await HandleRegisteredPageRequest(context, page);
-        }
-
-        else
+        if (resultType is null)
         {
             resultType = "404";
             await HandleNotFoundRequest(context);
@@ -246,79 +210,10 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         logger.Debug("Request {type}\tfor {RequestPath}", resultType, requestPath);
     }
 
-    private Task HandlePingRequest(HttpContext context)
-    {
-        var content = serverStartTime.ToString("o");
-        return context.Response.WriteAsync(content);
-    }
-
-    private static async Task HandleStaticFileRequest(HttpContext context, string fileAbsolutePath)
-    {
-        context.Response.ContentType = GetContentType(fileAbsolutePath);
-        await using var fileStream = new FileStream(fileAbsolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        await fileStream.CopyToAsync(context.Response.Body);
-    }
-
-    private async Task HandleRegisteredPageRequest(HttpContext context, Page page)
-    {
-        var content = page.CompleteContent;
-        content = InjectReloadScript(content);
-        await context.Response.WriteAsync(content);
-    }
-
     private static async Task HandleNotFoundRequest(HttpContext context)
     {
         context.Response.StatusCode = 404;
         await context.Response.WriteAsync("404 - File Not Found");
-    }
-
-    /// <summary>
-    /// Retrieves the content type of a file based on its extension.
-    /// If the content type cannot be determined, the default value "application/octet-stream" is returned.
-    /// </summary>
-    /// <param name="filePath">The path of the file.</param>
-    /// <returns>The content type of the file.</returns>
-    private static string GetContentType(string filePath)
-    {
-        var provider = new FileExtensionContentTypeProvider();
-        if (!provider.TryGetContentType(filePath, out var contentType))
-        {
-            contentType = "application/octet-stream";
-        }
-        return contentType ?? "application/octet-stream";
-    }
-
-    /// <summary>
-    /// Injects a reload script into the provided content.
-    /// The script is read from a JavaScript file and injected before the closing "body" tag.
-    /// </summary>
-    /// <param name="content">The content to inject the reload script into.</param>
-    /// <returns>The content with the reload script injected.</returns>
-    private string InjectReloadScript(string content)
-    {
-        // Read the content of the JavaScript file
-        string scriptContent;
-        try
-        {
-            var assembly = Assembly.GetExecutingAssembly();
-            using var stream = assembly.GetManifestResourceStream("SuCoS.wwwroot.js.reload.js")
-                ?? throw new FileNotFoundException("Could not find the embedded JavaScript resource.");
-            using var reader = new StreamReader(stream);
-            scriptContent = reader.ReadToEnd();
-        }
-        catch (Exception ex)
-        {
-            logger.Error(ex, "Could not read the JavaScript file.");
-            throw;
-        }
-
-        // Inject the JavaScript content
-        var reloadScript = $"<script>{scriptContent}</script>";
-
-        const string bodyClosingTag = "</body>";
-        content = content.Replace(bodyClosingTag, $"{reloadScript}{bodyClosingTag}", StringComparison.InvariantCulture);
-
-        return content;
     }
 
     /// <summary>

@@ -9,7 +9,7 @@ namespace SuCoS.Models;
 /// A scafold structure to help creating system-generated content, like
 /// tag, section or index pages
 /// </summary>
-public class FrontMatter : IFrontMatter
+internal class FrontMatter : IFrontMatter
 {
     #region IFrontMatter
 

@@ -1,5 +1,4 @@
 ﻿using System.CommandLine;
-using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Serilog;
@@ -11,17 +10,19 @@ namespace SuCoS;
 /// <summary>
 /// The main entry point of the program.
 /// </summary>
-public class Program
+internal class Program
 {
-    private ILogger logger;
+    internal const string helloWorld = @"
+ ____             ____            ____       
+/\  _`\          /\  _`\         /\  _`\     
+\ \,\L\_\  __  __\ \ \/\_\    ___\ \,\L\_\   
+ \/_\__ \ /\ \/\ \\ \ \/_/_  / __`\/_\__ \   
+   /\ \L\ \ \ \_\ \\ \ \L\ \/\ \L\ \/\ \L\ \ 
+   \ `\____\ \____/ \ \____/\ \____/\ `\____\
+    \/_____/\/___/   \/___/  \/___/  \/_____/
+";
 
-    /// <summary>
-    /// Constructor
-    /// </summary>
-    private Program(ILogger logger)
-    {
-        this.logger = logger;
-    }
+    private ILogger logger;
 
     /// <summary>
     /// Entry point of the program
@@ -30,25 +31,24 @@ public class Program
     /// <returns></returns>
     public static int Main(string[] args)
     {
-        ILogger logger = new LoggerConfiguration()
-            .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
-            .CreateLogger();
-
+        var logger = CreateLogger();
         var program = new Program(logger);
         return program.Run(args);
     }
 
-    private int Run(string[] args)
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    public Program(ILogger logger)
+    {
+        this.logger = logger;
+    }
+
+    internal int Run(string[] args)
     {
         // Print the logo of the program.
         OutputLogo();
-
-        // Print the name and version of the program.
-        var assembly = Assembly.GetEntryAssembly();
-        var assemblyName = assembly?.GetName();
-        var appName = assemblyName?.Name;
-        var appVersion = assemblyName?.Version;
-        logger.Information("{name} v{version}", appName, appVersion);
+        OutputWelcome();
 
         // Shared options between the commands
         var sourceOption = new Option<string>(new[] { "--source", "-s" }, () => ".", "Source directory path");
@@ -67,16 +67,14 @@ public class Program
         };
         buildCommandHandler.SetHandler((source, output, future, verbose) =>
         {
+            logger = CreateLogger(verbose);
+
             BuildOptions buildOptions = new(
-                output: string.IsNullOrEmpty(output) ? Path.Combine(source, "public") : output)
+                source: source,
+                output: output)
             {
-                Source = source,
                 Future = future
             };
-            logger = new LoggerConfiguration()
-                .MinimumLevel.Is(verbose ? LogEventLevel.Debug : LogEventLevel.Information)
-                .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
-                .CreateLogger();
             _ = new BuildCommand(buildOptions, logger);
         },
         sourceOption, buildOutputOption, futureOption, verboseOption);
@@ -90,17 +88,15 @@ public class Program
         };
         serveCommandHandler.SetHandler(async (source, future, verbose) =>
         {
+            logger = CreateLogger(verbose);
+
             ServeOptions serverOptions = new()
             {
                 Source = source,
                 Future = future
             };
-            logger = new LoggerConfiguration()
-                .MinimumLevel.Is(verbose ? LogEventLevel.Debug : LogEventLevel.Information)
-                .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
-                .CreateLogger();
 
-            var serveCommand = new ServeCommand(serverOptions, logger);
+            var serveCommand = new ServeCommand(serverOptions, logger, new SourceFileWatcher());
             await serveCommand.RunServer();
             await Task.Delay(-1);  // Wait forever.
         },
@@ -115,16 +111,28 @@ public class Program
         return rootCommand.Invoke(args);
     }
 
-    private void OutputLogo()
+    internal static ILogger CreateLogger(bool verbose = false)
     {
-        logger.Information(@"
- ____             ____            ____       
-/\  _`\          /\  _`\         /\  _`\     
-\ \,\L\_\  __  __\ \ \/\_\    ___\ \,\L\_\   
- \/_\__ \ /\ \/\ \\ \ \/_/_  / __`\/_\__ \   
-   /\ \L\ \ \ \_\ \\ \ \L\ \/\ \L\ \/\ \L\ \ 
-   \ `\____\ \____/ \ \____/\ \____/\ `\____\
-    \/_____/\/___/   \/___/  \/___/  \/_____/
-");
+        return new LoggerConfiguration()
+            .MinimumLevel.Is(verbose ? LogEventLevel.Debug : LogEventLevel.Information)
+            .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
+            .CreateLogger();
+    }
+
+    /// <summary>
+    /// Print the name and version of the program.
+    /// </summary>
+    internal void OutputWelcome()
+    {
+        var assembly = Assembly.GetEntryAssembly();
+        var assemblyName = assembly?.GetName();
+        var appName = assemblyName?.Name;
+        var appVersion = assemblyName?.Version;
+        logger.Information("{name} v{version}", appName, appVersion);
+    }
+
+    internal void OutputLogo()
+    {
+        logger.Information(helloWorld);
     }
 }
