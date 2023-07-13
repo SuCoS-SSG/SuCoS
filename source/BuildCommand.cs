@@ -10,7 +10,7 @@ namespace SuCoS;
 /// <summary>
 /// Build Command will build the site based on the source files.
 /// </summary>
-public class BuildCommand : BaseGeneratorCommand
+internal class BuildCommand : BaseGeneratorCommand
 {
     private readonly BuildOptions options;
 

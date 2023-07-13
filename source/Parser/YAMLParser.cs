@@ -12,7 +12,7 @@ namespace SuCoS.Parser;
 /// <summary>
 /// Responsible for parsing the content front matter using YAML
 /// </summary>
-public class YAMLParser : IFrontMatterParser
+internal class YAMLParser : IFrontMatterParser
 {
     /// <summary>
     /// YamlDotNet parser, strictly set to allow automatically parse only known fields
@@ -29,7 +29,7 @@ public class YAMLParser : IFrontMatterParser
         .Build();
 
     /// <inheritdoc/>
-    public FrontMatter ParseFrontmatterAndMarkdownFromFile( in string filePath, in string? sourceContentPath = null)
+    public IFrontMatter ParseFrontmatterAndMarkdownFromFile( in string filePath, in string? sourceContentPath = null)
     {
         if (filePath is null)
         {
@@ -52,7 +52,7 @@ public class YAMLParser : IFrontMatterParser
     }
 
     /// <inheritdoc/>
-    public FrontMatter ParseFrontmatterAndMarkdown(in string fileRelativePath, in string fileContent)
+    public IFrontMatter ParseFrontmatterAndMarkdown(in string fileRelativePath, in string fileContent)
     {
         if (fileRelativePath is null)
         {
@@ -79,7 +79,7 @@ public class YAMLParser : IFrontMatterParser
         return page;
     }
 
-    private FrontMatter ParseYAML(in string filePath, string yaml, in string rawContent)
+    private IFrontMatter ParseYAML(in string filePath, string yaml, in string rawContent)
     {
         var frontMatter = yamlDeserializerRigid.Deserialize<FrontMatter>(new StringReader(yaml)) ?? throw new FormatException("Error parsing front matter");
         var section = SiteHelper.GetSection(filePath);

@@ -1,9 +1,11 @@
+using System.IO;
+
 namespace SuCoS.Models.CommandLineOptions;
 
 /// <summary>
 /// Command line options for the build command.
 /// </summary>
-public class BuildOptions : GenerateOptions
+internal class BuildOptions : GenerateOptions
 {
     /// <summary>
     /// The path of the output files.
@@ -13,9 +15,11 @@ public class BuildOptions : GenerateOptions
     /// <summary>
     /// Constructor
     /// </summary>
+    /// <param name="source"></param>
     /// <param name="output"></param>
-    public BuildOptions(string output)
+    public BuildOptions(string source, string output)
     {
-        Output = output;
+        Source = source;
+        Output = string.IsNullOrEmpty(output) ? Path.Combine(source, "public") : output;
     }
 }

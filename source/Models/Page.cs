@@ -12,7 +12,7 @@ namespace SuCoS.Models;
 /// <summary>
 /// Each page data created from source files or from the system.
 /// </summary>
-public class Page : IFrontMatter
+internal class Page : IPage
 {
     private readonly IFrontMatter frontMatter;
 
@@ -90,7 +90,7 @@ public class Page : IFrontMatter
     /// <summary>
     /// Point to the site configuration.
     /// </summary>
-    public Site Site { get; }
+    public ISite Site { get; }
 
     /// <summary>
     /// Secondary URL patterns to be used to create the url.
@@ -112,7 +112,7 @@ public class Page : IFrontMatter
     /// Other content that mention this content.
     /// Used to create the tags list and Related Posts section.
     /// </summary>
-    public Page? Parent { get; set; }
+    public IPage? Parent { get; set; }
 
     /// <summary>
     /// Plain markdown content, without HTML.
@@ -122,7 +122,7 @@ public class Page : IFrontMatter
     /// <summary>
     /// A list of tags, if any.
     /// </summary>
-    public ConcurrentBag<Page> TagsReference { get; } = new();
+    public ConcurrentBag<IPage> TagsReference { get; } = new();
 
     /// <summary>
     /// Just a simple check if the current page is the home page
@@ -174,7 +174,7 @@ public class Page : IFrontMatter
     /// Other content that mention this content.
     /// Used to create the tags list and Related Posts section.
     /// </summary>
-    public IEnumerable<Page> Pages
+    public IEnumerable<IPage> Pages
     {
         get
         {
@@ -195,7 +195,7 @@ public class Page : IFrontMatter
     /// <summary>
     /// List of pages from the content folder.
     /// </summary>
-    public IEnumerable<Page> RegularPages
+    public IEnumerable<IPage> RegularPages
     {
         get
         {
@@ -262,14 +262,14 @@ echo page.SourceFileNameWithoutExtension
 endif
 -%}";
 
-    private List<Page>? regularPagesCache;
+    private List<IPage>? regularPagesCache;
 
-    private List<Page>? pagesCached { get; set; }
+    private List<IPage>? pagesCached { get; set; }
 
     /// <summary>
     /// Constructor
     /// </summary>
-    public Page(in IFrontMatter frontMatter, in Site site)
+    public Page(in IFrontMatter frontMatter, in ISite site)
     {
         this.frontMatter = frontMatter;
         Site = site;

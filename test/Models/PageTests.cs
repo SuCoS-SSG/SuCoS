@@ -2,27 +2,12 @@ using System.Globalization;
 using Moq;
 using SuCoS.Models;
 using Xunit;
-using Serilog;
 using SuCoS.Models.CommandLineOptions;
-using SuCoS.Parser;
 
 namespace Test.Models;
 
-public class PageTests
+public class PageTests : TestSetup
 {
-    private readonly IFrontMatterParser frontMatterParser = new YAMLParser();
-    private readonly Mock<IGenerateOptions> generateOptionsMock = new();
-    private readonly Mock<SiteSettings> siteSettingsMock = new();
-    private readonly Mock<ILogger> loggerMock = new();
-    private readonly Mock<ISystemClock> systemClockMock = new();
-    private readonly FrontMatter frontMatterMock = new()
-    {
-        Title = titleCONST,
-        SourcePath = sourcePathCONST
-    };
-    private readonly Site site;
-    private const string titleCONST = "Test Title";
-    private const string sourcePathCONST = "/path/to/file.md";
     private const string markdown1CONST = @"
 # word01 word02
 
@@ -45,13 +30,6 @@ console.WriteLine('hello word')
     private const string markdownPlain2CONST = @"word01 word02
 word03 word04 word05 6 7 eight
 ";
-
-    public PageTests()
-    {
-        var testDate = DateTime.Parse("2023-04-01", CultureInfo.InvariantCulture);
-        systemClockMock.Setup(c => c.Now).Returns(testDate);
-        site = new Site(generateOptionsMock.Object, siteSettingsMock.Object, frontMatterParser, loggerMock.Object, systemClockMock.Object);
-    }
 
     [Theory]
     [InlineData("Test Title", "/path/to/file.md", "file", "/path/to")]

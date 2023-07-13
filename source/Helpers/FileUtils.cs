@@ -9,7 +9,7 @@ namespace SuCoS.Helpers;
 /// <summary>
 /// Helper methods for scanning files.
 /// </summary>
-public static class FileUtils
+internal static class FileUtils
 {
     /// <summary>
     /// Gets the content of a template file based on the page and the theme path.

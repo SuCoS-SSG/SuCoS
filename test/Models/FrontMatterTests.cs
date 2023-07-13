@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Test.Models;
 
-public class FrontMatterTests
+public class FrontMatterTests : TestSetup
 {
     [Theory]
     [InlineData("Title1", "Section1", "Type1", "URL1", Kind.single)]

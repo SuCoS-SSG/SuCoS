@@ -13,7 +13,7 @@ namespace SuCoS.Helpers;
 /// <summary>
 /// Helper methods for scanning files.
 /// </summary>
-public static class SiteHelper
+internal static class SiteHelper
 {
     /// <summary>
     /// Markdig 20+ built-in extensions
@@ -41,7 +41,7 @@ public static class SiteHelper
         }
         catch
         {
-            throw new FormatException("Error reading app config");
+            throw new FormatException($"Error reading app config {configFile}");
         }
 
         var site = new Site(options, siteSettings, frontMatterParser, logger, null);
