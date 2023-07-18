@@ -112,10 +112,10 @@ word03 word04 word05 6 7 eight
 
     [Theory]
     [InlineData(null, null, true)]
-    [InlineData(null, "2024-06-28", false)]
-    [InlineData("2022-06-28", null, true)]
-    [InlineData("2024-06-28", "2022-06-28", false)]
-    [InlineData("2022-06-28", "2024-06-28", true)]
+    [InlineData(null, "2024-01-01", false)]
+    [InlineData("2022-01-01", null, true)]
+    [InlineData("2024-01-01", "2022-01-01", false)]
+    [InlineData("2022-01-01", "2024-01-01", true)]
     public void IsDatePublishable_ShouldReturnCorrectValues(string? publishDate, string? date, bool expectedValue)
     {
         var page = new Page(new FrontMatter
@@ -128,6 +128,61 @@ word03 word04 word05 6 7 eight
 
         // Assert
         Assert.Equal(expectedValue, site.IsDatePublishable(page));
+    }
+
+    [Theory]
+    // Draft as null
+    [InlineData(null, null, null, false, true)]
+    [InlineData(null, "2024-01-01", null, false, false)]
+    [InlineData("2022-01-01", null, null, false, true)]
+    [InlineData("2024-01-01", "2022-01-01", null, false, false)]
+    [InlineData("2022-01-01", "2024-01-01", null, false, true)]
+    // Draft as false
+    [InlineData(null, null, false, false, true)]
+    [InlineData(null, "2024-01-01", false, false, false)]
+    [InlineData("2022-01-01", null, false, false, true)]
+    [InlineData("2024-01-01", "2022-01-01", false, false, false)]
+    [InlineData("2022-01-01", "2024-01-01", false, false, true)]
+    // Draft as true
+    [InlineData(null, null, true, false, false)]
+    [InlineData(null, "2024-01-01", true, false, false)]
+    [InlineData("2022-01-01", null, true, false, false)]
+    [InlineData("2024-01-01", "2022-01-01", true, false, false)]
+    [InlineData("2022-01-01", "2024-01-01", true, false, false)]
+    // Draft as null, option -d
+    [InlineData(null, null, null, true, true)]
+    [InlineData(null, "2024-01-01", null, true, false)]
+    [InlineData("2022-01-01", null, null, true, true)]
+    [InlineData("2024-01-01", "2022-01-01", null, true, false)]
+    [InlineData("2022-01-01", "2024-01-01", null, true, true)]
+    // Draft as false, option -d
+    [InlineData(null, null, false, true, true)]
+    [InlineData(null, "2024-01-01", false, true, false)]
+    [InlineData("2022-01-01", null, false, true, true)]
+    [InlineData("2024-01-01", "2022-01-01", false, true, false)]
+    [InlineData("2022-01-01", "2024-01-01", false, true, true)]
+    // Draft as true, option -d
+    [InlineData(null, null, true, true, true)]
+    [InlineData(null, "2024-01-01", true, true, false)]
+    [InlineData("2022-01-01", null, true, true, true)]
+    [InlineData("2024-01-01", "2022-01-01", true, true, false)]
+    [InlineData("2022-01-01", "2024-01-01", true, true, true)]
+    public void IsValidPage_ShouldReturnCorrectValues(string? publishDate, string? date, bool? draft, bool draftOption, bool expectedValue)
+    {
+        var page = new Page(new FrontMatter
+        {
+            Title = titleCONST,
+            SourcePath = sourcePathCONST,
+            PublishDate = publishDate is null ? null : DateTime.Parse(publishDate, CultureInfo.InvariantCulture),
+            Date = date is null ? null : DateTime.Parse(date, CultureInfo.InvariantCulture),
+            Draft = draft
+        }, site);
+
+        var options = new Mock<IGenerateOptions>();
+        options.Setup(o => o.Draft).Returns(draftOption);
+
+        // Assert
+        Assert.Equal(expectedValue, site.IsValidPage(page, options.Object));
     }
 
     [Theory]

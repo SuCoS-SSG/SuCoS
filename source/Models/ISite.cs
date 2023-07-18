@@ -115,6 +115,15 @@ public interface ISite : IParams
     public void PostProcessPage(in IPage page, IPage? parent = null, bool overwrite = false);
 
     /// <summary>
+    /// Check if the page have the conditions to be published: valid date and not draft,
+    /// unless a command line option to force it.
+    /// </summary>
+    /// <param name="frontMatter">Page or front matter</param>
+    /// <param name="options">options</param>
+    /// <returns></returns>
+    public bool IsValidPage(in IFrontMatter frontMatter, IGenerateOptions? options);
+
+    /// <summary>
     /// Check if the page have a publishing date from the past.
     /// </summary>
     /// <param name="frontMatter">Page or front matter</param>

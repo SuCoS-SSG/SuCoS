@@ -49,6 +49,12 @@ public interface IFrontMatter : IParams
     string? URL { get; }
 
     /// <summary>
+    /// True for draft content. It will not be rendered unless 
+    /// a option <see cref="IGenerateOptions.Draft"/> is set to <c>true</c>.
+    /// </summary>
+    bool? Draft { get; }
+
+    /// <summary>
     /// Date of the post. Will be used as the <see cref="PublishDate"/> if it's not set.
     /// Unless the option <see cref="IGenerateOptions.Future"/> is set to <c>true</c>,
     /// the dates set from the future will be ignored.

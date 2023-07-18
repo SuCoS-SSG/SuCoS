@@ -28,6 +28,9 @@ internal class Page : IPage
     public string? URL => frontMatter.URL;
 
     /// <inheritdoc/>
+    public bool? Draft => frontMatter.Draft;
+
+    /// <inheritdoc/>
     public List<string>? Aliases => frontMatter.Aliases;
 
     /// <inheritdoc/>

@@ -112,10 +112,7 @@ public interface IPage : IFrontMatter
     /// <summary>
     /// Get all URLs related to this content.
     /// </summary>
-    public List<string> Urls
-    {
-        get;
-    }
+    public List<string> Urls { get; }
 
     /// <summary>
     /// Gets the Permalink path for the file.

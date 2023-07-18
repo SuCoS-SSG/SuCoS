@@ -9,6 +9,9 @@ internal class GenerateOptions : IGenerateOptions
     public string Source { get; init; } = ".";
 
     /// <inheritdoc/>
+    public bool Draft { get; init; }
+
+    /// <inheritdoc/>
     public bool Future { get; init; }
 
     /// <inheritdoc/>

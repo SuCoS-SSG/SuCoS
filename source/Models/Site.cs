@@ -45,17 +45,17 @@ internal class Site : ISite
     /// <summary>
     /// Site description
     /// </summary>
-    public string? Description  => settings.Description;
+    public string? Description => settings.Description;
 
     /// <summary>
     /// Copyright information
     /// </summary>
-    public string? Copyright  => settings.Copyright;
+    public string? Copyright => settings.Copyright;
 
     /// <summary>
     /// The base URL that will be used to build internal links.
     /// </summary>
-    public string BaseURL  => settings.BaseURL;
+    public string BaseURL => settings.BaseURL;
 
     /// <summary>
     /// The appearance of a URL is either ugly or pretty.
@@ -415,12 +415,18 @@ internal class Site : ISite
         }
     }
 
-    /// <summary>
-    /// Check if the page have a publishing date from the past.
-    /// </summary>
-    /// <param name="frontMatter">Page or front matter</param>
-    /// <param name="options">options</param>
-    /// <returns></returns>
+    /// <inheritdoc />
+    public bool IsValidPage(in IFrontMatter frontMatter, IGenerateOptions? options)
+    {
+        if (frontMatter is null)
+        {
+            throw new ArgumentNullException(nameof(frontMatter));
+        }
+        return IsValidDate(frontMatter, options)
+            && (frontMatter.Draft is null || frontMatter.Draft == false || (options?.Draft ?? false));
+    }
+
+    /// <inheritdoc />
     public bool IsValidDate(in IFrontMatter frontMatter, IGenerateOptions? options)
     {
         if (frontMatter is null)
