@@ -23,6 +23,9 @@ internal class FrontMatter : IFrontMatter
     public string? URL { get; init; }
 
     /// <inheritdoc/>
+    public bool? Draft { get; init; }
+
+    /// <inheritdoc/>
     public List<string>? Aliases { get; init; }
 
     /// <inheritdoc/>

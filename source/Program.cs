@@ -52,6 +52,7 @@ internal class Program
 
         // Shared options between the commands
         var sourceOption = new Option<string>(new[] { "--source", "-s" }, () => ".", "Source directory path");
+        var draftOption = new Option<bool>(new[] { "--draft", "-d" }, "Include draft content");
         var futureOption = new Option<bool>(new[] { "--future", "-f" }, "Include content with dates in the future");
         var expiredOption = new Option<bool>(new[] { "--expired", "-e" }, "Include content with ExpiredDate dates from the past");
         var verboseOption = new Option<bool>(new[] { "--verbose", "-v" }, "Verbose output");
@@ -62,12 +63,13 @@ internal class Program
         Command buildCommandHandler = new("build", "Builds the site")
         {
             sourceOption,
+            draftOption,
             buildOutputOption,
             futureOption,
             expiredOption,
             verboseOption
         };
-        buildCommandHandler.SetHandler((source, output, future, expired, verbose) =>
+        buildCommandHandler.SetHandler((source, output, draft, future, expired, verbose) =>
         {
             logger = CreateLogger(verbose);
 
@@ -75,28 +77,31 @@ internal class Program
                 source: source,
                 output: output)
             {
+                Draft = draft,
                 Future = future,
                 Expired = expired
             };
             _ = new BuildCommand(buildOptions, logger);
         },
-        sourceOption, buildOutputOption, futureOption, expiredOption, verboseOption);
+        sourceOption, buildOutputOption, draftOption, futureOption, expiredOption, verboseOption);
 
         // ServerCommand setup
         Command serveCommandHandler = new("serve", "Starts the server")
         {
             sourceOption,
+            draftOption,
             futureOption,
             expiredOption,
             verboseOption
         };
-        serveCommandHandler.SetHandler(async (source, future, expired, verbose) =>
+        serveCommandHandler.SetHandler(async (source, draft, future, expired, verbose) =>
         {
             logger = CreateLogger(verbose);
 
             ServeOptions serverOptions = new()
             {
                 Source = source,
+                Draft = draft,
                 Future = future,
                 Expired = expired
             };
@@ -105,7 +110,7 @@ internal class Program
             await serveCommand.RunServer();
             await Task.Delay(-1);  // Wait forever.
         },
-        sourceOption, futureOption, expiredOption, verboseOption);
+        sourceOption, draftOption, futureOption, expiredOption, verboseOption);
 
         RootCommand rootCommand = new("SuCoS commands")
         {
