@@ -298,7 +298,8 @@ endif
             if (Site.FluidParser.TryParse(URLforce, out var template, out var error))
             {
                 var context = new TemplateContext(Site.TemplateOptions)
-                    .SetValue("page", this);
+                    .SetValue("page", this)
+                    .SetValue("site", Site);
                 permaLink = template.Render(context);
             }
             else
@@ -318,6 +319,7 @@ endif
 
         return Urlizer.UrlizePath(permaLink);
     }
+
     private string ParseAndRenderTemplate(bool isBaseTemplate, string errorMessage)
     {
         var fileContents = FileUtils.GetTemplate(Site.SourceThemePath, this, Site.CacheManager, isBaseTemplate);
@@ -329,7 +331,8 @@ endif
         if (Site.FluidParser.TryParse(fileContents, out var template, out var error))
         {
             var context = new TemplateContext(Site.TemplateOptions)
-                .SetValue("page", this);
+                .SetValue("page", this)
+                .SetValue("site", Site);
             try
             {
                 var rendered = template.Render(context);
