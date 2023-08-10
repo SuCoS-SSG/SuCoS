@@ -1,22 +1,14 @@
 using Xunit;
-using Moq;
 using SuCoS.Parser;
 using System.Globalization;
 using SuCoS.Helpers;
 using SuCoS.Models;
-using Serilog;
-using SuCoS.Models.CommandLineOptions;
 
 namespace Test.Parser;
 
-public class YAMLParserTests
+public class YAMLParserTests : TestSetup
 {
     private readonly YAMLParser parser;
-    private readonly Site siteDefault;
-    private readonly Mock<IGenerateOptions> generateOptionsMock = new();
-    private readonly Mock<SiteSettings> siteSettingsMock = new();
-    private readonly Mock<ILogger> loggerMock = new();
-    private readonly Mock<ISystemClock> systemClockMock = new();
 
     private const string pageFrontmaterCONST = @"Title: Test Title
 Type: post
@@ -52,13 +44,13 @@ NestedData:
     - Test
     - Real Data
 ";
-    private const string filePathCONST = "test.md";
+    private const string fileFullPathCONST = "test.md";
+    private const string fileRelativePathCONST = "test.md";
     private readonly string pageContent;
 
     public YAMLParserTests()
     {
         parser = new YAMLParser();
-        siteDefault = new Site(generateOptionsMock.Object, siteSettingsMock.Object, parser, loggerMock.Object, systemClockMock.Object);
         pageContent = @$"---
 {pageFrontmaterCONST}
 ---
@@ -89,7 +81,7 @@ Date: 2023-04-01
     public void ParseFrontmatter_ShouldParseTitleCorrectly(string fileContent, string expectedTitle)
     {
         // Act
-        var frontMatter = parser.ParseFrontmatterAndMarkdown(filePathCONST, fileContent);
+        var frontMatter = parser.ParseFrontmatterAndMarkdown(fileRelativePathCONST, fileFullPathCONST, fileContent);
 
         // Asset
         Assert.Equal(expectedTitle, frontMatter.Title);
@@ -109,7 +101,7 @@ Date: 2023/01/01
         var expectedDate = DateTime.Parse(expectedDateString, CultureInfo.InvariantCulture);
 
         // Act
-        var frontMatter = parser.ParseFrontmatterAndMarkdown(filePathCONST, fileContent);
+        var frontMatter = parser.ParseFrontmatterAndMarkdown(fileRelativePathCONST, fileFullPathCONST, fileContent);
 
         // Asset
         Assert.Equal(expectedDate, frontMatter.Date);
@@ -124,7 +116,7 @@ Date: 2023/01/01
         var expectedExpiryDate = DateTime.Parse("2024-06-01", CultureInfo.InvariantCulture);
 
         // Act
-        var frontMatter = parser.ParseFrontmatterAndMarkdown(filePathCONST, pageContent);
+        var frontMatter = parser.ParseFrontmatterAndMarkdown(fileRelativePathCONST, fileFullPathCONST, pageContent);
 
         // Asset
         Assert.Equal("Test Title", frontMatter.Title);
@@ -144,7 +136,7 @@ Title
 ";
 
         // Asset
-        Assert.Throws<YamlDotNet.Core.YamlException>(() => parser.ParseFrontmatterAndMarkdown(filePathCONST, fileContent));
+        Assert.Throws<YamlDotNet.Core.YamlException>(() => parser.ParseFrontmatterAndMarkdown(fileRelativePathCONST, fileFullPathCONST, fileContent));
     }
 
     [Fact]
@@ -167,8 +159,8 @@ Title
         var page = new Page(new FrontMatter
         {
             Title = "Test Title",
-            SourcePath = "/test.md"
-        }, siteDefault);
+            SourceRelativePath = "/test.md"
+        }, site);
 
         // Act
         parser.ParseParams(page, typeof(Page), pageFrontmaterCONST);
@@ -182,11 +174,11 @@ Title
     public void ParseFrontmatter_ShouldParseContentInSiteFolder()
     {
         var date = DateTime.Parse("2023-07-01", CultureInfo.InvariantCulture);
-        var frontMatter = parser.ParseFrontmatterAndMarkdown("", pageContent);
-        Page page = new(frontMatter, siteDefault);
+        var frontMatter = parser.ParseFrontmatterAndMarkdown("", "", pageContent);
+        Page page = new(frontMatter, site);
 
         // Act
-        siteDefault.PostProcessPage(page);
+        site.PostProcessPage(page);
 
         // Asset
         Assert.Equal(date, frontMatter.Date);
@@ -196,11 +188,11 @@ Title
     public void ParseFrontmatter_ShouldCreateTags()
     {
         // Act
-        var frontMatter = parser.ParseFrontmatterAndMarkdown("", pageContent);
-        Page page = new(frontMatter, siteDefault);
+        var frontMatter = parser.ParseFrontmatterAndMarkdown("", "", pageContent);
+        Page page = new(frontMatter, site);
 
         // Act
-        siteDefault.PostProcessPage(page);
+        site.PostProcessPage(page);
 
         // Asset
         Assert.Equal(2, page.TagsReference.Count);
@@ -209,7 +201,7 @@ Title
     [Fact]
     public void ParseFrontmatter_ShouldParseCategoriesCorrectly()
     {
-        var frontMatter = parser.ParseFrontmatterAndMarkdown("fakeFilePath", pageContent);
+        var frontMatter = parser.ParseFrontmatterAndMarkdown("fakeFilePath", "/fakeFilePath", pageContent);
 
         // Asset
         Assert.Equal(new[] { "Test", "Real Data" }, frontMatter.Params["Categories"]);
@@ -238,19 +230,19 @@ Title
     [Fact]
     public void ParseFrontmatter_ShouldThrowExceptionWhenFilePathDoesNotExist2()
     {
-        Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdown(null!, "fakeContent"));
+        Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdown(null!, null!, "fakeContent"));
     }
 
     [Fact]
     public void ParseFrontmatter_ShouldHandleEmptyFileContent()
     {
-        Assert.Throws<FormatException>(() => parser.ParseFrontmatterAndMarkdown("fakeFilePath", ""));
+        Assert.Throws<FormatException>(() => parser.ParseFrontmatterAndMarkdown("fakeFilePath", "/fakeFilePath", ""));
     }
 
     [Fact]
     public void ParseYAML_ShouldThrowExceptionWhenFrontmatterIsInvalid()
     {
-        Assert.Throws<FormatException>(() => parser.ParseFrontmatterAndMarkdown("fakeFilePath", "invalidFrontmatter"));
+        Assert.Throws<FormatException>(() => parser.ParseFrontmatterAndMarkdown("fakeFilePath", "/fakeFilePath", "invalidFrontmatter"));
     }
 
     [Fact]
@@ -265,7 +257,7 @@ Title
     [Fact]
     public void ParseSiteSettings_ShouldReturnContent()
     {
-        var frontMatter = parser.ParseFrontmatterAndMarkdown("fakeFilePath", pageContent);
+        var frontMatter = parser.ParseFrontmatterAndMarkdown("fakeFilePath", "/fakeFilePath", pageContent);
 
         Assert.Equal(pageMarkdownCONST, frontMatter.RawContent);
     }
@@ -279,24 +271,24 @@ Title
     [Fact]
     public void SiteParams_ShouldThrowExceptionWhenTypeIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => parser.ParseParams(siteDefault, null!, siteContentCONST));
+        Assert.Throws<ArgumentNullException>(() => parser.ParseParams(site, null!, siteContentCONST));
     }
 
     [Fact]
     public void SiteParams_ShouldHandleEmptyContent()
     {
-        parser.ParseParams(siteDefault, typeof(Site), string.Empty);
-        Assert.Empty(siteDefault.Params);
+        parser.ParseParams(site, typeof(Site), string.Empty);
+        Assert.Empty(site.Params);
     }
 
     [Fact]
     public void SiteParams_ShouldPopulateParamsWithExtraFields()
     {
-        parser.ParseParams(siteDefault, typeof(Site), siteContentCONST);
-        Assert.NotEmpty(siteDefault.Params);
-        Assert.True(siteDefault.Params.ContainsKey("customParam"));
-        Assert.Equal("Custom Value", siteDefault.Params["customParam"]);
-        Assert.Equal(new[] { "Test", "Real Data" }, ((Dictionary<object, object>)siteDefault.Params["NestedData"])["Level2"]);
-        Assert.Equal("Test", ((siteDefault.Params["NestedData"] as Dictionary<object, object>)?["Level2"] as List<object>)?[0]);
+        parser.ParseParams(site, typeof(Site), siteContentCONST);
+        Assert.NotEmpty(site.Params);
+        Assert.True(site.Params.ContainsKey("customParam"));
+        Assert.Equal("Custom Value", site.Params["customParam"]);
+        Assert.Equal(new[] { "Test", "Real Data" }, ((Dictionary<object, object>)site.Params["NestedData"])["Level2"]);
+        Assert.Equal("Test", ((site.Params["NestedData"] as Dictionary<object, object>)?["Level2"] as List<object>)?[0]);
     }
 }

@@ -9,7 +9,7 @@ namespace SuCoS.ServerHandlers;
 /// <summary>
 /// Check if it is one of the Static files (serve the actual file)
 /// </summary>
-internal class StaticFileRequest : IServerHandlers
+public class StaticFileRequest : IServerHandlers
 {
     private readonly string basePath;
     private readonly bool inTheme;
@@ -39,6 +39,11 @@ internal class StaticFileRequest : IServerHandlers
     /// <inheritdoc />
     public async Task<string> Handle(HttpContext context, string requestPath, DateTime serverStartTime)
     {
+        if (requestPath is null)
+        {
+            throw new ArgumentNullException(nameof(requestPath));
+        }
+        
         var fileAbsolutePath = Path.Combine(basePath, requestPath.TrimStart('/'));
         if (context is null)
         {

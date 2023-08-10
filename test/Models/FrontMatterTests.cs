@@ -58,7 +58,7 @@ public class FrontMatterTests : TestSetup
         var frontMatter = new FrontMatter("Title", sourcePath);
 
         // Assert
-        Assert.Equal(expectedDirectory, frontMatter.SourcePathDirectory);
+        Assert.Equal(expectedDirectory, frontMatter.SourceRelativePathDirectory);
     }
 
     [Theory]

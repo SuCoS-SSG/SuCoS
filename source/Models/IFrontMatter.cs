@@ -7,12 +7,12 @@ namespace SuCoS.Models;
 /// <summary>
 /// Basic structure needed to generate user content and system content
 /// </summary>
-public interface IFrontMatter : IParams
+public interface IFrontMatter : IParams, IFile
 {
     /// <summary>
     /// The content Title.
     /// </summary>
-    public string? Title { get; }
+    string? Title { get; }
 
     /// <summary>
     /// The first directory where the content is located, inside content.
@@ -90,11 +90,16 @@ public interface IFrontMatter : IParams
     /// Page weight. Used for sorting by default.
     /// </summary>
     int Weight { get; }
-    
+
     /// <summary>
     /// A list of tags, if any.
     /// </summary>
-    public List<string>? Tags { get; }
+    List<string>? Tags { get; }
+
+    /// <summary>
+    /// List of resource definitions.
+    /// </summary>
+    List<FrontMatterResources>? ResourceDefinitions { get; }
 
     /// <summary>
     /// Raw content from the Markdown file, bellow the front matter.
@@ -106,21 +111,6 @@ public interface IFrontMatter : IParams
     /// It's used to determine the proper theme file.
     /// </summary>
     Kind Kind { get; }
-
-    /// <summary>
-    /// The source filename, without the extension. ;)
-    /// </summary>
-    public string? SourcePath { get; }
-
-    /// <summary>
-    /// The source filename, without the extension. ;)
-    /// </summary>
-    string? SourceFileNameWithoutExtension { get; }
-
-    /// <summary>
-    /// The source directory of the file, without the file name.
-    /// </summary>
-    string? SourcePathDirectory { get; }
 
     /// <summary>
     /// The date to be considered as the publish date.

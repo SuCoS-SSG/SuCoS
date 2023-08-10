@@ -21,7 +21,7 @@ public interface ISystemClock
 /// <summary>
 /// Represents a concrete implementation of the ISystemClock interface using the system clock.
 /// </summary>
-internal class SystemClock : ISystemClock
+public class SystemClock : ISystemClock
 {
     /// <summary>
     /// Gets the current local date and time.

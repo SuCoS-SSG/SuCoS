@@ -60,12 +60,12 @@ public interface ISite : IParams
     /// <summary>
     /// List of all pages, including generated, by their permalink.
     /// </summary>
-    public ConcurrentDictionary<string, IPage> PagesReferences { get; }
+    public ConcurrentDictionary<string, IOutput> OutputReferences { get; }
 
     /// <summary>
     /// List of pages from the content folder.
     /// </summary>
-    public List<IPage> RegularPages { get; }
+    public IEnumerable<IPage> RegularPages { get; }
 
     /// <summary>
     /// The page of the home page;
@@ -140,4 +140,14 @@ public interface ISite : IParams
     /// Check if the page is publishable
     /// </summary>
     public bool IsDatePublishable(in IFrontMatter frontMatter);
+
+    /// <summary>
+    /// Creates the page for the site index.
+    /// </summary>
+    /// <param name="relativePath">The relative path of the page.</param>
+    /// <param name="title"></param>
+    /// <param name="sectionName"></param>
+    /// <param name="originalPage"></param>
+    /// <returns>The created page for the index.</returns>
+    public IPage CreateSystemPage(string relativePath, string title, string? sectionName = null, IPage? originalPage = null);
 }

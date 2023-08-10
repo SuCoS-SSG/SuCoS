@@ -7,7 +7,7 @@ namespace SuCoS.ServerHandlers;
 /// <summary>
 /// Handle server requests
 /// </summary>
-internal interface IServerHandlers
+public interface IServerHandlers
 {
     /// <summary>
     /// Check if the condition is met to handle the request

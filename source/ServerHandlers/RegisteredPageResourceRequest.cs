@@ -10,7 +10,7 @@ namespace SuCoS.ServerHandlers;
 /// <summary>
 /// Return the server startup timestamp as the response
 /// </summary>
-public class RegisteredPageRequest : IServerHandlers
+public class RegisteredPageResourceRequest : IServerHandlers
 {
     readonly ISite site;
 
@@ -18,7 +18,7 @@ public class RegisteredPageRequest : IServerHandlers
     /// Constructor
     /// </summary>
     /// <param name="site"></param>
-    public RegisteredPageRequest(ISite site)
+    public RegisteredPageResourceRequest(ISite site)
     {
         this.site = site;
     }
@@ -30,7 +30,7 @@ public class RegisteredPageRequest : IServerHandlers
         {
             throw new ArgumentNullException(nameof(requestPath));
         }
-        return site.OutputReferences.TryGetValue(requestPath, out var item) && item is IPage _;
+        return site.OutputReferences.TryGetValue(requestPath, out var item) && item is IResource _;
     }
 
     /// <inheritdoc />
@@ -40,13 +40,13 @@ public class RegisteredPageRequest : IServerHandlers
         {
             throw new ArgumentNullException(nameof(context));
         }
-        
-        if (site.OutputReferences.TryGetValue(requestPath, out var output) && output is IPage page)
+
+        if (site.OutputReferences.TryGetValue(requestPath, out var output) && output is IResource resource)
         {
-            var content = page.CompleteContent;
-            content = InjectReloadScript(content);
-            await context.Response.WriteAsync(content);
-            return "dict";
+            context.Response.ContentType = resource.MimeType;
+            await using var fileStream = new FileStream(resource.SourceFullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            await fileStream.CopyToAsync(context.Response.Body);
+            return "resource";
         }
         else
         {

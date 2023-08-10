@@ -15,7 +15,7 @@ namespace SuCoS;
 /// <summary>
 /// Serve Command will live serve the site and watch any changes.
 /// </summary>
-internal class ServeCommand : BaseGeneratorCommand, IDisposable
+public class ServeCommand : BaseGeneratorCommand, IDisposable
 {
     private const string baseURLDefault = "http://localhost";
     private const int portDefault = 1122;
@@ -105,7 +105,8 @@ internal class ServeCommand : BaseGeneratorCommand, IDisposable
             new PingRequests(),
             new StaticFileRequest(site.SourceStaticPath, false),
             new StaticFileRequest(site.SourceThemeStaticPath, true),
-            new RegisteredPageRequest(site)
+            new RegisteredPageRequest(site),
+            new RegisteredPageResourceRequest(site)
         };
 
         host = new WebHostBuilder()

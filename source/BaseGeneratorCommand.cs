@@ -14,7 +14,7 @@ namespace SuCoS;
 /// <summary>
 /// Base class for build and serve commands.
 /// </summary>
-internal abstract class BaseGeneratorCommand
+public abstract class BaseGeneratorCommand
 {
     /// <summary>
     /// The configuration file name.
@@ -121,5 +121,4 @@ internal abstract class BaseGeneratorCommand
         }
         return false;
     }
-
 }

@@ -12,7 +12,7 @@ namespace SuCoS.Parser;
 /// <summary>
 /// Responsible for parsing the content front matter using YAML
 /// </summary>
-internal class YAMLParser : IFrontMatterParser
+public class YAMLParser : IFrontMatterParser
 {
     /// <summary>
     /// YamlDotNet parser, strictly set to allow automatically parse only known fields
@@ -29,30 +29,30 @@ internal class YAMLParser : IFrontMatterParser
         .Build();
 
     /// <inheritdoc/>
-    public IFrontMatter ParseFrontmatterAndMarkdownFromFile( in string filePath, in string? sourceContentPath = null)
+    public IFrontMatter ParseFrontmatterAndMarkdownFromFile(in string fileFullPath, in string? sourceContentPath = null)
     {
-        if (filePath is null)
+        if (fileFullPath is null)
         {
-            throw new ArgumentNullException(nameof(filePath));
+            throw new ArgumentNullException(nameof(fileFullPath));
         }
 
         string? fileContent;
         string? fileRelativePath;
         try
         {
-            fileContent = File.ReadAllText(filePath);
-            fileRelativePath = Path.GetRelativePath(sourceContentPath ?? string.Empty, filePath);
+            fileContent = File.ReadAllText(fileFullPath);
+            fileRelativePath = Path.GetRelativePath(sourceContentPath ?? string.Empty, fileFullPath);
         }
         catch (Exception ex)
         {
-            throw new FileNotFoundException(filePath, ex);
+            throw new FileNotFoundException(fileFullPath, ex);
         }
 
-        return ParseFrontmatterAndMarkdown(fileRelativePath, fileContent);
+        return ParseFrontmatterAndMarkdown(fileFullPath, fileRelativePath, fileContent);
     }
 
     /// <inheritdoc/>
-    public IFrontMatter ParseFrontmatterAndMarkdown(in string fileRelativePath, in string fileContent)
+    public IFrontMatter ParseFrontmatterAndMarkdown(in string fileFullPath, in string fileRelativePath, in string fileContent)
     {
         if (fileRelativePath is null)
         {
@@ -74,18 +74,19 @@ internal class YAMLParser : IFrontMatterParser
         var rawContent = content.ReadToEnd();
 
         // Now, you can parse the YAML front matter
-        var page = ParseYAML(fileRelativePath, yaml, rawContent);
+        var page = ParseYAML(fileFullPath, fileRelativePath, yaml, rawContent);
 
         return page;
     }
 
-    private IFrontMatter ParseYAML(in string filePath, string yaml, in string rawContent)
+    private IFrontMatter ParseYAML(in string fileFullPath, in string fileRelativePath, string yaml, in string rawContent)
     {
         var frontMatter = yamlDeserializerRigid.Deserialize<FrontMatter>(new StringReader(yaml)) ?? throw new FormatException("Error parsing front matter");
-        var section = SiteHelper.GetSection(filePath);
+        var section = SiteHelper.GetSection(fileRelativePath);
         frontMatter.RawContent = rawContent;
         frontMatter.Section = section;
-        frontMatter.SourcePath = filePath;
+        frontMatter.SourceRelativePath = fileRelativePath;
+        frontMatter.SourceFullPath = fileFullPath;
         frontMatter.Type ??= section;
 
         var yamlObject = yamlDeserializer.Deserialize(new StringReader(yaml));

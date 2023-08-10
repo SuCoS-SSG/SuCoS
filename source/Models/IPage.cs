@@ -10,7 +10,7 @@ namespace SuCoS.Models;
 /// <summary>
 /// Each page data created from source files or from the system.
 /// </summary>
-public interface IPage : IFrontMatter
+public interface IPage : IFrontMatter, IOutput
 {
     /// <inheritdoc/>
     new Kind Kind { get; set; }
@@ -18,9 +18,9 @@ public interface IPage : IFrontMatter
     /// <summary>
     /// The source directory of the file.
     /// </summary>
-    public string? SourcePathLastDirectory => string.IsNullOrEmpty(SourcePathDirectory)
+    public string? SourcePathLastDirectory => string.IsNullOrEmpty(SourceRelativePathDirectory)
     ? null
-    : Path.GetFileName(Path.GetFullPath(SourcePathDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));
+    : Path.GetFileName(Path.GetFullPath(SourceRelativePathDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));
 
     /// <summary>
     /// Point to the site configuration.
@@ -33,11 +33,6 @@ public interface IPage : IFrontMatter
     public List<string>? AliasesProcessed { get; set; }
 
     /// <summary>
-    /// The URL for the content.
-    /// </summary>
-    public string? Permalink { get; set; }
-
-    /// <summary>
     /// Other content that mention this content.
     /// Used to create the tags list and Related Posts section.
     /// </summary>
@@ -48,6 +43,16 @@ public interface IPage : IFrontMatter
     /// Used to create the tags list and Related Posts section.
     /// </summary>
     public IPage? Parent { get; set; }
+
+    /// <summary>
+    /// The bundle type of the page.
+    /// </summary>
+    public BundleType BundleType { get; set; }
+
+    /// <summary>
+    /// Page resources. All files that accompany a page.
+    /// </summary>
+    public List<Resource>? Resources { get; set; }
 
     /// <summary>
     /// Plain markdown content, without HTML.
@@ -97,7 +102,6 @@ public interface IPage : IFrontMatter
     /// <returns>The processed output file content.</returns>
     public string CompleteContent { get; }
 
-
     /// <summary>
     /// Other content that mention this content.
     /// Used to create the tags list and Related Posts section.
@@ -112,7 +116,7 @@ public interface IPage : IFrontMatter
     /// <summary>
     /// Get all URLs related to this content.
     /// </summary>
-    public List<string> Urls { get; }
+    public Dictionary<string, IOutput> AllOutputURLs { get; }
 
     /// <summary>
     /// Gets the Permalink path for the file.
@@ -120,4 +124,9 @@ public interface IPage : IFrontMatter
     /// <param name="URLforce">The URL to consider. If null use the predefined URL</param>
     /// <returns>The output path.</returns>
     public string CreatePermalink(string? URLforce = null);
+
+    /// <summary>
+    /// Final steps of parsing the content.
+    /// </summary>
+    public void PostProcess();
 }

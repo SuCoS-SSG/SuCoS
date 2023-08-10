@@ -16,7 +16,7 @@ namespace SuCoS.Models;
 /// <summary>
 /// The main configuration of the program, primarily extracted from the app.yaml file.
 /// </summary>
-internal class Site : ISite
+public class Site : ISite
 {
     #region IParams
 
@@ -53,7 +53,7 @@ internal class Site : ISite
     public string? Copyright => settings.Copyright;
 
     /// <summary>
-    /// The base URL that will be used to build internal links.
+    /// The base URL that will be used to build public links.
     /// </summary>
     public string BaseURL => settings.BaseURL;
 
@@ -91,9 +91,10 @@ internal class Site : ISite
     {
         get
         {
-            pagesCache ??= PagesReferences.Values
-                .OrderBy(page => -page.Weight)
-                .ToList();
+            pagesCache ??= OutputReferences.Values
+                .Where(output => output is IPage page)
+                .Select(output => (output as IPage)!)
+                .OrderBy(page => -page.Weight);
             return pagesCache!;
         }
     }
@@ -101,20 +102,19 @@ internal class Site : ISite
     /// <summary>
     /// List of all pages, including generated, by their permalink.
     /// </summary>
-    public ConcurrentDictionary<string, IPage> PagesReferences { get; } = new();
+    public ConcurrentDictionary<string, IOutput> OutputReferences { get; } = new();
 
     /// <summary>
     /// List of pages from the content folder.
     /// </summary>
-    public List<IPage> RegularPages
+    public IEnumerable<IPage> RegularPages
     {
         get
         {
-            regularPagesCache ??= PagesReferences
-                    .Where(pair => pair.Value.IsPage && pair.Key == pair.Value.Permalink)
-                    .Select(pair => pair.Value)
-                    .OrderBy(page => -page.Weight)
-                    .ToList();
+            regularPagesCache ??= OutputReferences
+                    .Where(pair => pair.Value is IPage page && page.IsPage && pair.Key == page.Permalink)
+                    .Select(pair => (pair.Value as IPage)!)
+                    .OrderBy(page => -page.Weight);
             return regularPagesCache;
         }
     }
@@ -149,9 +149,9 @@ internal class Site : ISite
     /// </summary>
     public int filesParsedToReport;
 
-    private const string indexFileConst = "index.md";
+    private const string indexLeafFileConst = "index.md";
 
-    private const string indexFileUpperConst = "INDEX.MD";
+    private const string indexBranchFileConst = "_index.md";
 
     /// <summary>
     /// The synchronization lock object during ProstProcess.
@@ -163,9 +163,9 @@ internal class Site : ISite
     /// </summary>
     private readonly IFrontMatterParser frontMatterParser;
 
-    private List<IPage>? pagesCache;
+    private IEnumerable<IPage>? pagesCache;
 
-    private List<IPage>? regularPagesCache;
+    private IEnumerable<IPage>? regularPagesCache;
 
     private readonly SiteSettings settings;
 
@@ -190,8 +190,9 @@ internal class Site : ISite
 
         // Liquid template options, needed to theme the content 
         // but also parse URLs
-        TemplateOptions.MemberAccessStrategy.Register<Page>();
         TemplateOptions.MemberAccessStrategy.Register<Site>();
+        TemplateOptions.MemberAccessStrategy.Register<Page>();
+        TemplateOptions.MemberAccessStrategy.Register<Resource>();
 
         this.clock = clock ?? new SystemClock();
     }
@@ -202,7 +203,7 @@ internal class Site : ISite
     public void ResetCache()
     {
         CacheManager.ResetCache();
-        PagesReferences.Clear();
+        OutputReferences.Clear();
     }
 
     /// <summary>
@@ -223,7 +224,7 @@ internal class Site : ISite
 
         _ = Parallel.ForEach(markdownFiles, filePath =>
         {
-            ParseSourceFile(parent, filePath);
+            ParseSourceFile(filePath, parent);
         });
 
         var subdirectories = Directory.GetDirectories(directory);
@@ -231,67 +232,6 @@ internal class Site : ISite
         {
             ParseAndScanSourceFiles(subdirectory, level + 1, parent);
         });
-    }
-
-    private void ParseIndexPage(in string? directory, int level, ref IPage? parent, ref string[] markdownFiles)
-    {
-        // Check if the index.md file exists in the current directory
-        var indexPage = markdownFiles.FirstOrDefault(file => Path.GetFileName(file).ToUpperInvariant() == indexFileUpperConst);
-        if (indexPage is not null)
-        {
-            markdownFiles = markdownFiles.Where(file => file != indexPage).ToArray();
-            var page = ParseSourceFile(parent, indexPage);
-            if (level == 0)
-            {
-                PagesReferences.TryRemove(page!.Permalink!, out _);
-                Home = page;
-                page.Permalink = "/";
-                page.Kind = Kind.index;
-                PagesReferences.GetOrAdd(page.Permalink, page);
-            }
-            else
-            {
-                parent = page;
-            }
-        }
-
-        // If it's the home page
-        else if (level == 0)
-        {
-            Home = CreateSystemPage(string.Empty, Title);
-        }
-
-        // Or a section page, which must be used as the parent for the next sub folder
-        else if (level == 1)
-        {
-            var section = new DirectoryInfo(directory!).Name;
-            parent = CreateSystemPage(section, section);
-        }
-    }
-
-    private IPage? ParseSourceFile(in IPage? parent, in string filePath)
-    {
-        Page? page = null;
-        try
-        {
-            var frontMatter = frontMatterParser.ParseFrontmatterAndMarkdownFromFile(filePath, SourceContentPath)
-                ?? throw new FormatException($"Error parsing front matter for {filePath}");
-
-            if (IsValidDate(frontMatter, Options))
-            {
-                page = new(frontMatter, this);
-                PostProcessPage(page, parent, true);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Error(ex, "Error parsing file {file}", filePath);
-        }
-
-        // Use interlocked to safely increment the counter in a multi-threaded environment
-        _ = Interlocked.Increment(ref filesParsedToReport);
-
-        return page;
     }
 
     /// <summary>
@@ -302,7 +242,7 @@ internal class Site : ISite
     /// <param name="sectionName"></param>
     /// <param name="originalPage"></param>
     /// <returns>The created page for the index.</returns>
-    private IPage CreateSystemPage(string relativePath, string title, string? sectionName = null, IPage? originalPage = null)
+    public IPage CreateSystemPage(string relativePath, string title, string? sectionName = null, IPage? originalPage = null)
     {
         sectionName ??= "section";
         var isIndex = string.IsNullOrEmpty(relativePath);
@@ -310,7 +250,8 @@ internal class Site : ISite
         {
             Kind = isIndex ? Kind.index : Kind.list,
             Section = isIndex ? "index" : sectionName,
-            SourcePath = Path.Combine(relativePath, indexFileConst),
+            SourceRelativePath = Path.Combine(relativePath, indexLeafFileConst),
+            SourceFullPath = Path.Combine(SourceContentPath, relativePath, indexLeafFileConst),
             Title = title,
             Type = isIndex ? "index" : sectionName,
             URL = relativePath
@@ -323,13 +264,16 @@ internal class Site : ISite
         {
             IPage? parent = null;
             // Check if we need to create a section, even
-            var sections = (frontMatter.SourcePathDirectory ?? string.Empty).Split('/', StringSplitOptions.RemoveEmptyEntries);
+            var sections = (frontMatter.SourceRelativePathDirectory ?? string.Empty).Split('/', StringSplitOptions.RemoveEmptyEntries);
             if (sections.Length > 1)
             {
                 parent = CreateSystemPage(sections[0], sections[0]);
             }
 
-            var newPage = new Page(frontMatter, this);
+            var newPage = new Page(frontMatter, this)
+            {
+                BundleType = BundleType.branch
+            };
             PostProcessPage(newPage, parent);
             return newPage;
         }));
@@ -356,6 +300,80 @@ internal class Site : ISite
         return page;
     }
 
+    private void ParseIndexPage(string? directory, int level, ref IPage? parent, ref string[] markdownFiles)
+    {
+        var indexLeafBundlePage = markdownFiles.FirstOrDefault(file => Path.GetFileName(file) == indexLeafFileConst);
+
+        var indexBranchBundlePage = markdownFiles.FirstOrDefault(file => Path.GetFileName(file) == indexBranchFileConst);
+
+        IPage? page = null;
+        if (indexLeafBundlePage is not null || indexBranchBundlePage is not null)
+        {
+            // Determine the file to use and the bundle type
+            var selectedFile = indexLeafBundlePage ?? indexBranchBundlePage;
+            var bundleType = selectedFile == indexLeafBundlePage ? BundleType.leaf : BundleType.branch;
+
+            // Remove the selected file from markdownFiles
+            markdownFiles = bundleType == BundleType.leaf
+                ? new string[] { }
+                : markdownFiles.Where(file => file != selectedFile).ToArray();
+
+            page = ParseSourceFile(selectedFile!, parent, bundleType);
+            if (page is null) return;
+
+            if (level == 0)
+            {
+                OutputReferences.TryRemove(page!.Permalink!, out _);
+                page.Permalink = "/";
+                page.Kind = Kind.index;
+
+                OutputReferences.GetOrAdd(page.Permalink, page);
+                Home = page;
+            }
+            else
+            {
+                parent = page;
+            }
+        }
+        else if (level == 0)
+        {
+            Home = CreateSystemPage(string.Empty, Title);
+        }
+        else if (level == 1 && directory is not null)
+        {
+            var section = new DirectoryInfo(directory).Name;
+            parent = CreateSystemPage(section, section);
+        }
+    }
+
+    private IPage? ParseSourceFile(in string filePath, in IPage? parent, BundleType bundleType = BundleType.none)
+    {
+        Page? page = null;
+        try
+        {
+            var frontMatter = frontMatterParser.ParseFrontmatterAndMarkdownFromFile(filePath, SourceContentPath)
+                ?? throw new FormatException($"Error parsing front matter for {filePath}");
+
+            if (IsValidPage(frontMatter, Options))
+            {
+                page = new(frontMatter, this)
+                {
+                    BundleType = bundleType
+                };
+                PostProcessPage(page, parent, true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error parsing file {file}", filePath);
+        }
+
+        // Use interlocked to safely increment the counter in a multi-threaded environment
+        _ = Interlocked.Increment(ref filesParsedToReport);
+
+        return page;
+    }
+
     /// <summary>
     /// Extra calculation and automatic data for each page.
     /// </summary>
@@ -373,45 +391,34 @@ internal class Site : ISite
         page.Permalink = page.CreatePermalink();
         lock (syncLockPostProcess)
         {
-            if (!PagesReferences.TryGetValue(page.Permalink, out var old) || overwrite)
+            if (!OutputReferences.TryGetValue(page.Permalink, out var oldOutput) || overwrite)
             {
-                if (old?.PagesReferences is not null)
+                page.PostProcess();
+
+                // Replace the old page with the newly created one
+                if (oldOutput is IPage oldpage && oldpage?.PagesReferences is not null)
                 {
-                    foreach (var pageOld in old.PagesReferences)
+                    foreach (var pageOld in oldpage.PagesReferences)
                     {
                         page.PagesReferences.Add(pageOld);
                     }
                 }
 
-                if (page.Aliases is not null)
-                {
-                    page.AliasesProcessed ??= new();
-                    foreach (var alias in page.Aliases)
-                    {
-                        page.AliasesProcessed.Add(page.CreatePermalink(alias));
-                    }
-                }
-
                 // Register the page for all urls
-                foreach (var url in page.Urls)
+                foreach (var pageOutput in page.AllOutputURLs)
                 {
-                    PagesReferences.TryAdd(url, page);
+                    OutputReferences.TryAdd(pageOutput.Key, pageOutput.Value);
                 }
-            }
-        }
-
-        if (page.Tags is not null)
-        {
-            foreach (var tagName in page.Tags)
-            {
-                CreateSystemPage(Path.Combine("tags", tagName), tagName, "tags", page);
             }
         }
 
         if (!string.IsNullOrEmpty(page.Section)
-            && PagesReferences.TryGetValue('/' + page.Section!, out var section))
+            && OutputReferences.TryGetValue('/' + page.Section!, out var output))
         {
-            section.PagesReferences.Add(page.Permalink!);
+            if (output is IPage section)
+            {
+                section.PagesReferences.Add(page.Permalink!);
+            }
         }
     }
 
