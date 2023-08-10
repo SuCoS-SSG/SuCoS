@@ -4,7 +4,7 @@ using System.IO;
 /// <summary>
 /// The FileSystemWatcher object that monitors the source directory for file changes.
 /// </summary>
-internal interface IFileWatcher
+public interface IFileWatcher
 {
     /// <summary>
     /// Starts the file watcher to monitor file changes in the specified source path.
@@ -23,7 +23,7 @@ internal interface IFileWatcher
 /// <summary>
 /// The FileSystemWatcher object that monitors the source directory for file changes.
 /// </summary>
-internal class SourceFileWatcher : IFileWatcher
+public class SourceFileWatcher : IFileWatcher
 {
     /// <summary>
     /// The FileSystemWatcher object that monitors the source directory for file changes.

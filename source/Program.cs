@@ -10,9 +10,12 @@ namespace SuCoS;
 /// <summary>
 /// The main entry point of the program.
 /// </summary>
-internal class Program
+public class Program
 {
-    internal const string helloWorld = @"
+    /// <summary>
+    /// Basic logo of the program, for fun
+    /// </summary>
+    public const string helloWorld = @"
  ____             ____            ____       
 /\  _`\          /\  _`\         /\  _`\     
 \ \,\L\_\  __  __\ \ \/\_\    ___\ \,\L\_\   
@@ -44,7 +47,12 @@ internal class Program
         this.logger = logger;
     }
 
-    internal int Run(string[] args)
+    /// <summary>
+    /// Actual entrypoint of the program
+    /// </summary>
+    /// <param name="args"></param>
+    /// <returns></returns>
+    public int Run(string[] args)
     {
         // Print the logo of the program.
         OutputLogo();
@@ -121,7 +129,12 @@ internal class Program
         return rootCommand.Invoke(args);
     }
 
-    internal static ILogger CreateLogger(bool verbose = false)
+    /// <summary>
+    /// Create a log (normally from Serilog), depending the verbose option
+    /// </summary>
+    /// <param name="verbose"></param>
+    /// <returns></returns>
+    public static ILogger CreateLogger(bool verbose = false)
     {
         return new LoggerConfiguration()
             .MinimumLevel.Is(verbose ? LogEventLevel.Debug : LogEventLevel.Information)
@@ -132,7 +145,7 @@ internal class Program
     /// <summary>
     /// Print the name and version of the program.
     /// </summary>
-    internal void OutputWelcome()
+    public void OutputWelcome()
     {
         var assembly = Assembly.GetEntryAssembly();
         var assemblyName = assembly?.GetName();
@@ -141,7 +154,10 @@ internal class Program
         logger.Information("{name} v{version}", appName, appVersion);
     }
 
-    internal void OutputLogo()
+    /// <summary>
+    /// Print the logo
+    /// </summary>
+    public void OutputLogo()
     {
         logger.Information(helloWorld);
     }

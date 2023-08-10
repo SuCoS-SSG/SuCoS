@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
+using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
 
 namespace SuCoS;
@@ -10,7 +11,7 @@ namespace SuCoS;
 /// <summary>
 /// Build Command will build the site based on the source files.
 /// </summary>
-internal class BuildCommand : BaseGeneratorCommand
+public class BuildCommand : BaseGeneratorCommand
 {
     private readonly BuildOptions options;
 
@@ -45,30 +46,40 @@ internal class BuildCommand : BaseGeneratorCommand
 
         // Print each page
         var pagesCreated = 0; // counter to keep track of the number of pages created
-        _ = Parallel.ForEach(site.PagesReferences, pair =>
+        _ = Parallel.ForEach(site.OutputReferences, pair =>
         {
-            var (url, page) = pair;
-            var result = page.CompleteContent;
+            var (url, output) = pair;
 
-            var path = (url + (site.UglyURLs ? "" : "/index.html")).TrimStart('/');
-
-            // Generate the output path
-            var outputAbsolutePath = Path.Combine(options.Output, path);
-
-            var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
-            if (!Directory.Exists(outputDirectory))
+            if (output is IPage page)
             {
-                _ = Directory.CreateDirectory(outputDirectory!);
+                var path = (url + (site.UglyURLs ? "" : "/index.html")).TrimStart('/');
+
+                // Generate the output path
+                var outputAbsolutePath = Path.Combine(options.Output, path);
+
+                var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
+                if (!Directory.Exists(outputDirectory))
+                {
+                    _ = Directory.CreateDirectory(outputDirectory!);
+                }
+
+                // Save the processed output to the final file
+                var result = page.CompleteContent;
+                File.WriteAllText(outputAbsolutePath, result);
+
+                // Log
+                logger.Debug("Page created: {Permalink}", outputAbsolutePath);
+
+                // Use interlocked to safely increment the counter in a multi-threaded environment
+                _ = Interlocked.Increment(ref pagesCreated);
             }
+            else if (output is IResource resource)
+            {
+                var outputAbsolutePath = Path.Combine(options.Output, resource.Permalink!.TrimStart('/'));
 
-            // Save the processed output to the final file
-            File.WriteAllText(outputAbsolutePath, result);
-
-            // Log
-            logger.Debug("Page created: {Permalink}", outputAbsolutePath);
-
-            // Use interlocked to safely increment the counter in a multi-threaded environment
-            _ = Interlocked.Increment(ref pagesCreated);
+                // Copy the file to the output folder
+                File.Copy(resource.SourceFullPath, outputAbsolutePath, overwrite: true);
+            }
         });
 
         // Stop the stopwatch
@@ -94,16 +105,16 @@ internal class BuildCommand : BaseGeneratorCommand
         // Get all files in the source folder
         var files = Directory.GetFiles(source);
 
-        foreach (var file in files)
+        foreach (var fileFullPath in files)
         {
             // Get the filename from the full path
-            var fileName = Path.GetFileName(file);
+            var fileName = Path.GetFileName(fileFullPath);
 
             // Create the destination path by combining the output folder and the filename
-            var destinationPath = Path.Combine(output, fileName);
+            var destinationFullPath = Path.Combine(output, fileName);
 
             // Copy the file to the output folder
-            File.Copy(file, destinationPath, overwrite: true);
+            File.Copy(fileFullPath, destinationFullPath, overwrite: true);
         }
     }
 }

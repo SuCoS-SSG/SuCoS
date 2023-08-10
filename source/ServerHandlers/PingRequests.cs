@@ -7,7 +7,7 @@ namespace SuCoS.ServerHandlers;
 /// <summary>
 /// Return the server startup timestamp as the response
 /// </summary>
-internal class PingRequests : IServerHandlers
+public class PingRequests : IServerHandlers
 {
     /// <inheritdoc />
     public bool Check(string requestPath)

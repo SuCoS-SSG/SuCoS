@@ -24,7 +24,7 @@ public class SiteSettings : IParams
     public string? Copyright { get; set; }
 
     /// <summary>
-    /// The base URL that will be used to build internal links.
+    /// The base URL that will be used to build public links.
     /// </summary>
     public string BaseURL { get; set; } = string.Empty;
 

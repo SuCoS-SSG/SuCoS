@@ -1,4 +1,4 @@
-using Moq;
+using NSubstitute;
 using Serilog.Events;
 using SuCoS;
 using Xunit;
@@ -23,13 +23,13 @@ public class ProgramTests : TestSetup
     public void OutputLogo_Should_LogHelloWorld()
     {
         // Arrange
-        var program = new Program(loggerMock.Object);
+        var program = new Program(loggerMock);
 
         // Act
         program.OutputLogo();
         program.OutputWelcome();
 
         // Assert
-        loggerMock.Verify(x => x.Information(Program.helloWorld), Times.Once);
+        loggerMock.Received(1).Information(Program.helloWorld);
     }
 }

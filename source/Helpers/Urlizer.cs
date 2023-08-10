@@ -8,7 +8,7 @@ namespace SuCoS.Helpers;
 /// <summary>
 /// Helper class to convert a string to a URL-friendly string.
 /// </summary>
-internal static partial class Urlizer
+public static partial class Urlizer
 {
     [GeneratedRegex(@"[^a-zA-Z0-9]+")]
     private static partial Regex UrlizeRegexAlpha();
@@ -68,7 +68,7 @@ internal static partial class Urlizer
 /// Options for the <see cref="Urlizer"/> class.
 /// Basically to force lowercase and to change the replacement character.
 /// </summary>
-internal class UrlizerOptions
+public class UrlizerOptions
 {
     /// <summary>
     /// Force to generate lowercase URLs.

@@ -13,7 +13,7 @@ namespace SuCoS.Helpers;
 /// <summary>
 /// Helper methods for scanning files.
 /// </summary>
-internal static class SiteHelper
+public static class SiteHelper
 {
     /// <summary>
     /// Markdig 20+ built-in extensions

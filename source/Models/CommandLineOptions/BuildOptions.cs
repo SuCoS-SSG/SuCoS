@@ -5,7 +5,7 @@ namespace SuCoS.Models.CommandLineOptions;
 /// <summary>
 /// Command line options for the build command.
 /// </summary>
-internal class BuildOptions : GenerateOptions
+public class BuildOptions : GenerateOptions
 {
     /// <summary>
     /// The path of the output files.

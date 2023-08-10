@@ -9,7 +9,7 @@ namespace SuCoS.Models;
 /// A scafold structure to help creating system-generated content, like
 /// tag, section or index pages
 /// </summary>
-internal class FrontMatter : IFrontMatter
+public class FrontMatter : IFrontMatter
 {
     #region IFrontMatter
 
@@ -45,9 +45,12 @@ internal class FrontMatter : IFrontMatter
 
     /// <inheritdoc/>
     public int Weight { get; init; } = 0;
-    
+
     /// <inheritdoc/>
     public List<string>? Tags { get; init; }
+
+    /// <inheritdoc/>
+    public List<FrontMatterResources>? ResourceDefinitions { get; set; }
 
     /// <inheritdoc/>
     [YamlIgnore]
@@ -59,15 +62,19 @@ internal class FrontMatter : IFrontMatter
 
     /// <inheritdoc/>
     [YamlIgnore]
-    public string? SourcePath { get; set; }
+    public string? SourceRelativePath { get; set; }
 
     /// <inheritdoc/>
     [YamlIgnore]
-    public string? SourceFileNameWithoutExtension => Path.GetFileNameWithoutExtension(SourcePath);
+    public string SourceFullPath { get; set; }
 
     /// <inheritdoc/>
     [YamlIgnore]
-    public string? SourcePathDirectory => Path.GetDirectoryName(SourcePath);
+    public string? SourceRelativePathDirectory => Path.GetDirectoryName(SourceRelativePath);
+
+    /// <inheritdoc/>
+    [YamlIgnore]
+    public string? SourceFileNameWithoutExtension => Path.GetFileNameWithoutExtension(SourceRelativePath);
 
     /// <inheritdoc/>
     [YamlIgnore]
@@ -81,7 +88,10 @@ internal class FrontMatter : IFrontMatter
     /// <summary>
     /// Constructor
     /// </summary>
-    public FrontMatter() { }
+    public FrontMatter()
+    {
+        SourceFullPath = string.Empty;
+    }
 
     /// <summary>
     /// Constructor
@@ -91,6 +101,7 @@ internal class FrontMatter : IFrontMatter
     public FrontMatter(string title, string sourcePath)
     {
         Title = title;
-        SourcePath = sourcePath;
+        SourceRelativePath = sourcePath;
+        SourceFullPath = sourcePath;
     }
 }

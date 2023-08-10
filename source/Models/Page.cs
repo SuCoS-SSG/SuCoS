@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Fluid;
 using Markdig;
+using Microsoft.Extensions.FileSystemGlobbing;
 using SuCoS.Helpers;
 
 namespace SuCoS.Models;
@@ -12,7 +13,7 @@ namespace SuCoS.Models;
 /// <summary>
 /// Each page data created from source files or from the system.
 /// </summary>
-internal class Page : IPage
+public class Page : IPage
 {
     private readonly IFrontMatter frontMatter;
 
@@ -55,6 +56,9 @@ internal class Page : IPage
     public List<string>? Tags => frontMatter.Tags;
 
     /// <inheritdoc/>
+    public List<FrontMatterResources>? ResourceDefinitions => frontMatter.ResourceDefinitions;
+
+    /// <inheritdoc/>
     public string RawContent => frontMatter.RawContent;
 
     /// <inheritdoc/>
@@ -65,13 +69,19 @@ internal class Page : IPage
     }
 
     /// <inheritdoc/>
-    public string? SourcePath => frontMatter.SourcePath;
+    public string? SourceRelativePath => frontMatter.SourceRelativePath;
+
+    /// <inheritdoc/>
+    public string? SourceRelativePathDirectory => frontMatter.SourceRelativePathDirectory;
+
+    /// <inheritdoc/>
+    public string SourceFullPath => frontMatter.SourceFullPath;
+
+    /// <inheritdoc/>
+    public string? SourceFullPathDirectory => frontMatter.SourceFullPathDirectory;
 
     /// <inheritdoc/>
     public string? SourceFileNameWithoutExtension => frontMatter.SourceFileNameWithoutExtension;
-
-    /// <inheritdoc/>
-    public string? SourcePathDirectory => frontMatter.SourcePathDirectory;
 
     /// <inheritdoc/>
     public Dictionary<string, object> Params
@@ -85,10 +95,9 @@ internal class Page : IPage
     /// <summary>
     /// The source directory of the file.
     /// </summary>
-    public string? SourcePathLastDirectory => string.IsNullOrEmpty(SourcePathDirectory)
+    public string? SourcePathLastDirectory => string.IsNullOrEmpty(SourceRelativePathDirectory)
     ? null
-    : Path.GetFileName(Path.GetFullPath(SourcePathDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));
-
+    : Path.GetFileName(Path.GetFullPath(SourceRelativePathDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));
 
     /// <summary>
     /// Point to the site configuration.
@@ -100,9 +109,7 @@ internal class Page : IPage
     /// </summary>
     public List<string>? AliasesProcessed { get; set; }
 
-    /// <summary>
-    /// The URL for the content.
-    /// </summary>
+    /// <inheritdoc/>
     public string? Permalink { get; set; }
 
     /// <summary>
@@ -111,11 +118,14 @@ internal class Page : IPage
     /// </summary>
     public ConcurrentBag<string> PagesReferences { get; } = new();
 
-    /// <summary>
-    /// Other content that mention this content.
-    /// Used to create the tags list and Related Posts section.
-    /// </summary>
+    /// <inheritdoc/>
     public IPage? Parent { get; set; }
+
+    /// <inheritdoc/>
+    public BundleType BundleType { get; set; } = BundleType.none;
+
+    /// <inheritdoc/>
+    public List<Resource>? Resources { get; set; }
 
     /// <summary>
     /// Plain markdown content, without HTML.
@@ -172,7 +182,6 @@ internal class Page : IPage
     /// <returns>The processed output file content.</returns>
     public string CompleteContent => ParseAndRenderTemplate(true, "Error parsing theme template: {Error}");
 
-
     /// <summary>
     /// Other content that mention this content.
     /// Used to create the tags list and Related Posts section.
@@ -189,7 +198,11 @@ internal class Page : IPage
             pagesCached ??= new();
             foreach (var permalink in PagesReferences)
             {
-                pagesCached.Add(Site.PagesReferences[permalink]);
+                var page = Site.OutputReferences[permalink] as IPage;
+                if (page is not null)
+                {
+                    pagesCached.Add(page);
+                }
             }
             return pagesCached;
         }
@@ -212,25 +225,43 @@ internal class Page : IPage
     /// <summary>
     /// Get all URLs related to this content.
     /// </summary>
-    public List<string> Urls
+    public Dictionary<string, IOutput> AllOutputURLs
     {
         get
         {
-            var urls = new List<string>();
+            var urls = new Dictionary<string, IOutput>();
+
             if (Permalink is not null)
             {
-                urls.Add(Permalink);
+                urls.Add(Permalink, this);
             }
 
             if (AliasesProcessed is not null)
             {
-                urls.AddRange(from aliases in AliasesProcessed
-                              select aliases);
+                foreach (var alias in AliasesProcessed)
+                {
+                    if (!urls.ContainsKey(alias))
+                    {
+                        urls.Add(alias, this);
+                    }
+                }
+            }
+
+            if (Resources is not null)
+            {
+                foreach (var resource in Resources)
+                {
+                    if (resource.Permalink is not null && !urls.ContainsKey(resource.Permalink))
+                    {
+                        urls.Add(resource.Permalink, resource);
+                    }
+                }
             }
 
             return urls;
         }
     }
+
 
     /// <summary>
     /// The markdown content.
@@ -318,6 +349,119 @@ endif
         }
 
         return Urlizer.UrlizePath(permaLink);
+    }
+
+    /// <inheritdoc/>
+    public void PostProcess()
+    {
+        // Create all the aliases
+        if (Aliases is not null)
+        {
+            AliasesProcessed ??= new();
+            foreach (var alias in Aliases)
+            {
+                AliasesProcessed.Add(CreatePermalink(alias));
+            }
+        }
+
+        // Create tag pages, if any
+        if (Tags is not null)
+        {
+            foreach (var tagName in Tags)
+            {
+                Site.CreateSystemPage(Path.Combine("tags", tagName), tagName, "tags", this);
+            }
+        }
+
+        ScanForResources();
+    }
+
+    private int counterInternal = 0;
+    private bool counterInternalLock;
+    private int counter
+    {
+        get
+        {
+            if (!counterInternalLock)
+            {
+                counterInternalLock = true;
+            }
+            return counterInternal;
+        }
+    }
+
+    private void ScanForResources()
+    {
+        if (string.IsNullOrEmpty(SourceFullPathDirectory)) return;
+        if (BundleType == BundleType.none) return;
+
+        try
+        {
+            var resourceFiles = Directory.GetFiles(SourceFullPathDirectory)
+                .Where(file =>
+                    file != SourceFullPath &&
+                    (BundleType == BundleType.leaf || !file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+                    );
+
+            foreach (var resourceFilename in resourceFiles)
+            {
+                Resources ??= new();
+                var filenameOriginal = Path.GetFileName(resourceFilename);
+                var filename = filenameOriginal;
+                var extention = Path.GetExtension(resourceFilename);
+                var title = filename;
+                Dictionary<string, object> resourceParams = new();
+
+                if (ResourceDefinitions is not null)
+                {
+                    if (counterInternalLock)
+                    {
+                        counterInternalLock = false;
+                        ++counterInternal;
+                    }
+                    foreach (var resourceDefinition in ResourceDefinitions)
+                    {
+                        resourceDefinition.GlobMatcher ??= new();
+                        resourceDefinition.GlobMatcher.AddInclude(resourceDefinition.Src);
+                        var file = new InMemoryDirectoryInfo("./", new[] { filenameOriginal });
+                        if (resourceDefinition.GlobMatcher.Execute(file).HasMatches)
+                        {
+                            if (Site.FluidParser.TryParse(resourceDefinition.Name, out var templateFileName, out var errorFileName))
+                            {
+                                var context = new TemplateContext(Site.TemplateOptions)
+                                    .SetValue("page", this)
+                                    .SetValue("site", Site)
+                                    .SetValue("counter", counter);
+                                filename = templateFileName.Render(context);
+                            }
+                            if (Site.FluidParser.TryParse(resourceDefinition.Title, out var templateTitle, out var errorTitle))
+                            {
+                                var context = new TemplateContext(Site.TemplateOptions)
+                                    .SetValue("page", this)
+                                    .SetValue("site", Site)
+                                    .SetValue("counter", counter);
+                                title = templateTitle.Render(context);
+                            }
+                            resourceParams = resourceDefinition.Params ?? new();
+                        }
+                    }
+                }
+
+                filename = Path.GetFileNameWithoutExtension(filename) + extention;
+                var resource = new Resource(resourceFilename)
+                {
+                    Title = title,
+                    FileName = filename,
+                    Permalink = Path.Combine(Permalink!, filename),
+                    Params = resourceParams
+                };
+                Resources.Add(resource);
+            }
+        }
+        catch
+        {
+            return;
+        }
     }
 
     private string ParseAndRenderTemplate(bool isBaseTemplate, string errorMessage)

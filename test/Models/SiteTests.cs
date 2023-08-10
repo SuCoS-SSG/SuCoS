@@ -1,5 +1,6 @@
 using Xunit;
 using SuCoS.Models.CommandLineOptions;
+using SuCoS.Models;
 
 namespace Test.Models;
 
@@ -24,7 +25,7 @@ public class SiteTests : TestSetup
         site.ParseAndScanSourceFiles(Path.Combine(siteFullPath, "content"));
 
         // Assert
-        Assert.Contains(site.Pages, page => page.SourcePathDirectory!.Length == 0);
+        Assert.Contains(site.Pages, page => page.SourceRelativePathDirectory!.Length == 0);
         Assert.Contains(site.Pages, page => page.SourceFileNameWithoutExtension == fileNameWithoutExtension);
     }
 
@@ -45,7 +46,7 @@ public class SiteTests : TestSetup
         // Assert
         Assert.NotNull(site.Home);
         Assert.True(site.Home.IsHome);
-        Assert.Single(site.PagesReferences.Values.Where(page => page.IsHome));
+        Assert.Single(site.OutputReferences.Values.Where(output => output is IPage page && page.IsHome));
     }
 
     [Theory]
@@ -64,13 +65,14 @@ public class SiteTests : TestSetup
         site.ParseAndScanSourceFiles(null);
 
         // Assert
-        Assert.Equal(expectedQuantity, site.PagesReferences.Values.Where(page => page.IsSection).Count());
+        Assert.Equal(expectedQuantity, site.OutputReferences.Values.Where(output => output is IPage page && page.IsSection).Count());
     }
 
     [Theory]
     [InlineData(testSitePathCONST01, 5)]
-    [InlineData(testSitePathCONST02, 8)]
+    [InlineData(testSitePathCONST02, 1)]
     [InlineData(testSitePathCONST03, 13)]
+    [InlineData(testSitePathCONST04, 26)]
     public void PagesReference_ShouldReturnExpectedQuantityOfPages(string sitePath, int expectedQuantity)
     {
         GenerateOptions options = new()
@@ -83,13 +85,14 @@ public class SiteTests : TestSetup
         site.ParseAndScanSourceFiles(null);
 
         // Assert
-        Assert.Equal(expectedQuantity, site.PagesReferences.Count);
+        Assert.Equal(expectedQuantity, site.OutputReferences.Values.Where(output => output is IPage page).Count());
     }
 
     [Theory]
     [InlineData(testSitePathCONST01, 4)]
-    [InlineData(testSitePathCONST02, 7)]
+    [InlineData(testSitePathCONST02, 0)]
     [InlineData(testSitePathCONST03, 11)]
+    [InlineData(testSitePathCONST04, 21)]
     public void Page_IsPage_ShouldReturnExpectedQuantityOfPages(string sitePath, int expectedQuantity)
     {
         GenerateOptions options = new()
@@ -102,7 +105,7 @@ public class SiteTests : TestSetup
         site.ParseAndScanSourceFiles(null);
 
         // Assert
-        Assert.Equal(expectedQuantity, site.PagesReferences.Values.Where(page => page.IsPage).Count());
+        Assert.Equal(expectedQuantity, site.OutputReferences.Values.Where(output => output is IPage page && page.IsPage).Count());
     }
 
     [Fact]
@@ -127,7 +130,7 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST02))
+            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST01))
         };
         site.Options = options;
 
@@ -152,12 +155,13 @@ public class SiteTests : TestSetup
         site.ParseAndScanSourceFiles(null);
 
         // Assert
-        site.PagesReferences.TryGetValue("/tags", out var tagSectionPage);
+        site.OutputReferences.TryGetValue("/tags", out var output);
+        var tagSectionPage = output as IPage;
         Assert.NotNull(tagSectionPage);
         Assert.Equal(2, tagSectionPage.Pages.Count());
         Assert.Empty(tagSectionPage.RegularPages);
-        Assert.Equal("tags/index.md", tagSectionPage.SourcePath);
-        Assert.Equal("tags", tagSectionPage.SourcePathDirectory);
+        Assert.Equal("tags/index.md", tagSectionPage.SourceRelativePath);
+        Assert.Equal("tags", tagSectionPage.SourceRelativePathDirectory);
         Assert.Equal("tags", tagSectionPage.SourcePathLastDirectory);
     }
 
@@ -174,7 +178,8 @@ public class SiteTests : TestSetup
         site.ParseAndScanSourceFiles(null);
 
         // Assert
-        site.PagesReferences.TryGetValue("/tags/tag1", out var page);
+        site.OutputReferences.TryGetValue("/tags/tag1", out var output);
+        var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(10, page.Pages.Count());
         Assert.Equal(10, page.RegularPages.Count());
@@ -198,7 +203,8 @@ public class SiteTests : TestSetup
         site.ParseAndScanSourceFiles(null);
 
         // Assert
-        site.PagesReferences.TryGetValue(url, out var page);
+        site.OutputReferences.TryGetValue(url, out var output);
+        var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(expectedContent, page.Content);
         Assert.Equal(page.ContentPreRendered, page.Content);
@@ -232,7 +238,8 @@ public class SiteTests : TestSetup
         site.ParseAndScanSourceFiles(null);
 
         // Assert
-        site.PagesReferences.TryGetValue(url, out var page);
+        site.OutputReferences.TryGetValue(url, out var output);
+        var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(expectedContentPreRendered, page.ContentPreRendered);
         Assert.Equal(expectedContent, page.Content);
@@ -257,7 +264,8 @@ public class SiteTests : TestSetup
         site.ParseAndScanSourceFiles(null);
 
         // Assert
-        site.PagesReferences.TryGetValue(url, out var page);
+        site.OutputReferences.TryGetValue(url, out var output);
+        var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(string.Empty, page.Content);
         Assert.Equal(string.Empty, page.CompleteContent);
@@ -296,7 +304,8 @@ public class SiteTests : TestSetup
         site.ParseAndScanSourceFiles(null);
 
         // Assert
-        site.PagesReferences.TryGetValue(url, out var page);
+        site.OutputReferences.TryGetValue(url, out var output);
+        var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(expectedContentPreRendered, page.ContentPreRendered);
         Assert.Equal(expectedContent, page.Content);

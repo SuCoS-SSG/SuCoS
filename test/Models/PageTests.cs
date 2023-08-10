@@ -1,8 +1,8 @@
-using System.Globalization;
-using Moq;
+using NSubstitute;
 using SuCoS.Models;
-using Xunit;
 using SuCoS.Models.CommandLineOptions;
+using System.Globalization;
+using Xunit;
 
 namespace Test.Models;
 
@@ -39,10 +39,10 @@ word03 word04 word05 6 7 eight
 
         // Assert
         Assert.Equal(title, page.Title);
-        Assert.Equal(sourcePath, page.SourcePath);
+        Assert.Equal(sourcePath, page.SourceRelativePath);
         Assert.Same(site, page.Site);
         Assert.Equal(sourceFileNameWithoutExtension, page.SourceFileNameWithoutExtension);
-        Assert.Equal(sourcePathDirectory, page.SourcePathDirectory);
+        Assert.Equal(sourcePathDirectory, page.SourceRelativePathDirectory);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ word03 word04 word05 6 7 eight
         Assert.Null(page.ExpiryDate);
         Assert.Null(page.AliasesProcessed);
         Assert.Null(page.Permalink);
-        Assert.Empty(page.Urls);
+        Assert.Empty(page.AllOutputURLs);
         Assert.Equal(string.Empty, page.RawContent);
         Assert.Empty(page.TagsReference);
         Assert.Empty(page.PagesReferences);
@@ -80,7 +80,7 @@ word03 word04 word05 6 7 eight
         var page = new Page(new FrontMatter
         {
             Title = titleCONST,
-            SourcePath = sourcePathCONST,
+            SourceRelativePath = sourcePathCONST,
             Aliases = new() { "v123", "{{ page.Title }}", "{{ page.Title }}-2" }
         }, site);
 
@@ -88,8 +88,8 @@ word03 word04 word05 6 7 eight
         site.PostProcessPage(page);
 
         // Assert
-        Assert.Equal(3, site.PagesReferences.Count);
-        site.PagesReferences.TryGetValue(url, out var pageOther);
+        Assert.Equal(3, site.OutputReferences.Count);
+        site.OutputReferences.TryGetValue(url, out var pageOther);
         Assert.NotNull(pageOther);
         Assert.Same(page, pageOther);
     }
@@ -102,8 +102,8 @@ word03 word04 word05 6 7 eight
         var page = new Page(new FrontMatter
         {
             Title = titleCONST,
-            SourcePath = sourcePathCONST,
-            ExpiryDate = systemClockMock.Object.Now.AddDays(days)
+            SourceRelativePath = sourcePathCONST,
+            ExpiryDate = systemClockMock.Now.AddDays(days)
         }, site);
 
         // Assert
@@ -121,7 +121,7 @@ word03 word04 word05 6 7 eight
         var page = new Page(new FrontMatter
         {
             Title = titleCONST,
-            SourcePath = sourcePathCONST,
+            SourceRelativePath = sourcePathCONST,
             PublishDate = publishDate is null ? null : DateTime.Parse(publishDate, CultureInfo.InvariantCulture),
             Date = date is null ? null : DateTime.Parse(date, CultureInfo.InvariantCulture)
         }, site);
@@ -172,17 +172,17 @@ word03 word04 word05 6 7 eight
         var page = new Page(new FrontMatter
         {
             Title = titleCONST,
-            SourcePath = sourcePathCONST,
+            SourceRelativePath = sourcePathCONST,
             PublishDate = publishDate is null ? null : DateTime.Parse(publishDate, CultureInfo.InvariantCulture),
             Date = date is null ? null : DateTime.Parse(date, CultureInfo.InvariantCulture),
             Draft = draft
         }, site);
 
-        var options = new Mock<IGenerateOptions>();
-        options.Setup(o => o.Draft).Returns(draftOption);
+        var options = Substitute.For<IGenerateOptions>();
+        options.Draft.Returns(draftOption);
 
         // Assert
-        Assert.Equal(expectedValue, site.IsValidPage(page, options.Object));
+        Assert.Equal(expectedValue, site.IsValidPage(page, options));
     }
 
     [Theory]
@@ -193,16 +193,16 @@ word03 word04 word05 6 7 eight
         var page = new Page(new FrontMatter
         {
             Title = titleCONST,
-            SourcePath = sourcePathCONST,
-            Date = systemClockMock.Object.Now.AddDays(1)
+            SourceRelativePath = sourcePathCONST,
+            Date = systemClockMock.Now.AddDays(1)
         }, site);
 
         // Act
-        var options = new Mock<IGenerateOptions>();
-        options.Setup(o => o.Future).Returns(futureOption);
+        var options = Substitute.For<IGenerateOptions>();
+        options.Future.Returns(futureOption);
 
         // Assert
-        Assert.Equal(expected, site.IsValidDate(page, options.Object));
+        Assert.Equal(expected, site.IsValidDate(page, options));
     }
 
     [Theory]
@@ -213,7 +213,7 @@ word03 word04 word05 6 7 eight
         var page = new Page(new FrontMatter
         {
             Title = titleCONST,
-            SourcePath = sourcePath
+            SourceRelativePath = sourcePath
         }, site);
 
         // Assert
@@ -228,7 +228,7 @@ word03 word04 word05 6 7 eight
         var page = new Page(new FrontMatter
         {
             Title = titleCONST,
-            SourcePath = sourcePathCONST,
+            SourceRelativePath = sourcePathCONST,
             URL = urlTemplate
         }, site);
         var actualPermalink = page.CreatePermalink();
