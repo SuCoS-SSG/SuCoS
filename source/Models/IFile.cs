@@ -1,5 +1,6 @@
 using System.IO;
 using Microsoft.AspNetCore.StaticFiles;
+using SuCoS.Helpers;
 
 namespace SuCoS.Models;
 
@@ -21,17 +22,17 @@ public interface IFile
     /// <summary>
     /// The source directory of the file, without the file name.
     /// </summary>
-    string? SourceRelativePathDirectory => Path.GetDirectoryName(SourceRelativePath);
+    string? SourceRelativePathDirectory => Urlizer.Path(Path.GetDirectoryName(SourceFullPath));
 
     /// <summary>
     /// The full source directory of the file, without the file name.
     /// </summary>
-    string? SourceFullPathDirectory => Path.GetDirectoryName(SourceFullPath);
+    string? SourceFullPathDirectory => Urlizer.Path(Path.GetDirectoryName(SourceFullPath));
 
     /// <summary>
     /// The source filename, without the extension. ;)
     /// </summary>
-    string? SourceFileNameWithoutExtension => Path.GetFileNameWithoutExtension(SourceRelativePath);
+    string? SourceFileNameWithoutExtension => Path.GetFileNameWithoutExtension(SourceFullPath);
 
     /// <summary>
     /// File extension.

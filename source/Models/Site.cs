@@ -246,12 +246,13 @@ public class Site : ISite
     {
         sectionName ??= "section";
         var isIndex = string.IsNullOrEmpty(relativePath);
+        relativePath = Urlizer.Path(relativePath);
         FrontMatter frontMatter = new()
         {
             Kind = isIndex ? Kind.index : Kind.list,
             Section = isIndex ? "index" : sectionName,
-            SourceRelativePath = Path.Combine(relativePath, indexLeafFileConst),
-            SourceFullPath = Path.Combine(SourceContentPath, relativePath, indexLeafFileConst),
+            SourceRelativePath = Urlizer.Path(Path.Combine(relativePath, indexLeafFileConst)),
+            SourceFullPath = Urlizer.Path(Path.Combine(SourceContentPath, relativePath, indexLeafFileConst)),
             Title = title,
             Type = isIndex ? "index" : sectionName,
             URL = relativePath
