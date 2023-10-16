@@ -2,7 +2,7 @@ using Xunit;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.Models;
 
-namespace Test.Models;
+namespace Tests.Models;
 
 /// <summary>
 /// Unit tests for the Site class.

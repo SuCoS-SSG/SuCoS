@@ -138,7 +138,7 @@ public class Program
     {
         return new LoggerConfiguration()
             .MinimumLevel.Is(verbose ? LogEventLevel.Debug : LogEventLevel.Information)
-            .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
+            .WriteTo.Async(a => a.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture))
             .CreateLogger();
     }
 

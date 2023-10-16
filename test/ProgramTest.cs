@@ -3,7 +3,7 @@ using Serilog.Events;
 using SuCoS;
 using Xunit;
 
-namespace Test;
+namespace Tests;
 
 public class ProgramTests : TestSetup
 {

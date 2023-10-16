@@ -5,6 +5,8 @@ using SuCoS.Models.CommandLineOptions;
 using SuCoS.Parser;
 using System.Globalization;
 
+namespace Tests;
+
 public class TestSetup
 {
     protected const string titleCONST = "Test Title";

@@ -4,7 +4,7 @@ using SuCoS;
 using SuCoS.Models.CommandLineOptions;
 using Xunit;
 
-namespace Test;
+namespace Tests;
 
 public class BaseGeneratorCommandTests
 {
