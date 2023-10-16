@@ -34,12 +34,13 @@ public class StopwatchReporter
     /// <param name="stepName"></param>
     public void Start(string stepName)
     {
-        if (!stopwatches.ContainsKey(stepName))
+        if (!stopwatches.TryGetValue(stepName, out var stopwatch))
         {
-            stopwatches[stepName] = new Stopwatch();
+            stopwatch = new Stopwatch();
+            stopwatches[stepName] = stopwatch;
         }
 
-        stopwatches[stepName].Restart();
+        stopwatch.Restart();
     }
 
     /// <summary>
@@ -50,12 +51,12 @@ public class StopwatchReporter
     /// <exception cref="ArgumentException"></exception>
     public void Stop(string stepName, int itemCount)
     {
-        if (!stopwatches.ContainsKey(stepName))
+        if (!stopwatches.TryGetValue(stepName, out var stopwatch))
         {
             throw new ArgumentException($"Step '{stepName}' has not been started.");
         }
 
-        stopwatches[stepName].Stop();
+        stopwatch.Stop();
         itemCounts[stepName] = itemCount;
     }
 

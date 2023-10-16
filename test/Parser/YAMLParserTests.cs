@@ -4,7 +4,7 @@ using System.Globalization;
 using SuCoS.Helpers;
 using SuCoS.Models;
 
-namespace Test.Parser;
+namespace Tests.Parser;
 
 public class YAMLParserTests : TestSetup
 {
