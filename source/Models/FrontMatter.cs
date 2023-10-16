@@ -70,11 +70,13 @@ public class FrontMatter : IFrontMatter
 
     /// <inheritdoc/>
     [YamlIgnore]
-    public string? SourceRelativePathDirectory => Path.GetDirectoryName(SourceRelativePath);
+    public string? SourceRelativePathDirectory => (Path.GetDirectoryName(SourceRelativePath) ?? string.Empty)
+        .Replace('\\', '/');
 
     /// <inheritdoc/>
     [YamlIgnore]
-    public string? SourceFileNameWithoutExtension => Path.GetFileNameWithoutExtension(SourceRelativePath);
+    public string? SourceFileNameWithoutExtension => (Path.GetFileNameWithoutExtension(SourceRelativePath) ?? string.Empty)
+        .Replace('\\', '/');
 
     /// <inheritdoc/>
     [YamlIgnore]

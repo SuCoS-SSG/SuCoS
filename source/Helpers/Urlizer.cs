@@ -62,6 +62,13 @@ public static partial class Urlizer
         }
         return (path.StartsWith('/') ? '/' : string.Empty) + string.Join('/', result);
     }
+
+    /// <summary>
+    /// Convert all paths to a unix path style
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public static string Path(string? path) => (path ?? string.Empty).Replace('\\', '/');
 }
 
 /// <summary>
