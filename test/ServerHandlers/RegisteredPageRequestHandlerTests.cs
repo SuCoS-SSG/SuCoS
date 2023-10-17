@@ -1,12 +1,15 @@
-using Microsoft.AspNetCore.Http;
+using NSubstitute;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.ServerHandlers;
+using System.Net;
 using Xunit;
 
 namespace Tests.ServerHandlers;
 
 public class RegisteredPageRequestHandlerTests : TestSetup
 {
+    private readonly HttpClient _httpClient = new HttpClient();
+
     [Theory]
     [InlineData("/", true)]
     [InlineData("/testPage", false)]
@@ -40,20 +43,23 @@ public class RegisteredPageRequestHandlerTests : TestSetup
         };
         var registeredPageRequest = new RegisteredPageRequest(site);
 
-        var context = new DefaultHttpContext();
+        var response = Substitute.For<IHttpListenerResponse>();
         var stream = new MemoryStream();
-        context.Response.Body = stream;
+        response.OutputStream.Returns(stream);
 
         // Act
         site.ParseAndScanSourceFiles(Path.Combine(siteFullPath, "content"));
         registeredPageRequest.Check(requestPath);
-        await registeredPageRequest.Handle(context, requestPath, DateTime.Now);
+        var code = await registeredPageRequest.Handle(response, requestPath, DateTime.Now);
 
         // Assert
         stream.Seek(0, SeekOrigin.Begin);
         using var reader = new StreamReader(stream);
         var content = await reader.ReadToEndAsync();
 
+        Assert.Equal("dict", code);
+
+        // Assert
         // You may want to adjust this assertion depending on the actual format of your injected script
         if (contains)
         {
@@ -66,7 +72,5 @@ public class RegisteredPageRequestHandlerTests : TestSetup
             Assert.DoesNotContain("</script>", content, StringComparison.InvariantCulture);
         }
         Assert.Contains("Index Content", content, StringComparison.InvariantCulture);
-
     }
-
 }

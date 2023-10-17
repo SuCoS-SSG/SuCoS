@@ -44,7 +44,7 @@ public class SourceFileWatcher : IFileWatcher
         fileWatcher = new FileSystemWatcher
         {
             Path = SourceAbsolutePath,
-            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
+            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName,
             IncludeSubdirectories = true,
             EnableRaisingEvents = true
         };

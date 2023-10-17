@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Http;
+using NSubstitute;
 using SuCoS.ServerHandlers;
 using Xunit;
 
@@ -10,15 +10,14 @@ public class PingRequestHandlerTests : TestSetup
     public async Task Handle_ReturnsServerStartupTimestamp()
     {
         // Arrange
-        var context = new DefaultHttpContext();
-
+        var response = Substitute.For<IHttpListenerResponse>();
         var stream = new MemoryStream();
-        context.Response.Body = stream;
+        response.OutputStream.Returns(stream);
 
         var pingRequests = new PingRequests();
 
         // Act
-        await pingRequests.Handle(context, "ping", todayDate);
+        var code = await pingRequests.Handle(response, "ping", todayDate);
 
         // Assert
         stream.Seek(0, SeekOrigin.Begin);
@@ -26,8 +25,9 @@ public class PingRequestHandlerTests : TestSetup
         var content = await reader.ReadToEndAsync();
 
         Assert.Equal(todayDate.ToString("o"), content);
-    }
 
+        Assert.Equal("ping", code);
+    }
 
     [Theory]
     [InlineData("/ping", true)]
