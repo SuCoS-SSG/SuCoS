@@ -1,8 +1,8 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.StaticFiles;
+using System.Net;
+using FolkerKinzel.MimeTypes;
 
 namespace SuCoS.ServerHandlers;
 
@@ -37,21 +37,22 @@ public class StaticFileRequest : IServerHandlers
     }
 
     /// <inheritdoc />
-    public async Task<string> Handle(HttpContext context, string requestPath, DateTime serverStartTime)
+    public async Task<string> Handle(IHttpListenerResponse response, string requestPath, DateTime serverStartTime)
     {
         if (requestPath is null)
         {
             throw new ArgumentNullException(nameof(requestPath));
         }
-        
-        var fileAbsolutePath = Path.Combine(basePath, requestPath.TrimStart('/'));
-        if (context is null)
+        if (response is null)
         {
-            throw new ArgumentNullException(nameof(context));
+            throw new ArgumentNullException(nameof(response));
         }
-        context.Response.ContentType = GetContentType(fileAbsolutePath!);
+
+        var fileAbsolutePath = Path.Combine(basePath, requestPath.TrimStart('/'));  
+        response.ContentType = GetContentType(fileAbsolutePath!);
         await using var fileStream = new FileStream(fileAbsolutePath!, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        await fileStream.CopyToAsync(context.Response.Body);
+        response.ContentLength64 = fileStream.Length;
+        await fileStream.CopyToAsync(response.OutputStream);
         return inTheme ? "themeSt" : "static";
     }
 
@@ -61,13 +62,6 @@ public class StaticFileRequest : IServerHandlers
     /// </summary>
     /// <param name="filePath">The path of the file.</param>
     /// <returns>The content type of the file.</returns>
-    private static string GetContentType(string filePath)
-    {
-        var provider = new FileExtensionContentTypeProvider();
-        if (!provider.TryGetContentType(filePath, out var contentType))
-        {
-            contentType = "application/octet-stream";
-        }
-        return contentType ?? "application/octet-stream";
-    }
+    private static string GetContentType(string filePath) =>
+        MimeString.FromFileName(filePath) ?? "application/octet-stream";
 }

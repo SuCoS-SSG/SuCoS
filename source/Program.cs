@@ -115,7 +115,7 @@ public class Program
             };
 
             var serveCommand = new ServeCommand(serverOptions, logger, new SourceFileWatcher());
-            await serveCommand.RunServer();
+            serveCommand.StartServer();
             await Task.Delay(-1);  // Wait forever.
         },
         sourceOption, draftOption, futureOption, expiredOption, verboseOption);

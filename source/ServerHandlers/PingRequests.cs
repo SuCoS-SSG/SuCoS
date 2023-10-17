@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using System.IO;
 
 namespace SuCoS.ServerHandlers;
 
@@ -16,14 +16,17 @@ public class PingRequests : IServerHandlers
     }
 
     /// <inheritdoc />
-    public async Task<string> Handle(HttpContext context, string requestPath, DateTime serverStartTime)
+    public async Task<string> Handle(IHttpListenerResponse response, string requestPath, DateTime serverStartTime)
     {
-        if (context is null)
+        if (response is null)
         {
-            throw new ArgumentNullException(nameof(context));
+            throw new ArgumentNullException(nameof(response));
         }
         var content = serverStartTime.ToString("o");
-        await context.Response.WriteAsync(content);
+
+        using var writer = new StreamWriter(response.OutputStream, leaveOpen: true);
+        await writer.WriteAsync(content);
+        await writer.FlushAsync();
 
         return "ping";
     }

@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 
 namespace SuCoS.ServerHandlers;
 
@@ -19,9 +18,9 @@ public interface IServerHandlers
     /// <summary>
     /// Process the request
     /// </summary>
-    /// <param name="context"></param>
+    /// <param name="response"></param>
     /// <param name="requestPath"></param>
     /// <param name="serverStartTime"></param>
     /// <returns></returns>
-    Task<string> Handle(HttpContext context, string requestPath, DateTime serverStartTime);
+    Task<string> Handle(IHttpListenerResponse response, string requestPath, DateTime serverStartTime);
 }

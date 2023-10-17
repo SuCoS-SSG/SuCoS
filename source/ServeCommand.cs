@@ -1,10 +1,10 @@
 using System;
 using System.IO;
+using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
+using Microsoft.VisualBasic;
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
@@ -29,23 +29,6 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     private readonly ServeOptions options;
 
     /// <summary>
-    /// The global base URL for the server, combined with the port number.
-    /// This is constructed in the ServeCommand constructor using the provided base URL and port number,
-    /// and is subsequently used when starting or restarting the server.
-    /// </summary>
-    private readonly string baseURLGlobal;
-
-    /// <summary>
-    /// An instance of IWebHost, which represents the running web server.
-    /// This instance is created every time the server starts or restarts and is used to manage 
-    /// the lifecycle of the server. It's nullable because there may be periods when there is no running server,
-    /// such as during a restart operation or before the server has been initially started.
-    /// </summary>
-    private IWebHost? host;
-
-    private IServerHandlers[]? handlers;
-
-    /// <summary>
     /// The FileSystemWatcher object that monitors the source directory for file changes.
     /// When a change is detected, this triggers a server restart to ensure the served content 
     /// remains up-to-date. The FileSystemWatcher is configured with the source directory 
@@ -62,28 +45,36 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     private Timer? debounceTimer;
 
     /// <summary>
-    /// A boolean flag indicating whether a server restart is currently in progress. 
-    /// This is used to prevent overlapping restarts when file changes are detected in quick succession.
-    /// </summary>
-    private volatile bool restartInProgress;
-
-    /// <summary>
     /// A SemaphoreSlim used to ensure that server restarts due to file changes occur sequentially, 
     /// not concurrently. This is necessary because a restart involves stopping the current server
     /// and starting a new one, which would not be thread-safe without some form of synchronization.
     /// </summary>
-    private readonly SemaphoreSlim restartServerLock = new(1, 1);
+    // private readonly SemaphoreSlim restartServerLock = new(1, 1);
+    private Task lastRestartTask = Task.CompletedTask;
+
+    private HttpListener? listener;
+
+    private IServerHandlers[]? handlers;
 
     private DateTime serverStartTime;
 
+    private Task? loop;
+
     /// <summary>
-    /// Method to start the server explicitly
+    /// Constructor for the ServeCommand class.
     /// </summary>
-    /// <returns></returns>
-    public async Task RunServer()
+    /// <param name="options">ServeOptions object specifying the serve options.</param>
+    /// <param name="logger">The logger instance. Injectable for testing</param>
+    /// <param name="fileWatcher"></param>
+    public ServeCommand(ServeOptions options, ILogger logger, IFileWatcher fileWatcher) : base(options, logger)
     {
-        // Start the server!
-        await StartServer("http://localhost", 1122);
+        this.options = options ?? throw new ArgumentNullException(nameof(options));
+        this.fileWatcher = fileWatcher ?? throw new ArgumentNullException(nameof(fileWatcher));
+
+        // Watch for file changes in the specified path
+        var SourceAbsolutePath = Path.GetFullPath(options.Source);
+        logger.Information("Watching for file changes in {SourceAbsolutePath}", SourceAbsolutePath);
+        fileWatcher.Start(SourceAbsolutePath, OnSourceFileChanged);
     }
 
     /// <summary>
@@ -92,7 +83,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <param name="baseURL">The base URL for the server.</param>
     /// <param name="port">The port number for the server.</param>
     /// <returns>A Task representing the asynchronous operation.</returns>
-    private async Task StartServer(string baseURL, int port)
+    public void StartServer(string baseURL = baseURLDefault, int port = portDefault)
     {
         logger.Information("Starting server...");
 
@@ -108,48 +99,49 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
             new RegisteredPageRequest(site),
             new RegisteredPageResourceRequest(site)
         };
+        listener = new HttpListener();
+        listener.Prefixes.Add($"{baseURL}:{port}/");
+        listener.Start();
 
-        host = new WebHostBuilder()
-            .UseKestrel()
-            .UseUrls(baseURLGlobal)
-            .UseContentRoot(options.Source) // Set the content root path
-            .UseEnvironment("Debug") // Set the hosting environment to Debug
-            .Configure(app =>
-            {
-                app.Run(HandleRequest); // Call the custom method for handling requests
-            })
-            .Build();
-
-        await host.StartAsync();
         logger.Information("You site is live: {baseURL}:{port}", baseURL, port);
 
+        loop = Task.Run(async () =>
+        {
+            while (listener is not null && listener.IsListening)
+            {
+                try
+                {
+                    var context = await listener.GetContextAsync();
+                    await HandleRequest(context);
+                }
+                catch (HttpListenerException ex)
+                {
+                    if (listener.IsListening)
+                    {
+                        logger.Error(ex, "Unexpected listener error.");
+                    }
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    if (listener.IsListening)
+                    {
+                        logger.Error(ex, "Error processing request.");
+                    }
+                    break;
+                }
+            }
+        });
     }
 
     /// <inheritdoc/>
     public void Dispose()
     {
-        host?.Dispose();
+        listener?.Stop();
+        listener?.Close();
         fileWatcher.Stop();
         debounceTimer?.Dispose();
         GC.SuppressFinalize(this);
-    }
-
-    /// <summary>
-    /// Constructor for the ServeCommand class.
-    /// </summary>
-    /// <param name="options">ServeOptions object specifying the serve options.</param>
-    /// <param name="logger">The logger instance. Injectable for testing</param>
-    /// <param name="fileWatcher"></param>
-    public ServeCommand(ServeOptions options, ILogger logger, IFileWatcher fileWatcher) : base(options, logger)
-    {
-        this.options = options ?? throw new ArgumentNullException(nameof(options));
-        this.fileWatcher = fileWatcher ?? throw new ArgumentNullException(nameof(fileWatcher));
-        baseURLGlobal = $"{baseURLDefault}:{portDefault}";
-
-        // Watch for file changes in the specified path
-        var SourceAbsolutePath = Path.GetFullPath(options.Source);
-        logger.Information("Watching for file changes in {SourceAbsolutePath}", SourceAbsolutePath);
-        fileWatcher.Start(SourceAbsolutePath, OnSourceFileChanged);
     }
 
     /// <summary>
@@ -157,49 +149,69 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// </summary>
     private async Task RestartServer()
     {
-        // Check if another restart is already in progress
-        await restartServerLock.WaitAsync();
-
-        try
+        await lastRestartTask.ContinueWith(async _ =>
         {
+            logger.Information($"Restarting server...");
+
+            if (listener != null && listener.IsListening)
+            {
+                listener.Stop();
+                listener.Close();
+
+                if (loop is not null)
+                {
+                    // Wait for the loop to finish processing any ongoing requests.
+                    await loop;
+                    loop.Dispose();
+                }
+            }
+
+            // Reinitialize the site
             site = SiteHelper.Init(configFile, options, frontMatterParser, WhereParamsFilter, logger, stopwatch);
 
-            // Stop the server
-            if (host != null)
-            {
-                await host.StopAsync(TimeSpan.FromSeconds(1));
-                host.Dispose();
-            }
-            await StartServer("http://localhost", 1122);
-        }
-        finally
-        {
-            _ = restartServerLock.Release();
-        }
+            StartServer(baseURLDefault, portDefault);
+        });
+
+        lastRestartTask = lastRestartTask.ContinueWith(t => t.Exception != null
+            ? throw t.Exception
+            : Task.CompletedTask);
     }
 
     /// <summary>
     /// Handles the HTTP request asynchronously.
     /// </summary>
     /// <param name="context">The HttpContext representing the current request.</param>
-    private async Task HandleRequest(HttpContext context)
+    private async Task HandleRequest(HttpListenerContext context)
     {
-        var requestPath = context.Request.Path.Value;
-        if (string.IsNullOrEmpty(Path.GetExtension(context.Request.Path.Value)) && requestPath.Length > 1)
-        {
-            requestPath = requestPath.TrimEnd('/');
-        }
+        var requestPath = context.Request.Url?.AbsolutePath ?? string.Empty;
 
         string? resultType = null;
         if (handlers is not null)
         {
-            foreach (var item in handlers)
+            try
             {
-                if (item.Check(requestPath))
+                var response = new HttpListenerResponseWrapper(context.Response);
+                foreach (var item in handlers)
                 {
-                    resultType = await item.Handle(context, requestPath, serverStartTime);
+                    if (!item.Check(requestPath))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        resultType = await item.Handle(response, requestPath, serverStartTime);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Debug(ex, "Error handling the request.");
+                    }
                     break;
                 }
+            }
+            finally
+            {
+                context.Response.OutputStream.Close();
             }
         }
 
@@ -211,10 +223,11 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         logger.Debug("Request {type}\tfor {RequestPath}", resultType, requestPath);
     }
 
-    private static async Task HandleNotFoundRequest(HttpContext context)
+    private static async Task HandleNotFoundRequest(HttpListenerContext context)
     {
         context.Response.StatusCode = 404;
-        await context.Response.WriteAsync("404 - File Not Found");
+        using var writer = new StreamWriter(context.Response.OutputStream);
+        await writer.WriteAsync("404 - File Not Found");
     }
 
     /// <summary>
@@ -224,43 +237,16 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <param name="e">The FileSystemEventArgs containing information about the file change.</param>
     private void OnSourceFileChanged(object sender, FileSystemEventArgs e)
     {
+        if (e.FullPath.Contains("\\.git\\", StringComparison.InvariantCulture)) return;
+
         // File changes are firing multiple events in a short time.
         // Debounce the event handler to prevent multiple events from firing in a short time
         debounceTimer?.Dispose();
         debounceTimer = new Timer(DebounceCallback, e, TimeSpan.FromMilliseconds(1), Timeout.InfiniteTimeSpan);
     }
 
-    private void DebounceCallback(object? state)
+    private async void DebounceCallback(object? state)
     {
-        if (state is not FileSystemEventArgs e)
-        {
-            return;
-        }
-        HandleFileChangeAsync(e).GetAwaiter().GetResult();
-    }
-
-    private async Task HandleFileChangeAsync(FileSystemEventArgs e)
-    {
-        if (restartInProgress)
-        {
-            return;
-        }
-
-        logger.Information("File change detected: {FullPath}", e.FullPath);
-
-        restartInProgress = true;
-        try
-        {
-            await RestartServer();
-        }
-        catch (Exception ex)
-        {
-            logger.Error(ex, "Failed to restart server.");
-            throw;
-        }
-        finally
-        {
-            restartInProgress = false;
-        }
+        await RestartServer();
     }
 }

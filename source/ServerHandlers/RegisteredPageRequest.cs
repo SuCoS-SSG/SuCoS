@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using SuCoS.Models;
 
 namespace SuCoS.ServerHandlers;
@@ -34,18 +33,18 @@ public class RegisteredPageRequest : IServerHandlers
     }
 
     /// <inheritdoc />
-    public async Task<string> Handle(HttpContext context, string requestPath, DateTime serverStartTime)
+    public async Task<string> Handle(IHttpListenerResponse response, string requestPath, DateTime serverStartTime)
     {
-        if (context is null)
+        if (response is null)
         {
-            throw new ArgumentNullException(nameof(context));
+            throw new ArgumentNullException(nameof(response));
         }
-        
         if (site.OutputReferences.TryGetValue(requestPath, out var output) && output is IPage page)
         {
             var content = page.CompleteContent;
             content = InjectReloadScript(content);
-            await context.Response.WriteAsync(content);
+            using var writer = new StreamWriter(response.OutputStream, leaveOpen: true);
+            await writer.WriteAsync(content);
             return "dict";
         }
         else

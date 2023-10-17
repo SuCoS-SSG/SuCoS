@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Http;
+using NSubstitute;
 using SuCoS.ServerHandlers;
 using Xunit;
 
@@ -7,6 +7,7 @@ namespace Tests.ServerHandlers;
 public class StaticFileRequestHandlerTests : TestSetup, IDisposable
 {
     private readonly string tempFilePath;
+    private readonly HttpClient _httpClient = new HttpClient();
 
     public StaticFileRequestHandlerTests() : base()
     {
@@ -26,7 +27,7 @@ public class StaticFileRequestHandlerTests : TestSetup, IDisposable
         var staticFileRequest = new StaticFileRequest(basePath, false);
 
         // Act
-        var result = staticFileRequest.Check(requestPath);
+        var result = staticFileRequest.Check(requestPath: requestPath);
 
         // Assert
         Assert.True(result);
@@ -41,13 +42,14 @@ public class StaticFileRequestHandlerTests : TestSetup, IDisposable
             ?? throw new InvalidOperationException("Unable to determine directory of temporary file.");
         var staticFileRequest = new StaticFileRequest(basePath, true);
 
-        var context = new DefaultHttpContext();
+
+        var response = Substitute.For<IHttpListenerResponse>();
         var stream = new MemoryStream();
-        context.Response.Body = stream;
+        response.OutputStream.Returns(stream);
 
         // Act
         staticFileRequest.Check(requestPath);
-        await staticFileRequest.Handle(context, requestPath, DateTime.Now);
+        var code = await staticFileRequest.Handle(response, requestPath, DateTime.Now);
 
         // Assert
         stream.Seek(0, SeekOrigin.Begin);
@@ -55,6 +57,8 @@ public class StaticFileRequestHandlerTests : TestSetup, IDisposable
         var content = await reader.ReadToEndAsync();
 
         Assert.Equal("test", content);
+
+        Assert.Equal("themeSt", code);
     }
 
     public void Dispose()
