@@ -1,9 +1,9 @@
-﻿using System.CommandLine;
-using System.Reflection;
-using System.Threading.Tasks;
-using Serilog;
+﻿using Serilog;
 using Serilog.Events;
+using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
+using System.CommandLine;
+using System.Reflection;
 
 namespace SuCoS;
 

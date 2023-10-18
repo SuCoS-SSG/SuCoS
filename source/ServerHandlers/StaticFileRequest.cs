@@ -1,7 +1,3 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using System.Net;
 using FolkerKinzel.MimeTypes;
 
 namespace SuCoS.ServerHandlers;
@@ -48,7 +44,7 @@ public class StaticFileRequest : IServerHandlers
             throw new ArgumentNullException(nameof(response));
         }
 
-        var fileAbsolutePath = Path.Combine(basePath, requestPath.TrimStart('/'));  
+        var fileAbsolutePath = Path.Combine(basePath, requestPath.TrimStart('/'));
         response.ContentType = GetContentType(fileAbsolutePath!);
         await using var fileStream = new FileStream(fileAbsolutePath!, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         response.ContentLength64 = fileStream.Length;

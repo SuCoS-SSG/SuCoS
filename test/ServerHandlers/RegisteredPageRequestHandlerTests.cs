@@ -1,15 +1,12 @@
 using NSubstitute;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.ServerHandlers;
-using System.Net;
 using Xunit;
 
 namespace Tests.ServerHandlers;
 
 public class RegisteredPageRequestHandlerTests : TestSetup
 {
-    private readonly HttpClient _httpClient = new HttpClient();
-
     [Theory]
     [InlineData("/", true)]
     [InlineData("/testPage", false)]

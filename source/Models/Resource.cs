@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace SuCoS.Models;
 
 /// <summary>
@@ -17,8 +15,8 @@ public class Resource : IResource
     public string SourceFullPath { get; set; }
 
     /// <inheritdoc/>
-    public string? SourceRelativePath => throw new System.NotImplementedException();
-    
+    public string? SourceRelativePath => throw new NotImplementedException();
+
     /// <inheritdoc/>
     public string? Permalink { get; set; }
 

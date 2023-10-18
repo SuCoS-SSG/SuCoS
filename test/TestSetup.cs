@@ -1,5 +1,5 @@
-using Serilog;
 using NSubstitute;
+using Serilog;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.Parser;

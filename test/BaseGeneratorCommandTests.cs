@@ -1,7 +1,7 @@
-using System.Reflection;
 using Serilog;
 using SuCoS;
 using SuCoS.Models.CommandLineOptions;
+using System.Reflection;
 using Xunit;
 
 namespace Tests;

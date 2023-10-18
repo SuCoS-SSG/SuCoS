@@ -1,14 +1,8 @@
-using System;
-using System.IO;
-using System.Net;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.VisualBasic;
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.ServerHandlers;
+using System.Net;
 
 namespace SuCoS;
 

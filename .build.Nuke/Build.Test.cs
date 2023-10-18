@@ -1,13 +1,13 @@
 using Nuke.Common;
-using Nuke.Common.Tools.DotNet;
-using Nuke.Common.Tools.OpenCover;
-using static Nuke.Common.Tools.ReportGenerator.ReportGeneratorTasks;
-using Nuke.Common.Tools.ReportGenerator;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.Coverlet;
-using static Nuke.Common.Tools.Coverlet.CoverletTasks;
+using Nuke.Common.Tools.DotNet;
+using Nuke.Common.Tools.OpenCover;
+using Nuke.Common.Tools.ReportGenerator;
 using Serilog;
 using System;
+using static Nuke.Common.Tools.Coverlet.CoverletTasks;
+using static Nuke.Common.Tools.ReportGenerator.ReportGeneratorTasks;
 
 namespace SuCoS;
 
@@ -17,14 +17,14 @@ namespace SuCoS;
 /// </summary>
 sealed partial class Build : NukeBuild
 {
-    AbsolutePath testDirectory => RootDirectory / "test";
-    AbsolutePath testDLLDirectory => testDirectory / "bin" / "Debug" / "net7.0";
-    AbsolutePath testAssembly => testDLLDirectory / "test.dll";
-    AbsolutePath coverageDirectory => RootDirectory / "coverage-results";
-    AbsolutePath coverageResultDirectory => coverageDirectory / "coverage";
-    AbsolutePath coverageResultFile => coverageResultDirectory / "coverage.xml";
-    AbsolutePath coverageReportDirectory => coverageDirectory / "report";
-    AbsolutePath coverageReportSummaryDirectory => coverageReportDirectory / "Summary.txt";
+    static AbsolutePath testDirectory => RootDirectory / "test";
+    static AbsolutePath testDLLDirectory => testDirectory / "bin" / "Debug" / "net7.0";
+    static AbsolutePath testAssembly => testDLLDirectory / "test.dll";
+    static AbsolutePath coverageDirectory => RootDirectory / "coverage-results";
+    static AbsolutePath coverageResultDirectory => coverageDirectory / "coverage";
+    static AbsolutePath coverageResultFile => coverageResultDirectory / "coverage.xml";
+    static AbsolutePath coverageReportDirectory => coverageDirectory / "report";
+    static AbsolutePath coverageReportSummaryDirectory => coverageReportDirectory / "Summary.txt";
 
     Target Test => _ => _
         .DependsOn(Compile)
@@ -40,7 +40,7 @@ sealed partial class Build : NukeBuild
                 .SetFormat(CoverletOutputFormat.cobertura));
         });
 
-    Target TestReport => _ => _
+    public Target TestReport => _ => _
         .DependsOn(Test)
         .Executes(() =>
         {

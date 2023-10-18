@@ -1,5 +1,5 @@
-using Xunit;
 using SuCoS.Helpers;
+using Xunit;
 
 namespace Tests.Helpers;
 

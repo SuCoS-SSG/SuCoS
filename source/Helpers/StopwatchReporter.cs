@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
+using Serilog;
 using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
-using Serilog;
 
 namespace SuCoS.Helpers;
 
