@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace SuCoS.Models.CommandLineOptions;
 
 /// <summary>

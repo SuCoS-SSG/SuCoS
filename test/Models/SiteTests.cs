@@ -1,6 +1,6 @@
-using Xunit;
-using SuCoS.Models.CommandLineOptions;
 using SuCoS.Models;
+using SuCoS.Models.CommandLineOptions;
+using Xunit;
 
 namespace Tests.Models;
 

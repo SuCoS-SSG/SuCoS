@@ -1,8 +1,8 @@
-using Xunit;
-using SuCoS.Parser;
-using System.Globalization;
 using SuCoS.Helpers;
 using SuCoS.Models;
+using SuCoS.Parser;
+using System.Globalization;
+using Xunit;
 
 namespace Tests.Parser;
 

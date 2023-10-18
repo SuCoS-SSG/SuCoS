@@ -1,5 +1,5 @@
-using System.Globalization;
 using SuCoS.Models;
+using System.Globalization;
 using Xunit;
 
 namespace Tests.Models;

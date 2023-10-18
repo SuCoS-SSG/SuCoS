@@ -1,10 +1,10 @@
 
-using System.Diagnostics;
-using System.Globalization;
-using System.Reflection;
 using Serilog;
 using Serilog.Sinks.InMemory;
 using SuCoS.Helpers;
+using System.Diagnostics;
+using System.Globalization;
+using System.Reflection;
 using Xunit;
 
 namespace Tests.Helpers;

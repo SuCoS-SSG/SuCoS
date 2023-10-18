@@ -1,9 +1,9 @@
 using Nuke.Common;
-using Serilog;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Docker;
-using System.Linq;
+using Serilog;
 using System;
+using System.Linq;
 
 namespace SuCoS;
 
@@ -21,7 +21,7 @@ sealed partial class Build : NukeBuild
     [Parameter("GitLab Project Full Address")]
     readonly string containerDefaultRID = "linux-x64";
 
-    Target CreateContainer => _ => _
+    public Target CreateContainer => _ => _
         .DependsOn(Publish)
         .DependsOn(CheckNewCommits)
         .OnlyWhenStatic(() => runtimeIdentifier != "win-x64")

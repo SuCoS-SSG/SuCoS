@@ -1,5 +1,3 @@
-using System;
-
 namespace SuCoS.Models;
 
 /// <summary>

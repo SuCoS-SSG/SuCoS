@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using SuCoS.Helpers;
 using SuCoS.Models;
+using System.Text;
 using YamlDotNet.Serialization;
 
 namespace SuCoS.Parser;

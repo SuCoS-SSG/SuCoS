@@ -7,7 +7,6 @@ namespace Tests.ServerHandlers;
 public class StaticFileRequestHandlerTests : TestSetup, IDisposable
 {
     private readonly string tempFilePath;
-    private readonly HttpClient _httpClient = new HttpClient();
 
     public StaticFileRequestHandlerTests() : base()
     {
@@ -68,5 +67,7 @@ public class StaticFileRequestHandlerTests : TestSetup, IDisposable
         {
             File.Delete(tempFilePath);
         }
+
+        GC.SuppressFinalize(this);
     }
 }

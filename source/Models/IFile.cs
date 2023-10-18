@@ -1,4 +1,3 @@
-using System.IO;
 using FolkerKinzel.MimeTypes;
 
 // using Microsoft.AspNetCore.StaticFiles;

@@ -1,14 +1,14 @@
+using Nuke.Common;
+using Nuke.Common.CI.GitLab;
+using Nuke.Common.IO;
+using Nuke.Common.Tools.Git;
+using Serilog;
 using System;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Net.Http.Json;
-using Nuke.Common;
-using Nuke.Common.CI.GitLab;
-using Nuke.Common.IO;
-using Nuke.Common.Tools.Git;
-using Serilog;
 
 namespace SuCoS;
 
@@ -42,7 +42,7 @@ sealed partial class Build : NukeBuild
     /// One for each runtime identifier.
     /// </summary>
     /// <see href="https://docs.gitlab.com/ee/user/packages/generic_packages/"/>
-    Target CreatePackage => _ => _
+    public Target CreatePackage => _ => _
         .DependsOn(Publish)
         .DependsOn(CheckNewCommits)
         .Requires(() => gitlabPrivateToken)
@@ -97,7 +97,7 @@ sealed partial class Build : NukeBuild
     /// Creates a release in the GitLab repository.
     /// </summary>
     /// <see href="https://docs.gitlab.com/ee/api/releases/#create-a-release"/>
-    Target GitLabCreateRelease => _ => _
+    public Target GitLabCreateRelease => _ => _
         .DependsOn(GitLabCreateTag)
         .OnlyWhenStatic(() => HasNewCommits)
         .Requires(() => gitlabPrivateToken)
