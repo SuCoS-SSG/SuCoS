@@ -2,15 +2,18 @@
 using Serilog.Events;
 using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
-using System.CommandLine;
 using System.Reflection;
+using CommandLine;
 
 namespace SuCoS;
 
 /// <summary>
 /// The main entry point of the program.
 /// </summary>
-public class Program
+/// <remarks>
+/// Constructor
+/// </remarks>
+public class Program(ILogger logger)
 {
     /// <summary>
     /// Basic logo of the program, for fun
@@ -25,7 +28,7 @@ public class Program
     \/_____/\/___/   \/___/  \/___/  \/_____/
 ";
 
-    private ILogger logger;
+    private ILogger Logger { get; set; } = logger;
     private static readonly string[] aliases = ["--source", "-s"];
     private static readonly string[] aliasesArray = ["--draft", "-d"];
     private static readonly string[] aliasesArray0 = ["--future", "-f"];
@@ -38,19 +41,10 @@ public class Program
     /// </summary>
     /// <param name="args"></param>
     /// <returns></returns>
-    public static int Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
-        var logger = CreateLogger();
-        var program = new Program(logger);
-        return program.Run(args);
-    }
-
-    /// <summary>
-    /// Constructor
-    /// </summary>
-    public Program(ILogger logger)
-    {
-        this.logger = logger;
+        var program = new Program(CreateLogger());
+        return await program.RunCommandLine(args);
     }
 
     /// <summary>
@@ -58,81 +52,55 @@ public class Program
     /// </summary>
     /// <param name="args"></param>
     /// <returns></returns>
-    public int Run(string[] args)
+    public async Task<int> RunCommandLine(string[] args)
     {
-        // Print the logo of the program.
-        OutputLogo();
-        OutputWelcome();
-
-        // Shared options between the commands
-        var sourceOption = new Option<string>(aliases, () => ".", "Source directory path");
-        var draftOption = new Option<bool>(aliasesArray, "Include draft content");
-        var futureOption = new Option<bool>(aliasesArray0, "Include content with dates in the future");
-        var expiredOption = new Option<bool>(aliasesArray1, "Include content with ExpiredDate dates from the past");
-        var verboseOption = new Option<bool>(aliasesArray2, "Verbose output");
-
-        // BuildCommand setup
-        var buildOutputOption = new Option<string>(aliasesArray3, "Output directory path");
-
-        Command buildCommandHandler = new("build", "Builds the site")
-        {
-            sourceOption,
-            draftOption,
-            buildOutputOption,
-            futureOption,
-            expiredOption,
-            verboseOption
-        };
-        buildCommandHandler.SetHandler((source, output, draft, future, expired, verbose) =>
-        {
-            logger = CreateLogger(verbose);
-
-            BuildOptions buildOptions = new(
-                source: source,
-                output: output)
+        return await CommandLine.Parser.Default.ParseArguments<BuildOptions, ServeOptions>(args)
+            .WithParsed<GenerateOptions>(options =>
             {
-                Draft = draft,
-                Future = future,
-                Expired = expired
-            };
-            _ = new BuildCommand(buildOptions, logger);
-        },
-        sourceOption, buildOutputOption, draftOption, futureOption, expiredOption, verboseOption);
-
-        // ServerCommand setup
-        Command serveCommandHandler = new("serve", "Starts the server")
-        {
-            sourceOption,
-            draftOption,
-            futureOption,
-            expiredOption,
-            verboseOption
-        };
-        serveCommandHandler.SetHandler(async (source, draft, future, expired, verbose) =>
-        {
-            logger = CreateLogger(verbose);
-
-            ServeOptions serverOptions = new()
+                Logger = CreateLogger(options.Verbose);
+            })
+            .WithParsed<BuildOptions>(options =>
             {
-                Source = source,
-                Draft = draft,
-                Future = future,
-                Expired = expired
-            };
-
-            var serveCommand = new ServeCommand(serverOptions, logger, new SourceFileWatcher());
-            serveCommand.StartServer();
-            await Task.Delay(-1).ConfigureAwait(false);  // Wait forever.
-        },
-        sourceOption, draftOption, futureOption, expiredOption, verboseOption);
-
-        RootCommand rootCommand = new("SuCoS commands")
-        {
-            buildCommandHandler,
-            serveCommandHandler
-        };
-
-        return rootCommand.Invoke(args);
+                options.Output = string.IsNullOrEmpty(options.Output) ? Path.Combine(options.Source, "public") : options.Output;
+            })
+            .MapResult(
+                (BuildOptions options) =>
+                {
+                    try
+                    {
+                        _ = new BuildCommand(options, Logger);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Build failed: {ex.Message}");
+                        return Task.FromResult(1);
+                    }
+                    return Task.FromResult(0);
+                },
+                async (ServeOptions options) =>
+                {
+                    try
+                    {
+                        var serveCommand = new ServeCommand(options, Logger, new SourceFileWatcher());
+                        serveCommand.StartServer();
+                        await Task.Delay(-1).ConfigureAwait(false);  // Wait forever.
+                    }
+                    catch (Exception ex)
+                    {
+                        if (options.Verbose)
+                        {
+                            Logger.Error(ex, "Serving failed");
+                        }
+                        else
+                        {
+                            Logger.Error($"Serving failed: {ex.Message}");
+                        }
+                        return 1;
+                    }
+                    return 0;
+                }
+                , errs => Task.FromResult(1)
+                );
     }
 
     /// <summary>
@@ -144,7 +112,8 @@ public class Program
     {
         return new LoggerConfiguration()
             .MinimumLevel.Is(verbose ? LogEventLevel.Debug : LogEventLevel.Information)
-            .WriteTo.Async(a => a.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture))
+            // .WriteTo.Async(a => a.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture))
+            .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
             .CreateLogger();
     }
 
@@ -157,7 +126,7 @@ public class Program
         var assemblyName = assembly?.GetName();
         var appName = assemblyName?.Name;
         var appVersion = assemblyName?.Version;
-        logger.Information("{name} v{version}", appName, appVersion);
+        Logger.Information("{name} v{version}", appName, appVersion);
     }
 
     /// <summary>
@@ -165,6 +134,6 @@ public class Program
     /// </summary>
     public void OutputLogo()
     {
-        logger.Information(helloWorld);
+        Logger.Information(helloWorld);
     }
 }
