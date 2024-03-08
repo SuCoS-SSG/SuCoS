@@ -67,7 +67,7 @@ public class FrontMatterTests : TestSetup
     [InlineData("2023-07-11", "2023-07-12", "2023-07-12")]
     [InlineData("2023-07-11", null, "2023-07-11")]
     [InlineData(null, null, null)]
-    public void GetPublishDate_Returns_PublishDate_If_Not_Null_Otherwise_Date(string dateString, string publishDateString, string expectedDateString)
+    public void GetPublishDate_Returns_PublishDate_If_Not_Null_Otherwise_Date(string? dateString, string? publishDateString, string? expectedDateString)
     {
         // Arrange
         var date = string.IsNullOrEmpty(dateString) ? (DateTime?)null : DateTime.Parse(dateString, CultureInfo.InvariantCulture);

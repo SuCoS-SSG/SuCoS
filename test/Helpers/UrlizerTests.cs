@@ -8,7 +8,7 @@ public class UrlizerTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void Urlize_NullOrEmptyText_ThrowsArgumentNullException(string text)
+    public void Urlize_NullOrEmptyText_ThrowsArgumentNullException(string? text)
     {
         var result = Urlizer.Urlize(text);
         Assert.Equal("", result);
@@ -17,7 +17,7 @@ public class UrlizerTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void UrlizePath_NullPath_ReturnsEmptyString(string path)
+    public void UrlizePath_NullPath_ReturnsEmptyString(string? path)
     {
         var result = Urlizer.UrlizePath(path);
 
