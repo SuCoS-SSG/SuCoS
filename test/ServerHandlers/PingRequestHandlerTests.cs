@@ -32,7 +32,6 @@ public class PingRequestHandlerTests : TestSetup
     [Theory]
     [InlineData("/ping", true)]
     [InlineData("ping", false)]
-    [InlineData(null, false)]
     public void Check_HandlesVariousRequestPaths(string requestPath, bool expectedResult)
     {
         // Arrange

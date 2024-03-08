@@ -223,7 +223,7 @@ word03 word04 word05 6 7 eight
     [Theory]
     [InlineData(null, "/test-title")]
     [InlineData("{{ page.Title }}/{{ page.SourceFileNameWithoutExtension }}", "/test-title/file")]
-    public void Permalink_CreateWithDefaultOrCustomURLTemplate(string urlTemplate, string expectedPermalink)
+    public void Permalink_CreateWithDefaultOrCustomURLTemplate(string? urlTemplate, string expectedPermalink)
     {
         var page = new Page(new FrontMatter
         {
@@ -270,10 +270,13 @@ word03 word04 word05 6 7 eight
     [InlineData(markdown2CONST, markdownPlain2CONST)]
     public void Plain_ShouldReturnCorrectPlainString(string rawContent, string plain)
     {
+        ArgumentException.ThrowIfNullOrEmpty(plain);
         var page = new Page(new FrontMatter
         {
             RawContent = rawContent
         }, site);
+        // Required to make the test pass on Windows
+        plain = plain.Replace("\r\n", "\n", StringComparison.Ordinal);
 
         // Assert
         Assert.Equal(plain, page.Plain);
