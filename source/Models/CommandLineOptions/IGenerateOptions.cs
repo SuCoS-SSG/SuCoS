@@ -6,6 +6,11 @@ namespace SuCoS.Models.CommandLineOptions;
 public interface IGenerateOptions
 {
     /// <summary>
+    /// How verbose it must be.
+    /// </summary>
+    bool Verbose { get; }
+
+    /// <summary>
     /// The path of the source files.
     /// </summary>
     string Source { get; }

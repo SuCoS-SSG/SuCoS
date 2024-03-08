@@ -36,7 +36,7 @@ public static class SiteHelper
         }
         catch
         {
-            throw new FormatException($"Error reading app config {configFile}");
+            throw;
         }
 
         var site = new Site(options, siteSettings, frontMatterParser, logger, null);
@@ -97,22 +97,16 @@ public static class SiteHelper
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(frontMatterParser);
 
-        try
+        // Read the main configation
+        var filePath = Path.Combine(options.Source, configFile);
+        if (!File.Exists(filePath))
         {
-            // Read the main configation
-            var filePath = Path.Combine(options.Source, configFile);
-            if (!File.Exists(filePath))
-            {
-                throw new FileNotFoundException($"The {configFile} file was not found in the specified source directory: {options.Source}");
-            }
+            throw new FileNotFoundException($"The {configFile} file was not found in the specified source directory: {options.Source}");
+        }
 
-            var fileContent = File.ReadAllText(filePath);
-            var siteSettings = frontMatterParser.ParseSiteSettings(fileContent) ?? throw new FormatException("Error reading app config");
-            return siteSettings;
-        }
-        catch
-        {
-            throw new FormatException("Error reading app config");
-        }
+        var fileContent = File.ReadAllText(filePath);
+        var siteSettings = frontMatterParser.ParseSiteSettings(fileContent)
+            ?? throw new FormatException($"Error reading app config {configFile}");
+        return siteSettings;
     }
 }
