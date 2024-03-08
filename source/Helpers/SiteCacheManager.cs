@@ -11,17 +11,17 @@ public class SiteCacheManager
     /// <summary>
     /// Cache for content templates.
     /// </summary>
-    public readonly Dictionary<(string?, Kind?, string?), string> contentTemplateCache = new();
+    public Dictionary<(string?, Kind?, string?), string> contentTemplateCache { get; } = new();
 
     /// <summary>
     /// Cache for base templates.
     /// </summary>
-    public readonly Dictionary<(string?, Kind?, string?), string> baseTemplateCache = new();
+    public Dictionary<(string?, Kind?, string?), string> baseTemplateCache { get; } = new();
 
     /// <summary>
     /// Cache for tag page.
     /// </summary>
-    public readonly ConcurrentDictionary<string, Lazy<IPage>> automaticContentCache = new();
+    public ConcurrentDictionary<string, Lazy<IPage>> automaticContentCache { get; } = new();
 
     /// <summary>
     /// Resets the template cache to force a reload of all templates.

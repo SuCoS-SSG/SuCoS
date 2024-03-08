@@ -27,10 +27,7 @@ public static class SiteHelper
     /// <exception cref="FormatException"></exception>
     public static Site Init(string configFile, IGenerateOptions options, IFrontMatterParser frontMatterParser, FilterDelegate whereParamsFilter, ILogger logger, StopwatchReporter stopwatch)
     {
-        if (stopwatch is null)
-        {
-            throw new ArgumentNullException(nameof(stopwatch));
-        }
+        ArgumentNullException.ThrowIfNull(stopwatch);
 
         SiteSettings siteSettings;
         try
@@ -54,7 +51,7 @@ public static class SiteHelper
 
         site.ParseAndScanSourceFiles(site.SourceContentPath);
 
-        stopwatch.Stop("Parse", site.filesParsedToReport);
+        stopwatch.Stop("Parse", site.FilesParsedToReport);
 
         site.TemplateOptions.FileProvider = new PhysicalFileProvider(Path.GetFullPath(site.SourceThemePath));
 
@@ -97,14 +94,8 @@ public static class SiteHelper
     /// <returns>The site settings.</returns>
     private static SiteSettings ParseSettings(string configFile, IGenerateOptions options, IFrontMatterParser frontMatterParser)
     {
-        if (options is null)
-        {
-            throw new ArgumentNullException(nameof(options));
-        }
-        if (frontMatterParser is null)
-        {
-            throw new ArgumentNullException(nameof(frontMatterParser));
-        }
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(frontMatterParser);
 
         try
         {

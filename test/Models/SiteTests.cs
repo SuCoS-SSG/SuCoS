@@ -46,7 +46,7 @@ public class SiteTests : TestSetup
         // Assert
         Assert.NotNull(site.Home);
         Assert.True(site.Home.IsHome);
-        Assert.Single(site.OutputReferences.Values.Where(output => output is IPage page && page.IsHome));
+		_ = Assert.Single(site.OutputReferences.Values.Where(output => output is IPage page && page.IsHome));
     }
 
     [Theory]
@@ -154,8 +154,8 @@ public class SiteTests : TestSetup
         // Act
         site.ParseAndScanSourceFiles(null);
 
-        // Assert
-        site.OutputReferences.TryGetValue("/tags", out var output);
+		// Assert
+		_ = site.OutputReferences.TryGetValue("/tags", out var output);
         var tagSectionPage = output as IPage;
         Assert.NotNull(tagSectionPage);
         Assert.Equal(2, tagSectionPage.Pages.Count());
@@ -177,8 +177,8 @@ public class SiteTests : TestSetup
         // Act
         site.ParseAndScanSourceFiles(null);
 
-        // Assert
-        site.OutputReferences.TryGetValue("/tags/tag1", out var output);
+		// Assert
+		_ = site.OutputReferences.TryGetValue("/tags/tag1", out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(10, page.Pages.Count());
@@ -202,8 +202,8 @@ public class SiteTests : TestSetup
         // Act
         site.ParseAndScanSourceFiles(null);
 
-        // Assert
-        site.OutputReferences.TryGetValue(url, out var output);
+		// Assert
+		_ = site.OutputReferences.TryGetValue(url, out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(expectedContent, page.Content);
@@ -237,8 +237,8 @@ public class SiteTests : TestSetup
         // Act
         site.ParseAndScanSourceFiles(null);
 
-        // Assert
-        site.OutputReferences.TryGetValue(url, out var output);
+		// Assert
+		_ = site.OutputReferences.TryGetValue(url, out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(expectedContentPreRendered, page.ContentPreRendered);
@@ -263,8 +263,8 @@ public class SiteTests : TestSetup
         // Act
         site.ParseAndScanSourceFiles(null);
 
-        // Assert
-        site.OutputReferences.TryGetValue(url, out var output);
+		// Assert
+		_ = site.OutputReferences.TryGetValue(url, out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(string.Empty, page.Content);
@@ -303,8 +303,8 @@ public class SiteTests : TestSetup
         // Act
         site.ParseAndScanSourceFiles(null);
 
-        // Assert
-        site.OutputReferences.TryGetValue(url, out var output);
+		// Assert
+		_ = site.OutputReferences.TryGetValue(url, out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(expectedContentPreRendered, page.ContentPreRendered);

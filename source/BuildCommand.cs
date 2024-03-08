@@ -54,10 +54,7 @@ public class BuildCommand : BaseGeneratorCommand
                 var outputAbsolutePath = Path.Combine(options.Output, path);
 
                 var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
-                if (!Directory.Exists(outputDirectory))
-                {
-                    _ = Directory.CreateDirectory(outputDirectory!);
-                }
+                _ = Directory.CreateDirectory(outputDirectory!);
 
                 // Save the processed output to the final file
                 var result = page.CompleteContent;
@@ -72,6 +69,9 @@ public class BuildCommand : BaseGeneratorCommand
             else if (output is IResource resource)
             {
                 var outputAbsolutePath = Path.Combine(options.Output, resource.Permalink!.TrimStart('/'));
+
+                var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
+                _ = Directory.CreateDirectory(outputDirectory!);
 
                 // Copy the file to the output folder
                 File.Copy(resource.SourceFullPath, outputAbsolutePath, overwrite: true);

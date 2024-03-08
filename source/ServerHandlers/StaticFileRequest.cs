@@ -24,10 +24,8 @@ public class StaticFileRequest : IServerHandlers
     /// <inheritdoc />
     public bool Check(string requestPath)
     {
-        if (requestPath is null)
-        {
-            throw new ArgumentNullException(nameof(requestPath));
-        }
+        ArgumentNullException.ThrowIfNull(requestPath);
+
         var fileAbsolutePath = Path.Combine(basePath, requestPath.TrimStart('/'));
         return File.Exists(fileAbsolutePath);
     }
@@ -35,20 +33,14 @@ public class StaticFileRequest : IServerHandlers
     /// <inheritdoc />
     public async Task<string> Handle(IHttpListenerResponse response, string requestPath, DateTime serverStartTime)
     {
-        if (requestPath is null)
-        {
-            throw new ArgumentNullException(nameof(requestPath));
-        }
-        if (response is null)
-        {
-            throw new ArgumentNullException(nameof(response));
-        }
+        ArgumentNullException.ThrowIfNull(requestPath);
+        ArgumentNullException.ThrowIfNull(response);
 
         var fileAbsolutePath = Path.Combine(basePath, requestPath.TrimStart('/'));
         response.ContentType = GetContentType(fileAbsolutePath!);
         await using var fileStream = new FileStream(fileAbsolutePath!, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         response.ContentLength64 = fileStream.Length;
-        await fileStream.CopyToAsync(response.OutputStream);
+        await fileStream.CopyToAsync(response.OutputStream).ConfigureAwait(false);
         return inTheme ? "themeSt" : "static";
     }
 

@@ -21,22 +21,22 @@ public abstract class BaseGeneratorCommand
     /// <summary>
     /// The site configuration.
     /// </summary>
-    protected Site site;
+    protected Site site { get; set; }
 
     /// <summary>
     /// The front matter parser instance. The default is YAML.
     /// </summary>
-    protected readonly IFrontMatterParser frontMatterParser = new YAMLParser();
+    protected IFrontMatterParser frontMatterParser { get; } = new YAMLParser();
 
     /// <summary>
     /// The stopwatch reporter.
     /// </summary>
-    protected readonly StopwatchReporter stopwatch;
+    protected StopwatchReporter stopwatch { get; }
 
     /// <summary>
     /// The logger (Serilog).
     /// </summary>
-    protected readonly ILogger logger;
+    protected ILogger logger { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseGeneratorCommand"/> class.
@@ -45,10 +45,7 @@ public abstract class BaseGeneratorCommand
     /// <param name="logger">The logger instance. Injectable for testing</param>
     protected BaseGeneratorCommand(IGenerateOptions options, ILogger logger)
     {
-        if (options is null)
-        {
-            throw new ArgumentNullException(nameof(options));
-        }
+        ArgumentNullException.ThrowIfNull(options);
 
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         stopwatch = new(logger);
@@ -68,14 +65,8 @@ public abstract class BaseGeneratorCommand
     /// <exception cref="ArgumentNullException"></exception>
     protected static ValueTask<FluidValue> WhereParamsFilter(FluidValue input, FilterArguments arguments, TemplateContext context)
     {
-        if (input is null)
-        {
-            throw new ArgumentNullException(nameof(input));
-        }
-        if (arguments is null)
-        {
-            throw new ArgumentNullException(nameof(arguments));
-        }
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(arguments);
 
         List<FluidValue> result = new();
         var list = (input as ArrayValue)!.Values;

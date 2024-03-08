@@ -44,16 +44,16 @@ public class StaticFileRequestHandlerTests : TestSetup, IDisposable
 
         var response = Substitute.For<IHttpListenerResponse>();
         var stream = new MemoryStream();
-        response.OutputStream.Returns(stream);
+		_ = response.OutputStream.Returns(stream);
 
-        // Act
-        staticFileRequest.Check(requestPath);
-        var code = await staticFileRequest.Handle(response, requestPath, DateTime.Now);
+		// Act
+		_ = staticFileRequest.Check(requestPath);
+        var code = await staticFileRequest.Handle(response, requestPath, DateTime.Now).ConfigureAwait(true);
 
-        // Assert
-        stream.Seek(0, SeekOrigin.Begin);
+		// Assert
+		_ = stream.Seek(0, SeekOrigin.Begin);
         using var reader = new StreamReader(stream);
-        var content = await reader.ReadToEndAsync();
+        var content = await reader.ReadToEndAsync().ConfigureAwait(true);
 
         Assert.Equal("test", content);
 

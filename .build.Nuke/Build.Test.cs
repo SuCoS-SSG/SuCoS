@@ -26,30 +26,30 @@ sealed partial class Build : NukeBuild
     static AbsolutePath coverageReportDirectory => coverageDirectory / "report";
     static AbsolutePath coverageReportSummaryDirectory => coverageReportDirectory / "Summary.txt";
 
-    Target Test => _ => _
+    Target Test => td => td
         .DependsOn(Compile)
         .Executes(() =>
         {
-            coverageResultDirectory.CreateDirectory();
-            Coverlet(s => s
-                .SetTarget("dotnet")
-                .SetTargetArgs("test --no-build --no-restore")
-                .SetAssembly(testAssembly)
-                // .SetThreshold(75)
-                .SetOutput(coverageResultFile)
-                .SetFormat(CoverletOutputFormat.cobertura));
+			_ = coverageResultDirectory.CreateDirectory();
+			_ = Coverlet(s => s
+				.SetTarget("dotnet")
+				.SetTargetArgs("test --no-build --no-restore")
+				.SetAssembly(testAssembly)
+				// .SetThreshold(75)
+				.SetOutput(coverageResultFile)
+				.SetFormat(CoverletOutputFormat.cobertura));
         });
 
-    public Target TestReport => _ => _
+    public Target TestReport => td => td
         .DependsOn(Test)
         .Executes(() =>
         {
-            coverageReportDirectory.CreateDirectory();
-            ReportGenerator(s => s
-                    .SetTargetDirectory(coverageReportDirectory)
-                    .SetReportTypes(new ReportTypes[] { ReportTypes.Html, ReportTypes.TextSummary })
-                    .SetReports(coverageResultFile)
-                    );
+			_ = coverageReportDirectory.CreateDirectory();
+			_ = ReportGenerator(s => s
+					.SetTargetDirectory(coverageReportDirectory)
+					.SetReportTypes([ReportTypes.Html, ReportTypes.TextSummary])
+					.SetReports(coverageResultFile)
+					);
             var summaryText = coverageReportSummaryDirectory.ReadAllLines();
             Log.Information(string.Join(Environment.NewLine, summaryText));
         });

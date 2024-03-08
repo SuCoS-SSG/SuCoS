@@ -17,14 +17,8 @@ public static class FileUtils
     /// <returns>The content of the template file.</returns>
     public static string GetTemplate(string themePath, Page page, SiteCacheManager cacheManager, bool isBaseTemplate = false)
     {
-        if (page is null)
-        {
-            throw new ArgumentNullException(nameof(page));
-        }
-        if (cacheManager is null)
-        {
-            throw new ArgumentNullException(nameof(cacheManager));
-        }
+        ArgumentNullException.ThrowIfNull(page);
+        ArgumentNullException.ThrowIfNull(cacheManager);
 
         var index = (page.Section, page.Kind, page.Type);
 
@@ -53,10 +47,7 @@ public static class FileUtils
     /// <returns>The content of the template file, or an empty string if not found.</returns>
     private static string GetTemplate(List<string> templatePaths)
     {
-        if (templatePaths is null)
-        {
-            throw new ArgumentNullException(nameof(templatePaths));
-        }
+        ArgumentNullException.ThrowIfNull(templatePaths);
 
         // Iterate through the template paths and return the content of the first existing file
         foreach (var templatePath in templatePaths.Where(File.Exists))
@@ -76,10 +67,7 @@ public static class FileUtils
     /// <returns>The list of template paths in the lookup order.</returns>
     private static List<string> GetTemplateLookupOrder(string themePath, Page page, bool isBaseTemplate)
     {
-        if (page is null)
-        {
-            throw new ArgumentNullException(nameof(page));
-        }
+        ArgumentNullException.ThrowIfNull(page);
 
         // Generate the lookup order for template files based on the theme path, page section, type, and kind
         var sections = page.Section is not null ? new[] { page.Section, string.Empty } : new[] { string.Empty };

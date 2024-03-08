@@ -21,7 +21,7 @@ sealed partial class Build : NukeBuild
     [Parameter("GitLab Project Full Address")]
     readonly string containerDefaultRID = "linux-x64";
 
-    public Target CreateContainer => _ => _
+    public Target CreateContainer => td => td
         .DependsOn(Publish)
         .DependsOn(CheckNewCommits)
         .OnlyWhenStatic(() => runtimeIdentifier != "win-x64")
@@ -34,35 +34,35 @@ sealed partial class Build : NukeBuild
                 tags.AddRange(tagsOriginal);
             }
 
-            // Build the Container image
-            DockerTasks.DockerBuild(_ => _
-                .SetPath(PublishDirectory)
-                .SetFile($"./Dockerfile")
-                .SetTag(tags.Select(tag => $"{ContainerRegistryImage}:{tag}").ToArray())
-                .SetBuildArg(new[] { $"BASE_IMAGE={BaseImage}", $"COPY_PATH={PublishDirectory}" })
-                .SetProcessLogger((outputType, output) =>
-                {
-                    // A bug this log type value
-                    if (outputType != OutputType.Std)
-                        Log.Information(output);
-                    else
-                        Log.Error(output);
-                })
-                );
+			// Build the Container image
+			_ = DockerTasks.DockerBuild(dbs => dbs
+				.SetPath(PublishDirectory)
+				.SetFile($"./Dockerfile")
+				.SetTag(tags.Select(tag => $"{ContainerRegistryImage}:{tag}").ToArray())
+				.SetBuildArg([$"BASE_IMAGE={BaseImage}", $"COPY_PATH={PublishDirectory}"])
+				.SetProcessLogger((outputType, output) =>
+				{
+					// A bug this log type value
+					if (outputType != OutputType.Std)
+						Log.Information(output);
+					else
+						Log.Error(output);
+				})
+				);
 
-            // Log in to the Docker registry
-            DockerTasks.DockerLogin(_ => _
-                .SetServer("registry.gitlab.com")
-                .SetUsername("gitlab-ci-token")
-                .SetPassword(GitLab.JobToken)
-                );
+			// Log in to the Docker registry
+			_ = DockerTasks.DockerLogin(_ => _
+				.SetServer("registry.gitlab.com")
+				.SetUsername("gitlab-ci-token")
+				.SetPassword(GitLab.JobToken)
+				);
 
             // Push the container images
             foreach (var tag in tags)
             {
-                DockerTasks.DockerPush(_ => _
-                    .SetName($"{ContainerRegistryImage}:{tag}")
-                    );
+				_ = DockerTasks.DockerPush(_ => _
+					.SetName($"{ContainerRegistryImage}:{tag}")
+					);
 
                 // Create a link to the GitLab release
                 var tagLink = GitLabAPIUrl($"?orderBy=NAME&sort=asc&search[]={tag}");

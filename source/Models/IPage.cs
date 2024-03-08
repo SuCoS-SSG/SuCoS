@@ -1,6 +1,7 @@
 using Markdig;
 using SuCoS.Helpers;
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 
 namespace SuCoS.Models;
 
@@ -27,7 +28,7 @@ public interface IPage : IFrontMatter, IOutput
     /// <summary>
     /// Secondary URL patterns to be used to create the url.
     /// </summary>
-    public List<string>? AliasesProcessed { get; set; }
+    public Collection<string>? AliasesProcessed { get; }
 
     /// <summary>
     /// Other content that mention this content.
@@ -49,7 +50,7 @@ public interface IPage : IFrontMatter, IOutput
     /// <summary>
     /// Page resources. All files that accompany a page.
     /// </summary>
-    public List<Resource>? Resources { get; set; }
+    public Collection<Resource>? Resources { get; }
 
     /// <summary>
     /// Plain markdown content, without HTML.
@@ -81,7 +82,7 @@ public interface IPage : IFrontMatter, IOutput
     /// </summary>
     public int WordCount => Plain.Split(nonWords, StringSplitOptions.RemoveEmptyEntries).Length;
 
-    private static readonly char[] nonWords = { ' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r' };
+    private static readonly char[] nonWords = [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
 
     /// <summary>
     /// The markdown content converted to HTML

@@ -24,13 +24,13 @@ public class BaseGeneratorCommandTests
     [Fact]
     public void Constructor_ShouldThrowArgumentNullException_WhenOptionsIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => new BaseGeneratorCommandStub(null!, testLogger));
+		_ = Assert.Throws<ArgumentNullException>(() => new BaseGeneratorCommandStub(null!, testLogger));
     }
 
     [Fact]
     public void Constructor_ShouldThrowArgumentNullException_WhenLoggerIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => new BaseGeneratorCommandStub(testOptions, null!));
+		_ = Assert.Throws<ArgumentNullException>(() => new BaseGeneratorCommandStub(testOptions, null!));
     }
 
     [Fact]

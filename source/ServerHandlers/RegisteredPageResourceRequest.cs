@@ -22,26 +22,21 @@ public class RegisteredPageResourceRequest : IServerHandlers
     /// <inheritdoc />
     public bool Check(string requestPath)
     {
-        if (requestPath is null)
-        {
-            throw new ArgumentNullException(nameof(requestPath));
-        }
+        ArgumentNullException.ThrowIfNull(requestPath);
+
         return site.OutputReferences.TryGetValue(requestPath, out var item) && item is IResource _;
     }
 
     /// <inheritdoc />
     public async Task<string> Handle(IHttpListenerResponse response, string requestPath, DateTime serverStartTime)
     {
-        if (response is null)
-        {
-            throw new ArgumentNullException(nameof(response));
-        }
+        ArgumentNullException.ThrowIfNull(response);
 
         if (site.OutputReferences.TryGetValue(requestPath, out var output) && output is IResource resource)
         {
             response.ContentType = resource.MimeType;
             await using var fileStream = new FileStream(resource.SourceFullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            await fileStream.CopyToAsync(response.OutputStream);
+            await fileStream.CopyToAsync(response.OutputStream).ConfigureAwait(false);
             return "resource";
         }
         else
@@ -56,7 +51,7 @@ public class RegisteredPageResourceRequest : IServerHandlers
     /// </summary>
     /// <param name="content">The content to inject the reload script into.</param>
     /// <returns>The content with the reload script injected.</returns>
-    private string InjectReloadScript(string content)
+    private static string InjectReloadScript(string content)
     {
         // Read the content of the JavaScript file
         string scriptContent;

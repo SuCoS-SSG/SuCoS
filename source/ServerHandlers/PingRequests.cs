@@ -14,15 +14,13 @@ public class PingRequests : IServerHandlers
     /// <inheritdoc />
     public async Task<string> Handle(IHttpListenerResponse response, string requestPath, DateTime serverStartTime)
     {
-        if (response is null)
-        {
-            throw new ArgumentNullException(nameof(response));
-        }
+        ArgumentNullException.ThrowIfNull(response);
+
         var content = serverStartTime.ToString("o");
 
         using var writer = new StreamWriter(response.OutputStream, leaveOpen: true);
-        await writer.WriteAsync(content);
-        await writer.FlushAsync();
+        await writer.WriteAsync(content).ConfigureAwait(false);
+        await writer.FlushAsync().ConfigureAwait(false);
 
         return "ping";
     }

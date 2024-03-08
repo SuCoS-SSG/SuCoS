@@ -135,8 +135,8 @@ Title
 ---
 ";
 
-        // Asset
-        Assert.Throws<YamlDotNet.Core.YamlException>(() => parser.ParseFrontmatterAndMarkdown(fileRelativePathCONST, fileFullPathCONST, fileContent));
+		// Asset
+		_ = Assert.Throws<YamlDotNet.Core.YamlException>(() => parser.ParseFrontmatterAndMarkdown(fileRelativePathCONST, fileFullPathCONST, fileContent));
     }
 
     [Fact]
@@ -212,37 +212,37 @@ Title
     [Fact]
     public void ParseFrontmatter_ShouldThrowExceptionWhenSiteIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdownFromFile(null!, "fakeFilePath"));
+		_ = Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdownFromFile(null!, "fakeFilePath"));
     }
 
     [Fact]
     public void ParseFrontmatter_ShouldThrowExceptionWhenFilePathIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdownFromFile(null!));
+		_ = Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdownFromFile(null!));
     }
 
     [Fact]
     public void ParseFrontmatter_ShouldThrowExceptionWhenFilePathDoesNotExist()
     {
-        Assert.Throws<FileNotFoundException>(() => parser.ParseFrontmatterAndMarkdownFromFile("fakePath"));
+		_ = Assert.Throws<FileNotFoundException>(() => parser.ParseFrontmatterAndMarkdownFromFile("fakePath"));
     }
 
     [Fact]
     public void ParseFrontmatter_ShouldThrowExceptionWhenFilePathDoesNotExist2()
     {
-        Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdown(null!, null!, "fakeContent"));
+		_ = Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdown(null!, null!, "fakeContent"));
     }
 
     [Fact]
     public void ParseFrontmatter_ShouldHandleEmptyFileContent()
     {
-        Assert.Throws<FormatException>(() => parser.ParseFrontmatterAndMarkdown("fakeFilePath", "/fakeFilePath", ""));
+		_ = Assert.Throws<FormatException>(() => parser.ParseFrontmatterAndMarkdown("fakeFilePath", "/fakeFilePath", ""));
     }
 
     [Fact]
     public void ParseYAML_ShouldThrowExceptionWhenFrontmatterIsInvalid()
     {
-        Assert.Throws<FormatException>(() => parser.ParseFrontmatterAndMarkdown("fakeFilePath", "/fakeFilePath", "invalidFrontmatter"));
+		_ = Assert.Throws<FormatException>(() => parser.ParseFrontmatterAndMarkdown("fakeFilePath", "/fakeFilePath", "invalidFrontmatter"));
     }
 
     [Fact]
@@ -265,13 +265,13 @@ Title
     [Fact]
     public void SiteParams_ShouldThrowExceptionWhenSettingsIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => parser.ParseParams(null!, typeof(Site), siteContentCONST));
+		_ = Assert.Throws<ArgumentNullException>(() => parser.ParseParams(null!, typeof(Site), siteContentCONST));
     }
 
     [Fact]
     public void SiteParams_ShouldThrowExceptionWhenTypeIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => parser.ParseParams(site, null!, siteContentCONST));
+		_ = Assert.Throws<ArgumentNullException>(() => parser.ParseParams(site, null!, siteContentCONST));
     }
 
     [Fact]

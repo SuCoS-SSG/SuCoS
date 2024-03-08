@@ -141,7 +141,9 @@ public class Site : ISite
     /// <summary>
     /// Number of files parsed, used in the report.
     /// </summary>
-    public int filesParsedToReport;
+    public int FilesParsedToReport => filesParsedToReport;
+
+    private int filesParsedToReport;
 
     private const string indexLeafFileConst = "index.md";
 
@@ -218,7 +220,7 @@ public class Site : ISite
 
         _ = Parallel.ForEach(markdownFiles, filePath =>
         {
-            ParseSourceFile(filePath, parent);
+            _ = ParseSourceFile(filePath, parent);
         });
 
         var subdirectories = Directory.GetDirectories(directory);
@@ -310,7 +312,7 @@ public class Site : ISite
 
             // Remove the selected file from markdownFiles
             markdownFiles = bundleType == BundleType.leaf
-                ? new string[] { }
+                ? Array.Empty<string>()
                 : markdownFiles.Where(file => file != selectedFile).ToArray();
 
             page = ParseSourceFile(selectedFile!, parent, bundleType);
@@ -318,11 +320,11 @@ public class Site : ISite
 
             if (level == 0)
             {
-                OutputReferences.TryRemove(page!.Permalink!, out _);
+                _ = OutputReferences.TryRemove(page!.Permalink!, out _);
                 page.Permalink = "/";
                 page.Kind = Kind.index;
 
-                OutputReferences.GetOrAdd(page.Permalink, page);
+                _ = OutputReferences.GetOrAdd(page.Permalink, page);
                 Home = page;
             }
             else
@@ -341,7 +343,7 @@ public class Site : ISite
         }
     }
 
-    private IPage? ParseSourceFile(in string filePath, in IPage? parent, BundleType bundleType = BundleType.none)
+    private Page? ParseSourceFile(in string filePath, in IPage? parent, BundleType bundleType = BundleType.none)
     {
         Page? page = null;
         try
@@ -377,10 +379,7 @@ public class Site : ISite
     /// <param name="overwrite"></param>
     public void PostProcessPage(in IPage page, IPage? parent = null, bool overwrite = false)
     {
-        if (page is null)
-        {
-            throw new ArgumentNullException(nameof(page));
-        }
+        ArgumentNullException.ThrowIfNull(page);
 
         page.Parent = parent;
         page.Permalink = page.CreatePermalink();
@@ -391,7 +390,7 @@ public class Site : ISite
                 page.PostProcess();
 
                 // Replace the old page with the newly created one
-                if (oldOutput is IPage oldpage && oldpage?.PagesReferences is not null)
+                if (oldOutput is IPage oldpage && oldpage.PagesReferences is not null)
                 {
                     foreach (var pageOld in oldpage.PagesReferences)
                     {
@@ -402,7 +401,7 @@ public class Site : ISite
                 // Register the page for all urls
                 foreach (var pageOutput in page.AllOutputURLs)
                 {
-                    OutputReferences.TryAdd(pageOutput.Key, pageOutput.Value);
+                    _ = OutputReferences.TryAdd(pageOutput.Key, pageOutput.Value);
                 }
             }
         }
@@ -420,10 +419,8 @@ public class Site : ISite
     /// <inheritdoc />
     public bool IsValidPage(in IFrontMatter frontMatter, IGenerateOptions? options)
     {
-        if (frontMatter is null)
-        {
-            throw new ArgumentNullException(nameof(frontMatter));
-        }
+        ArgumentNullException.ThrowIfNull(frontMatter);
+
         return IsValidDate(frontMatter, options)
             && (frontMatter.Draft is null || frontMatter.Draft == false || (options?.Draft ?? false));
     }
@@ -431,10 +428,8 @@ public class Site : ISite
     /// <inheritdoc />
     public bool IsValidDate(in IFrontMatter frontMatter, IGenerateOptions? options)
     {
-        if (frontMatter is null)
-        {
-            throw new ArgumentNullException(nameof(frontMatter));
-        }
+        ArgumentNullException.ThrowIfNull(frontMatter);
+
         return (!IsDateExpired(frontMatter) || (options?.Expired ?? false))
             && (IsDatePublishable(frontMatter) || (options?.Future ?? false));
     }
@@ -444,10 +439,8 @@ public class Site : ISite
     /// </summary>
     public bool IsDateExpired(in IFrontMatter frontMatter)
     {
-        if (frontMatter is null)
-        {
-            throw new ArgumentNullException(nameof(frontMatter));
-        }
+        ArgumentNullException.ThrowIfNull(frontMatter);
+
         return frontMatter.ExpiryDate is not null && frontMatter.ExpiryDate <= clock.Now;
     }
 
@@ -456,10 +449,8 @@ public class Site : ISite
     /// </summary>
     public bool IsDatePublishable(in IFrontMatter frontMatter)
     {
-        if (frontMatter is null)
-        {
-            throw new ArgumentNullException(nameof(frontMatter));
-        }
+        ArgumentNullException.ThrowIfNull(frontMatter);
+
         return frontMatter.GetPublishDate is null || frontMatter.GetPublishDate <= clock.Now;
     }
 }

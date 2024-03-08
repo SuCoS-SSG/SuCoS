@@ -42,7 +42,7 @@ public class TestSetup
 
     public TestSetup()
     {
-        systemClockMock.Now.Returns(todayDate);
+		_ = systemClockMock.Now.Returns(todayDate);
         site = new Site(generateOptionsMock, siteSettingsMock, frontMatterParser, loggerMock, systemClockMock);
     }
 }

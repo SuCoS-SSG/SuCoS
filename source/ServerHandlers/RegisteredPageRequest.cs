@@ -22,26 +22,22 @@ public class RegisteredPageRequest : IServerHandlers
     /// <inheritdoc />
     public bool Check(string requestPath)
     {
-        if (requestPath is null)
-        {
-            throw new ArgumentNullException(nameof(requestPath));
-        }
+        ArgumentNullException.ThrowIfNull(requestPath);
+
         return site.OutputReferences.TryGetValue(requestPath, out var item) && item is IPage _;
     }
 
     /// <inheritdoc />
     public async Task<string> Handle(IHttpListenerResponse response, string requestPath, DateTime serverStartTime)
     {
-        if (response is null)
-        {
-            throw new ArgumentNullException(nameof(response));
-        }
+        ArgumentNullException.ThrowIfNull(response);
+
         if (site.OutputReferences.TryGetValue(requestPath, out var output) && output is IPage page)
         {
             var content = page.CompleteContent;
             content = InjectReloadScript(content);
             using var writer = new StreamWriter(response.OutputStream, leaveOpen: true);
-            await writer.WriteAsync(content);
+            await writer.WriteAsync(content).ConfigureAwait(false);
             return "dict";
         }
         else
