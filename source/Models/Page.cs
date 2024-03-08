@@ -3,6 +3,7 @@ using Markdig;
 using Microsoft.Extensions.FileSystemGlobbing;
 using SuCoS.Helpers;
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 
 namespace SuCoS.Models;
 
@@ -28,7 +29,7 @@ public class Page : IPage
     public bool? Draft => frontMatter.Draft;
 
     /// <inheritdoc/>
-    public List<string>? Aliases => frontMatter.Aliases;
+    public Collection<string>? Aliases => frontMatter.Aliases;
 
     /// <inheritdoc/>
     public string? Section => frontMatter.Section;
@@ -49,10 +50,10 @@ public class Page : IPage
     public int Weight => frontMatter.Weight;
 
     /// <inheritdoc/>
-    public List<string>? Tags => frontMatter.Tags;
+    public Collection<string>? Tags => frontMatter.Tags;
 
     /// <inheritdoc/>
-    public List<FrontMatterResources>? ResourceDefinitions => frontMatter.ResourceDefinitions;
+    public Collection<FrontMatterResources>? ResourceDefinitions => frontMatter.ResourceDefinitions;
 
     /// <inheritdoc/>
     public string RawContent => frontMatter.RawContent;
@@ -103,7 +104,7 @@ public class Page : IPage
     /// <summary>
     /// Secondary URL patterns to be used to create the url.
     /// </summary>
-    public List<string>? AliasesProcessed { get; set; }
+    public Collection<string>? AliasesProcessed { get; set; }
 
     /// <inheritdoc/>
     public string? Permalink { get; set; }
@@ -121,7 +122,7 @@ public class Page : IPage
     public BundleType BundleType { get; set; } = BundleType.none;
 
     /// <inheritdoc/>
-    public List<Resource>? Resources { get; set; }
+    public Collection<Resource>? Resources { get; set; }
 
     /// <summary>
     /// Plain markdown content, without HTML.
@@ -153,7 +154,7 @@ public class Page : IPage
     /// </summary>
     public int WordCount => Plain.Split(nonWords, StringSplitOptions.RemoveEmptyEntries).Length;
 
-    private static readonly char[] nonWords = { ' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r' };
+    private static readonly char[] nonWords = [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
 
     /// <summary>
     /// The markdown content converted to HTML
@@ -191,7 +192,7 @@ public class Page : IPage
                 return pagesCached;
             }
 
-            pagesCached ??= new();
+            pagesCached = new();
             foreach (var permalink in PagesReferences)
             {
                 var page = Site.OutputReferences[permalink] as IPage;
@@ -365,14 +366,14 @@ endif
         {
             foreach (var tagName in Tags)
             {
-                Site.CreateSystemPage(Path.Combine("tags", tagName), tagName, "tags", this);
+                _ = Site.CreateSystemPage(Path.Combine("tags", tagName), tagName, "tags", this);
             }
         }
 
         ScanForResources();
     }
 
-    private int counterInternal = 0;
+    private int counterInternal;
     private bool counterInternalLock;
     private int counter
     {
@@ -418,7 +419,7 @@ endif
                     foreach (var resourceDefinition in ResourceDefinitions)
                     {
                         resourceDefinition.GlobMatcher ??= new();
-                        resourceDefinition.GlobMatcher.AddInclude(resourceDefinition.Src);
+                        _ = resourceDefinition.GlobMatcher.AddInclude(resourceDefinition.Src);
                         var file = new InMemoryDirectoryInfo("./", new[] { filenameOriginal });
                         if (resourceDefinition.GlobMatcher.Execute(file).HasMatches)
                         {

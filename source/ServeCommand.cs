@@ -9,7 +9,7 @@ namespace SuCoS;
 /// <summary>
 /// Serve Command will live serve the site and watch any changes.
 /// </summary>
-public class ServeCommand : BaseGeneratorCommand, IDisposable
+public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
 {
     private const string baseURLDefault = "http://localhost";
     private const int portDefault = 1122;
@@ -86,13 +86,13 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
 
         serverStartTime = DateTime.UtcNow;
 
-        handlers = new IServerHandlers[]{
+        handlers = [
             new PingRequests(),
             new StaticFileRequest(site.SourceStaticPath, false),
             new StaticFileRequest(site.SourceThemeStaticPath, true),
             new RegisteredPageRequest(site),
             new RegisteredPageResourceRequest(site)
-        };
+        ];
         listener = new HttpListener();
         listener.Prefixes.Add($"{baseURL}:{port}/");
         listener.Start();
@@ -105,8 +105,8 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
             {
                 try
                 {
-                    var context = await listener.GetContextAsync();
-                    await HandleRequest(context);
+                    var context = await listener.GetContextAsync().ConfigureAwait(false);
+                    await HandleRequest(context).ConfigureAwait(false);
                 }
                 catch (HttpListenerException ex)
                 {
@@ -143,7 +143,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     /// </summary>
     private async Task RestartServer()
     {
-        await lastRestartTask.ContinueWith(async _ =>
+        _ = await lastRestartTask.ContinueWith(async _ =>
         {
             logger.Information($"Restarting server...");
 
@@ -155,7 +155,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
                 if (loop is not null)
                 {
                     // Wait for the loop to finish processing any ongoing requests.
-                    await loop;
+                    await loop.ConfigureAwait(false);
                     loop.Dispose();
                 }
             }
@@ -164,7 +164,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
             site = SiteHelper.Init(configFile, options, frontMatterParser, WhereParamsFilter, logger, stopwatch);
 
             StartServer(baseURLDefault, portDefault);
-        });
+        }).ConfigureAwait(false);
 
         lastRestartTask = lastRestartTask.ContinueWith(t => t.Exception != null
             ? throw t.Exception
@@ -194,7 +194,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
 
                     try
                     {
-                        resultType = await item.Handle(response, requestPath, serverStartTime);
+                        resultType = await item.Handle(response, requestPath, serverStartTime).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -212,7 +212,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
         if (resultType is null)
         {
             resultType = "404";
-            await HandleNotFoundRequest(context);
+            await HandleNotFoundRequest(context).ConfigureAwait(false);
         }
         logger.Debug("Request {type}\tfor {RequestPath}", resultType, requestPath);
     }
@@ -221,7 +221,7 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
     {
         context.Response.StatusCode = 404;
         using var writer = new StreamWriter(context.Response.OutputStream);
-        await writer.WriteAsync("404 - File Not Found");
+        await writer.WriteAsync("404 - File Not Found").ConfigureAwait(false);
     }
 
     /// <summary>
@@ -241,6 +241,6 @@ public class ServeCommand : BaseGeneratorCommand, IDisposable
 
     private async void DebounceCallback(object? state)
     {
-        await RestartServer();
+        await RestartServer().ConfigureAwait(false);
     }
 }

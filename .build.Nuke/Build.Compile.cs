@@ -26,21 +26,21 @@ sealed partial class Build : NukeBuild
             coverageDirectory.DeleteDirectory();
         });
 
-    Target Restore => _ => _
+    Target Restore => td => td
         .DependsOn(Clean)
         .Executes(() =>
         {
-            DotNetRestore(s => s
+            _ = DotNetRestore(s => s
                 .SetProjectFile(solution));
         });
 
-    Target Compile => _ => _
+    Target Compile => td => td
         .DependsOn(Restore)
         .Executes(() =>
         {
             Log.Debug("Configuration {Configuration}", configurationSet);
             Log.Debug("configuration {configuration}", configuration);
-            DotNetBuild(s => s
+            _ = DotNetBuild(s => s
                 .SetNoLogo(true)
                 .SetProjectFile(solution)
                 .SetConfiguration(configurationSet)

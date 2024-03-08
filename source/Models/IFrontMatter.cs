@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using SuCoS.Models.CommandLineOptions;
 
 namespace SuCoS.Models;
@@ -82,7 +83,7 @@ public interface IFrontMatter : IParams, IFile
     /// List URL, it will be parsed as liquid templates, so you can use page variables.
     /// </summary>
     /// <see cref="URL"/>
-    List<string>? Aliases { get; }
+    Collection<string>? Aliases { get; }
 
     /// <summary>
     /// Page weight. Used for sorting by default.
@@ -92,12 +93,12 @@ public interface IFrontMatter : IParams, IFile
     /// <summary>
     /// A list of tags, if any.
     /// </summary>
-    List<string>? Tags { get; }
+    Collection<string>? Tags { get; }
 
     /// <summary>
     /// List of resource definitions.
     /// </summary>
-    List<FrontMatterResources>? ResourceDefinitions { get; }
+    Collection<FrontMatterResources>? ResourceDefinitions { get; }
 
     /// <summary>
     /// Raw content from the Markdown file, bellow the front matter.

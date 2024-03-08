@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using YamlDotNet.Serialization;
 
 namespace SuCoS.Models;
@@ -23,7 +24,7 @@ public class FrontMatter : IFrontMatter
     public bool? Draft { get; init; }
 
     /// <inheritdoc/>
-    public List<string>? Aliases { get; init; }
+    public Collection<string>? Aliases { get; init; }
 
     /// <inheritdoc/>
     public string? Section { get; set; } = string.Empty;
@@ -41,13 +42,13 @@ public class FrontMatter : IFrontMatter
     public DateTime? ExpiryDate { get; init; }
 
     /// <inheritdoc/>
-    public int Weight { get; init; } = 0;
+    public int Weight { get; init; }
 
     /// <inheritdoc/>
-    public List<string>? Tags { get; init; }
+    public Collection<string>? Tags { get; init; }
 
     /// <inheritdoc/>
-    public List<FrontMatterResources>? ResourceDefinitions { get; set; }
+    public Collection<FrontMatterResources>? ResourceDefinitions { get; set; }
 
     /// <inheritdoc/>
     [YamlIgnore]

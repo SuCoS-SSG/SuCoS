@@ -26,6 +26,12 @@ public class Program
 ";
 
     private ILogger logger;
+    private static readonly string[] aliases = ["--source", "-s"];
+    private static readonly string[] aliasesArray = ["--draft", "-d"];
+    private static readonly string[] aliasesArray0 = ["--future", "-f"];
+    private static readonly string[] aliasesArray1 = ["--expired", "-e"];
+    private static readonly string[] aliasesArray2 = ["--verbose", "-v"];
+    private static readonly string[] aliasesArray3 = ["--output", "-o"];
 
     /// <summary>
     /// Entry point of the program
@@ -59,14 +65,14 @@ public class Program
         OutputWelcome();
 
         // Shared options between the commands
-        var sourceOption = new Option<string>(new[] { "--source", "-s" }, () => ".", "Source directory path");
-        var draftOption = new Option<bool>(new[] { "--draft", "-d" }, "Include draft content");
-        var futureOption = new Option<bool>(new[] { "--future", "-f" }, "Include content with dates in the future");
-        var expiredOption = new Option<bool>(new[] { "--expired", "-e" }, "Include content with ExpiredDate dates from the past");
-        var verboseOption = new Option<bool>(new[] { "--verbose", "-v" }, "Verbose output");
+        var sourceOption = new Option<string>(aliases, () => ".", "Source directory path");
+        var draftOption = new Option<bool>(aliasesArray, "Include draft content");
+        var futureOption = new Option<bool>(aliasesArray0, "Include content with dates in the future");
+        var expiredOption = new Option<bool>(aliasesArray1, "Include content with ExpiredDate dates from the past");
+        var verboseOption = new Option<bool>(aliasesArray2, "Verbose output");
 
         // BuildCommand setup
-        var buildOutputOption = new Option<string>(new[] { "--output", "-o" }, "Output directory path");
+        var buildOutputOption = new Option<string>(aliasesArray3, "Output directory path");
 
         Command buildCommandHandler = new("build", "Builds the site")
         {
@@ -116,7 +122,7 @@ public class Program
 
             var serveCommand = new ServeCommand(serverOptions, logger, new SourceFileWatcher());
             serveCommand.StartServer();
-            await Task.Delay(-1);  // Wait forever.
+            await Task.Delay(-1).ConfigureAwait(false);  // Wait forever.
         },
         sourceOption, draftOption, futureOption, expiredOption, verboseOption);
 

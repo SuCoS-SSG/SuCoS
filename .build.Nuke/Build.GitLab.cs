@@ -42,7 +42,7 @@ sealed partial class Build : NukeBuild
     /// One for each runtime identifier.
     /// </summary>
     /// <see href="https://docs.gitlab.com/ee/user/packages/generic_packages/"/>
-    public Target CreatePackage => _ => _
+    public Target CreatePackage => td => td
         .DependsOn(Publish)
         .DependsOn(CheckNewCommits)
         .Requires(() => gitlabPrivateToken)
@@ -80,9 +80,9 @@ sealed partial class Build : NukeBuild
                 using var httpClient = HttpClientGitLabToken();
                 var response = await httpClient.PutAsync(
                     packageLink,
-                    new StreamContent(fileStream));
+                    new StreamContent(fileStream)).ConfigureAwait(false);
 
-                response.EnsureSuccessStatusCode();
+				_ = response.EnsureSuccessStatusCode();
             }
             catch (Exception ex)
             {
@@ -97,7 +97,7 @@ sealed partial class Build : NukeBuild
     /// Creates a release in the GitLab repository.
     /// </summary>
     /// <see href="https://docs.gitlab.com/ee/api/releases/#create-a-release"/>
-    public Target GitLabCreateRelease => _ => _
+    public Target GitLabCreateRelease => td => td
         .DependsOn(GitLabCreateTag)
         .OnlyWhenStatic(() => HasNewCommits)
         .Requires(() => gitlabPrivateToken)
@@ -113,9 +113,9 @@ sealed partial class Build : NukeBuild
                         tag_name = TagName,
                         name = $"{TagName} {Date}",
                         description = $"Created {Date}"
-                    });
+                    }).ConfigureAwait(false);
 
-                response.EnsureSuccessStatusCode();
+				_ = response.EnsureSuccessStatusCode();
             }
             catch (Exception ex)
             {
@@ -128,7 +128,7 @@ sealed partial class Build : NukeBuild
     /// Creates a tag in the GitLab repository.
     /// </summary>
     /// <see href="https://docs.gitlab.com/ee/api/tags.html#create-a-new-tag"/>
-    Target GitLabCreateTag => _ => _
+    Target GitLabCreateTag => td => td
         .DependsOn(CheckNewCommits)
         .After(Compile)
         .OnlyWhenStatic(() => HasNewCommits)
@@ -145,9 +145,9 @@ sealed partial class Build : NukeBuild
                         tag_name = TagName,
                         @ref = GitLab?.CommitRefName ?? GitTasks.GitCurrentCommit(),
                         message = $"Automatic tag creation: {isScheduled} at {Date}"
-                    });
+                    }).ConfigureAwait(false);
 
-                response.EnsureSuccessStatusCode();
+				_ = response.EnsureSuccessStatusCode();
             }
             catch (Exception ex)
             {
@@ -197,9 +197,9 @@ sealed partial class Build : NukeBuild
                 {
                     name = itemName,
                     url = itemLink
-                });
+                }).ConfigureAwait(false);
 
-            response.EnsureSuccessStatusCode();
+			_ = response.EnsureSuccessStatusCode();
         }
         catch (Exception ex)
         {

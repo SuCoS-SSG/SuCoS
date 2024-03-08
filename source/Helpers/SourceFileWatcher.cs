@@ -3,7 +3,7 @@ namespace SuCoS.Helpers;
 /// <summary>
 /// The FileSystemWatcher object that monitors the source directory for file changes.
 /// </summary>
-public class SourceFileWatcher : IFileWatcher
+public sealed class SourceFileWatcher : IFileWatcher, IDisposable
 {
     /// <summary>
     /// The FileSystemWatcher object that monitors the source directory for file changes.
@@ -16,10 +16,7 @@ public class SourceFileWatcher : IFileWatcher
     /// <inheritdoc/>
     public void Start(string SourceAbsolutePath, Action<object, FileSystemEventArgs> OnSourceFileChanged)
     {
-        if (OnSourceFileChanged is null)
-        {
-            throw new ArgumentNullException(nameof(OnSourceFileChanged));
-        }
+        ArgumentNullException.ThrowIfNull(OnSourceFileChanged);
 
         fileWatcher = new FileSystemWatcher
         {
@@ -40,5 +37,20 @@ public class SourceFileWatcher : IFileWatcher
     public void Stop()
     {
         fileWatcher?.Dispose();
+    }
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            fileWatcher?.Dispose();
+        }
     }
 }
