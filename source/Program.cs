@@ -28,14 +28,6 @@ public class Program(ILogger logger)
     \/_____/\/___/   \/___/  \/___/  \/_____/
 ";
 
-    private ILogger Logger { get; set; } = logger;
-    private static readonly string[] aliases = ["--source", "-s"];
-    private static readonly string[] aliasesArray = ["--draft", "-d"];
-    private static readonly string[] aliasesArray0 = ["--future", "-f"];
-    private static readonly string[] aliasesArray1 = ["--expired", "-e"];
-    private static readonly string[] aliasesArray2 = ["--verbose", "-v"];
-    private static readonly string[] aliasesArray3 = ["--output", "-o"];
-
     /// <summary>
     /// Entry point of the program
     /// </summary>
@@ -57,7 +49,7 @@ public class Program(ILogger logger)
         return await CommandLine.Parser.Default.ParseArguments<BuildOptions, ServeOptions>(args)
             .WithParsed<GenerateOptions>(options =>
             {
-                Logger = CreateLogger(options.Verbose);
+                logger = CreateLogger(options.Verbose);
             })
             .WithParsed<BuildOptions>(options =>
             {
@@ -68,11 +60,11 @@ public class Program(ILogger logger)
                 {
                     try
                     {
-                        _ = new BuildCommand(options, Logger);
+                        _ = new BuildCommand(options, logger);
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error($"Build failed: {ex.Message}");
+                        logger.Error($"Build failed: {ex.Message}");
                         return Task.FromResult(1);
                     }
                     return Task.FromResult(0);
@@ -81,7 +73,7 @@ public class Program(ILogger logger)
                 {
                     try
                     {
-                        var serveCommand = new ServeCommand(options, Logger, new SourceFileWatcher());
+                        var serveCommand = new ServeCommand(options, logger, new SourceFileWatcher());
                         serveCommand.StartServer();
                         await Task.Delay(-1).ConfigureAwait(false);  // Wait forever.
                     }
@@ -89,11 +81,11 @@ public class Program(ILogger logger)
                     {
                         if (options.Verbose)
                         {
-                            Logger.Error(ex, "Serving failed");
+                            logger.Error(ex, "Serving failed");
                         }
                         else
                         {
-                            Logger.Error($"Serving failed: {ex.Message}");
+                            logger.Error($"Serving failed: {ex.Message}");
                         }
                         return 1;
                     }
@@ -108,14 +100,11 @@ public class Program(ILogger logger)
     /// </summary>
     /// <param name="verbose"></param>
     /// <returns></returns>
-    public static ILogger CreateLogger(bool verbose = false)
-    {
-        return new LoggerConfiguration()
-            .MinimumLevel.Is(verbose ? LogEventLevel.Debug : LogEventLevel.Information)
-            // .WriteTo.Async(a => a.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture))
-            .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
-            .CreateLogger();
-    }
+    public static ILogger CreateLogger(bool verbose = false) => new LoggerConfiguration()
+        .MinimumLevel.Is(verbose ? LogEventLevel.Debug : LogEventLevel.Information)
+        // .WriteTo.Async(a => a.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture))
+        .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
+        .CreateLogger();
 
     /// <summary>
     /// Print the name and version of the program.
@@ -126,7 +115,7 @@ public class Program(ILogger logger)
         var assemblyName = assembly?.GetName();
         var appName = assemblyName?.Name;
         var appVersion = assemblyName?.Version;
-        Logger.Information("{name} v{version}", appName, appVersion);
+        logger.Information("{name} v{version}", appName, appVersion);
     }
 
     /// <summary>
@@ -134,6 +123,6 @@ public class Program(ILogger logger)
     /// </summary>
     public void OutputLogo()
     {
-        Logger.Information(helloWorld);
+        logger.Information(helloWorld);
     }
 }

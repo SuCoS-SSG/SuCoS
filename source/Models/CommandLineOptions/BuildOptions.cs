@@ -5,7 +5,7 @@ namespace SuCoS.Models.CommandLineOptions;
 /// <summary>
 /// Command line options for the build command.
 /// </summary>
-[Verb("build", HelpText = "Builds the site")]
+[Verb("build", true, HelpText = "Builds the site")]
 public class BuildOptions : GenerateOptions
 {
     /// <summary>

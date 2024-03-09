@@ -18,7 +18,7 @@ public class SiteTests : TestSetup
         var siteFullPath = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST01));
         site.Options = new GenerateOptions
         {
-            Source = siteFullPath
+            SourceArgument = siteFullPath
         };
 
         // Act
@@ -36,7 +36,7 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            Source = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
+            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
         };
         site.Options = options;
 
@@ -57,7 +57,7 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            Source = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
+            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
         };
         site.Options = options;
 
@@ -77,7 +77,7 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            Source = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
+            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
         };
         site.Options = options;
 
@@ -97,7 +97,7 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            Source = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
+            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
         };
         site.Options = options;
 
@@ -113,7 +113,7 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST03))
+            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST03))
         };
         site.Options = options;
 
@@ -130,7 +130,7 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST01))
+            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST01))
         };
         site.Options = options;
 
@@ -147,7 +147,7 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST04))
+            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST04))
         };
         site.Options = options;
 
@@ -170,7 +170,7 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST04))
+            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST04))
         };
         site.Options = options;
 
@@ -195,7 +195,7 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST04))
+            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST04))
         };
         site.Options = options;
 
@@ -230,7 +230,7 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST05))
+            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST05))
         };
         site.Options = options;
 
@@ -256,7 +256,7 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST07))
+            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST07))
         };
         site.Options = options;
 
@@ -296,7 +296,7 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            Source = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST06))
+            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST06))
         };
         site.Options = options;
 

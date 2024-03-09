@@ -14,7 +14,7 @@ public class ProgramTests : TestSetup
     {
         // Act
         var logger = Program.CreateLogger(verbose);
-
+        
         // Assert
         Assert.True(logger.IsEnabled(expected));
     }
