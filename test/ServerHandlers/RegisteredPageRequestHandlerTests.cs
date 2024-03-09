@@ -16,7 +16,7 @@ public class RegisteredPageRequestHandlerTests : TestSetup
         var siteFullPath = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST06));
         site.Options = new GenerateOptions
         {
-            Source = siteFullPath
+            SourceArgument = siteFullPath
         };
         var registeredPageRequest = new RegisteredPageRequest(site);
 
@@ -36,7 +36,7 @@ public class RegisteredPageRequestHandlerTests : TestSetup
         var siteFullPath = Path.GetFullPath(Path.Combine(testSitesPath, testSitePath));
         site.Options = new GenerateOptions
         {
-            Source = siteFullPath
+            SourceArgument = siteFullPath
         };
         var registeredPageRequest = new RegisteredPageRequest(site);
 

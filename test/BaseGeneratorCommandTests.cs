@@ -10,7 +10,7 @@ public class BaseGeneratorCommandTests
 {
     private static readonly IGenerateOptions testOptions = new GenerateOptions
     {
-        Source = "test_source"
+        SourceArgument = "test_source"
     };
 
     private static readonly ILogger testLogger = new LoggerConfiguration().CreateLogger();

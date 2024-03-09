@@ -12,8 +12,15 @@ public class GenerateOptions : IGenerateOptions
     public bool Verbose { get; init; }
 
     /// <inheritdoc/>
+    public string Source => string.IsNullOrEmpty(SourceOption) ? SourceArgument : SourceOption;
+
+    /// <inheritdoc/>
+    [Value(0)]
+    public string SourceArgument { private get; init; } = "./";
+
+    /// <inheritdoc/>
     [Option('s', "source", Required = false, HelpText = "Source directory path")]
-    public required string Source { get; init; } = ".";
+    public string SourceOption { private get; init; } = string.Empty;
 
     /// <inheritdoc/>
     [Option('d', "draft", Required = false, HelpText = "Include draft content")]
