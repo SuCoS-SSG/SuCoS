@@ -1,22 +1,16 @@
 # SuCoS
 
 ```txt
- ____             ____            ____       
-/\  _`\          /\  _`\         /\  _`\     
-\ \,\L\_\  __  __\ \ \/\_\    ___\ \,\L\_\   
- \/_\__ \ /\ \/\ \\ \ \/_/_  / __`\/_\__ \   
-   /\ \L\ \ \ \_\ \\ \ \L\ \/\ \L\ \/\ \L\ \ 
-   \ `\____\ \____/ \ \____/\ \____/\ `\____\
-    \/_____/\/___/   \/___/  \/___/  \/_____/
+░█▀▀░█░█░█▀▀░█▀█░█▀▀
+░▀▀█░█░█░█░░░█░█░▀▀█
+░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀
 ```
 
 **S**tatic site generator
 **u**sing
-**CoS**harp
+**CS**harp
 
-🎉 Welcome to **SuCoS**, the most delightfully wacky and laughably unstable Static Site Generator out there! 🎉
-
-The vision is to be a close substitute of [Hugo](https://gohugo.io/), but written in **C#**. As a vision, I will dream as much as I can.
+🎉 Welcome to **SuCoS** (Juices), the most delightfully wacky and laughably unstable Static Site Generator out there! 🎉
 
 > **DISCLAIMER**: **SuCoS** is in a **SUPER ALPHA version**, and we mean SUPER! Please do not use for ANY real site for now. Prepare to be entertained by unexpected behaviors! 🎢
 
@@ -27,15 +21,13 @@ The vision is to be a close substitute of [Hugo](https://gohugo.io/), but writte
 
 ## Usage
 
-First, navigate to the **SuCoS** folder.
-Chris Kibble
-Then, run the following command:
+First, navigate to the **SuCoS** folder, then, run the following command:
 
 ```bash
-SuCoS --source YOUR_SITE_PATH
+SuCoS <YOUR_SITE_PATH>
 ```
 
-if `--source` not present, it will default to current folder.
+if `<YOUR_SITE_PATH>` not present, it will default to current folder.
 
 Watch in awe as **SuCoS** creates a static site from your input files, or as it possibly implodes (with a 50/50 chance).
 
@@ -47,7 +39,7 @@ This piece of software is brought to you under the [MIT license](LICENSE), becau
 
 ## Build Requirements
 
-**SuCoS** is built with **dotnet 7**, the latest and greatest in the C# universe! To join the party, make sure you have it installed on your system.
+**SuCoS** is built with **dotnet 8**, and the latest C# speed and features!
 
 ```bash
 git clone https://github.com/brunomassa/sucos.git
@@ -61,8 +53,6 @@ We welcome contributions in the form of bug reports, feature requests, and pull 
 
 ## Final Words
 
-Remember, **SuCoS** is a work in progress, and it's important to maintain calm while using this software. After all, we're all in this unpredictable journey together. Have fun, and may the 4th be with you! 😄
+Remember, **SuCoS** is a work in progress, and it's important to maintain calm while using this software. Have fun, and may the 4th be with you! 😄
 
-## Author
-
-Created by [Bruno MASSA](https://www.brunomassa.com) and hopefully your contributions TOO!
+Created by [Bruno MASSA](https://www.brunomassa.com) and hopefully your contributions too!
