@@ -42,7 +42,7 @@ public class Program(ILogger logger)
     /// <returns></returns>
     public async Task<int> RunCommandLine(string[] args)
     {
-        return await CommandLine.Parser.Default.ParseArguments<BuildOptions, ServeOptions>(args)
+        return await CommandLine.Parser.Default.ParseArguments<BuildOptions, ServeOptions, CheckLinkOptions>(args)
             .WithParsed<GenerateOptions>(options =>
             {
                 logger = CreateLogger(options.Verbose);
@@ -86,8 +86,13 @@ public class Program(ILogger logger)
                         return 1;
                     }
                     return 0;
-                }
-                , errs => Task.FromResult(1)
+                },
+                (CheckLinkOptions options) =>
+                {
+                    var command = new CheckLinkCommand(options, logger);
+                    return command.Run();
+                },
+                 errs => Task.FromResult(1)
                 );
     }
 

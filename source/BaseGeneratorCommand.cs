@@ -68,7 +68,7 @@ public abstract class BaseGeneratorCommand
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(arguments);
 
-        List<FluidValue> result = new();
+        List<FluidValue> result = [];
         var list = (input as ArrayValue)!.Values;
 
         var keys = arguments.At(0).ToStringValue().Split('.');

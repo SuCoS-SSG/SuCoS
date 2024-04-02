@@ -33,7 +33,7 @@ public class SiteSettings : IParams
     #region IParams
 
     /// <inheritdoc/>
-    public Dictionary<string, object> Params { get; set; } = new();
+    public Dictionary<string, object> Params { get; set; } = [];
 
     #endregion IParams
 }

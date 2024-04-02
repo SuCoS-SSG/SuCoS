@@ -113,7 +113,7 @@ public class Page : IPage
     /// Other content that mention this content.
     /// Used to create the tags list and Related Posts section.
     /// </summary>
-    public ConcurrentBag<string> PagesReferences { get; } = new();
+    public ConcurrentBag<string> PagesReferences { get; } = [];
 
     /// <inheritdoc/>
     public IPage? Parent { get; set; }
@@ -132,7 +132,7 @@ public class Page : IPage
     /// <summary>
     /// A list of tags, if any.
     /// </summary>
-    public ConcurrentBag<IPage> TagsReference { get; } = new();
+    public ConcurrentBag<IPage> TagsReference { get; } = [];
 
     /// <summary>
     /// Just a simple check if the current page is the home page
@@ -192,7 +192,7 @@ public class Page : IPage
                 return pagesCached;
             }
 
-            pagesCached = new();
+            pagesCached = [];
             foreach (var permalink in PagesReferences)
             {
                 var page = Site.OutputReferences[permalink] as IPage;
@@ -354,7 +354,7 @@ endif
         // Create all the aliases
         if (Aliases is not null)
         {
-            AliasesProcessed ??= new();
+            AliasesProcessed ??= [];
             foreach (var alias in Aliases)
             {
                 AliasesProcessed.Add(CreatePermalink(alias));
@@ -402,12 +402,12 @@ endif
 
             foreach (var resourceFilename in resourceFiles)
             {
-                Resources ??= new();
+                Resources ??= [];
                 var filenameOriginal = Path.GetFileName(resourceFilename);
                 var filename = filenameOriginal;
                 var extention = Path.GetExtension(resourceFilename);
                 var title = filename;
-                Dictionary<string, object> resourceParams = new();
+                Dictionary<string, object> resourceParams = [];
 
                 if (ResourceDefinitions is not null)
                 {
@@ -439,7 +439,7 @@ endif
                                     .SetValue("counter", counter);
                                 title = templateTitle.Render(context);
                             }
-                            resourceParams = resourceDefinition.Params ?? new();
+                            resourceParams = resourceDefinition.Params ?? [];
                         }
                     }
                 }

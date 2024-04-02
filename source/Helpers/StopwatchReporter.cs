@@ -21,8 +21,8 @@ public class StopwatchReporter
     public StopwatchReporter(ILogger logger)
     {
         this.logger = logger;
-        stopwatches = new Dictionary<string, Stopwatch>();
-        itemCounts = new Dictionary<string, int>();
+        stopwatches = [];
+        itemCounts = [];
     }
 
     /// <summary>

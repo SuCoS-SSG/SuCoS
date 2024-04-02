@@ -21,7 +21,7 @@ public class Resource : IResource
     public string? Permalink { get; set; }
 
     /// <inheritdoc/>
-    public Dictionary<string, object> Params { get; set; } = new();
+    public Dictionary<string, object> Params { get; set; } = [];
 
     /// <summary>
     /// Default constructor.

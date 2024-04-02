@@ -1,5 +1,6 @@
 using SuCoS.Helpers;
 using SuCoS.Models;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using YamlDotNet.Serialization;
 
@@ -98,13 +99,13 @@ public class YAMLParser : IFrontMatterParser
     }
 
     /// <summary>
-    ///  Parse all YAML files for non-matching fields.
+    /// Parse all YAML files for non-matching fields.
     /// </summary>
     /// <param name="settings">Site or Frontmatter object, that implements IParams</param>
     /// <param name="type">The type (Site or Frontmatter)</param>
     /// <param name="yaml">YAML content</param>
     /// <param name="yamlObject">yamlObject already parsed if available</param>
-    public void ParseParams(IParams settings, Type type, string yaml, object? yamlObject = null)
+    public void ParseParams(IParams settings, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type, string yaml, object? yamlObject = null)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(type);

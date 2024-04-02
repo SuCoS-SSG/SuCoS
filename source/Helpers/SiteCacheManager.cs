@@ -11,12 +11,12 @@ public class SiteCacheManager
     /// <summary>
     /// Cache for content templates.
     /// </summary>
-    public Dictionary<(string?, Kind?, string?), string> contentTemplateCache { get; } = new();
+    public Dictionary<(string?, Kind?, string?), string> contentTemplateCache { get; } = [];
 
     /// <summary>
     /// Cache for base templates.
     /// </summary>
-    public Dictionary<(string?, Kind?, string?), string> baseTemplateCache { get; } = new();
+    public Dictionary<(string?, Kind?, string?), string> baseTemplateCache { get; } = [];
 
     /// <summary>
     /// Cache for tag page.
