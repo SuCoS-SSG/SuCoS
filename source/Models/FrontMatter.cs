@@ -81,7 +81,7 @@ public class FrontMatter : IFrontMatter
     public DateTime? GetPublishDate => PublishDate ?? Date;
 
     /// <inheritdoc/>
-    public Dictionary<string, object> Params { get; set; } = new();
+    public Dictionary<string, object> Params { get; set; } = [];
 
     #endregion IFrontMatter
 

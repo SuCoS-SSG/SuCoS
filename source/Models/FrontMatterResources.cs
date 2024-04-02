@@ -17,7 +17,7 @@ public class FrontMatterResources : IFrontMatterResources
     public string? Name { get; set; }
 
     /// <inheritdoc/>
-    public Dictionary<string, object> Params { get; set; } = new();
+    public Dictionary<string, object> Params { get; set; } = [];
 
     /// <inheritdoc/>
     public Matcher? GlobMatcher { get; set; }
