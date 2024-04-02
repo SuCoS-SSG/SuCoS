@@ -19,10 +19,9 @@ public class Program(ILogger logger)
     /// Basic logo of the program, for fun
     /// </summary>
     public const string helloWorld = @"
-░█▀▀░█░█░█▀▀░█▀█░█▀▀
-░▀▀█░█░█░█░░░█░█░▀▀█
-░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀
-";
+░█▀▀░░░░░█▀▀░░░░░█▀▀
+░▀▀█░█░█░█░░░█▀█░▀▀█
+░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀";
 
     /// <summary>
     /// Entry point of the program
@@ -42,6 +41,8 @@ public class Program(ILogger logger)
     /// <returns></returns>
     public async Task<int> RunCommandLine(string[] args)
     {
+        OutputLogo();
+        OutputWelcome();
         return await CommandLine.Parser.Default.ParseArguments<BuildOptions, ServeOptions, CheckLinkOptions>(args)
             .WithParsed<GenerateOptions>(options =>
             {
