@@ -43,7 +43,7 @@ public class Program(ILogger logger)
     {
         OutputLogo();
         OutputWelcome();
-        return await CommandLine.Parser.Default.ParseArguments<BuildOptions, ServeOptions, CheckLinkOptions>(args)
+        return await CommandLine.Parser.Default.ParseArguments<BuildOptions, ServeOptions, CheckLinkOptions, NewSiteOptions>(args)
             .WithParsed<GenerateOptions>(options =>
             {
                 logger = CreateLogger(options.Verbose);
@@ -90,8 +90,14 @@ public class Program(ILogger logger)
                 },
                 (CheckLinkOptions options) =>
                 {
+                    logger = CreateLogger(options.Verbose);
                     var command = new CheckLinkCommand(options, logger);
                     return command.Run();
+                },
+                (NewSiteOptions options) =>
+                {
+                    var command = new NewSiteCommand(options, logger);
+                    return Task.FromResult(command.Run());
                 },
                  errs => Task.FromResult(1)
                 );
