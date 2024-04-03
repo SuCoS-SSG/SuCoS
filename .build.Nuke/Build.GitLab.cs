@@ -1,6 +1,7 @@
 using Nuke.Common;
 using Nuke.Common.CI.GitLab;
 using Nuke.Common.IO;
+using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.Git;
 using Serilog;
 using System;
@@ -42,7 +43,7 @@ sealed partial class Build : NukeBuild
     /// One for each runtime identifier.
     /// </summary>
     /// <see href="https://docs.gitlab.com/ee/user/packages/generic_packages/"/>
-    public Target CreatePackage => td => td
+    public Target GitLabUploadPackage => td => td
         .DependsOn(Publish)
         .DependsOn(CheckNewCommits)
         .Requires(() => gitlabPrivateToken)
@@ -156,6 +157,34 @@ sealed partial class Build : NukeBuild
             }
         });
 
+    /// <summary>
+    /// Push all images created to the Registry
+    /// </summary>
+    public Target GitLabPushContainer => td => td
+        .DependsOn(CreateContainer)
+        .Executes(() =>
+        {
+            var tags = ContainerTags();
+
+            // Log in to the Docker registry
+            _ = DockerTasks.DockerLogin(_ => _
+                .SetServer("registry.gitlab.com")
+                .SetUsername("gitlab-ci-token")
+                .SetPassword(GitLab.JobToken)
+                );
+
+            // Push the container images
+            foreach (var tag in tags)
+            {
+                _ = DockerTasks.DockerPush(_ => _
+                    .SetName($"{ContainerRegistryImage}:{tag}")
+                    );
+
+                // Create a link to the GitLab release
+                var tagLink = GitLabAPIUrl($"?orderBy=NAME&sort=asc&search[]={tag}");
+                GitLabCreateReleaseLink($"docker-{tag}", tagLink);
+            }
+        });
     /// <summary>
     /// Creates a HTTP client and set the authentication header.
     /// </summary>

@@ -27,7 +27,7 @@ sealed partial class Build : NukeBuild
         });
 
     Target Restore => td => td
-        .DependsOn(Clean)
+        .After(Clean)
         .Executes(() =>
         {
             _ = DotNetRestore(s => s
@@ -35,7 +35,7 @@ sealed partial class Build : NukeBuild
         });
 
     Target Compile => td => td
-        .DependsOn(Restore)
+        .After(Restore)
         .Executes(() =>
         {
             Log.Debug("Configuration {Configuration}", configurationSet);
