@@ -19,10 +19,6 @@ variables:
   PUBLISH_SINGLE_FILE: "true"
   PUBLISH_TRIMMED: "false"
 
-# cache:
-#   paths:
-#     - "**/.nuget/packages"
-
 services:
   - docker:dind
 
@@ -35,7 +31,7 @@ test:
     - schedules
   script:
     - |
-      ./build.sh TestReport Publish \
+      ./build.sh Restore Compile TestReport Publish \
         --configuration "Debug" \
         --publish-directory "./publish"
   coverage: '/^  Line coverage: (\d*.\d*)%/'
@@ -58,7 +54,7 @@ check-and-create-release:
     - web
   script:
     - |
-      ./build.sh Compile GitLabCreateRelease \
+      ./build.sh Restore Compile GitLabCreateRelease \
         --is-scheduled $CI_PIPELINE_SCHEDULED \
         --gitlab-private-token $GITLAB_PRIVATE_TOKEN
 
@@ -78,7 +74,7 @@ publish:
     - chmod +x ./build.sh
   script:
     - |
-      ./build.sh CreatePackage CreateContainer \
+      ./build.sh Restore Publish GitLabUploadPackage GitLabPushContainer \
         --runtime-identifier $RID \
         --publish-directory "./publish/SuCoS-$RID" \
         --publish-self-contained $PUBLISH_SELF_CONTAINED \
@@ -90,4 +86,4 @@ publish:
     matrix:
       - RID: "win-x64"
       - RID: "linux-x64"
-      # - RID: "alpine-x64"
+      - RID: "linux-musl-x64"

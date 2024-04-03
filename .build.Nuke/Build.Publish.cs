@@ -28,7 +28,7 @@ sealed partial class Build : NukeBuild
   readonly bool publishTrimmed = false;
 
   Target Publish => td => td
-      .DependsOn(Restore)
+      .After(Restore)
       .Executes(() =>
       {
         _ = DotNetPublish(s => s
