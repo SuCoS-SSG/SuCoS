@@ -79,6 +79,15 @@ public class Site : ISite
     public string SourceThemeStaticPath => Path.Combine(SourceThemePath, "static");
 
     /// <summary>
+    /// List of all basic source folders
+    /// </summary>
+    public IEnumerable<string> SourceFodlers => [
+        SourceContentPath,
+        SourceStaticPath,
+        SourceThemePath
+    ];
+
+    /// <summary>
     /// List of all pages, including generated.
     /// </summary>
     public IEnumerable<IPage> Pages
