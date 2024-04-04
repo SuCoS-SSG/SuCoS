@@ -162,6 +162,7 @@ sealed partial class Build : NukeBuild
     /// </summary>
     public Target GitLabPushContainer => td => td
         .DependsOn(CreateContainer)
+        .OnlyWhenStatic(() => runtimeIdentifier != "win-x64")
         .Executes(() =>
         {
             var tags = ContainerTags();
