@@ -99,7 +99,7 @@ public class Program(ILogger logger)
                     var command = new NewSiteCommand(options, logger);
                     return Task.FromResult(command.Run());
                 },
-                 errs => Task.FromResult(1)
+                 errs => Task.FromResult(0)
                 );
     }
 
