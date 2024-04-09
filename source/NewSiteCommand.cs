@@ -1,14 +1,14 @@
 using Serilog;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
-using YamlDotNet.Serialization;
+using SuCoS.Parser;
 
 namespace SuCoS;
 
 /// <summary>
 /// Check links of a given site.
 /// </summary>
-public sealed partial class NewSiteCommand(NewSiteOptions settings, ILogger logger)
+public sealed partial class NewSiteCommand(NewSiteOptions options, ILogger logger)
 {
     /// <summary>
     /// Run the app
@@ -18,18 +18,18 @@ public sealed partial class NewSiteCommand(NewSiteOptions settings, ILogger logg
     {
         var siteSettings = new SiteSettings()
         {
-            Title = settings.Title,
-            Description = settings.Description,
-            BaseURL = settings.BaseURL,
+            Title = options.Title,
+            Description = options.Description,
+            BaseURL = options.BaseURL
         };
 
         // TODO: Refactor Site class to not need YAML parser nor FrontMatterParser
-        var site = new Site(new ServeOptions() { SourceOption = settings.Output }, siteSettings, null!, logger, null);
+        var site = new Site(new ServeOptions() { SourceOption = options.Output }, siteSettings, null!, logger, null);
 
-        var outputPath = Path.GetFullPath(settings.Output);
+        var outputPath = Path.GetFullPath(options.Output);
         var siteSettingsPath = Path.Combine(outputPath, "sucos.yaml");
 
-        if (File.Exists(siteSettingsPath) && !settings.Force)
+        if (File.Exists(siteSettingsPath) && !options.Force)
         {
             logger.Error("{directoryPath} already exists", outputPath);
             return 1;
@@ -41,15 +41,16 @@ public sealed partial class NewSiteCommand(NewSiteOptions settings, ILogger logg
 
         try
         {
-            ExportSiteSettings(siteSettings, siteSettingsPath);
+            var parser = new YAMLParser();
+            parser.Export(siteSettings, siteSettingsPath);
         }
         catch (Exception ex)
         {
             logger.Error("Failed to export site settings: {ex}", ex);
             return 1;
         }
-        logger.Information("Done");
 
+        logger.Information("Done");
         return 0;
     }
 
@@ -65,25 +66,4 @@ public sealed partial class NewSiteCommand(NewSiteOptions settings, ILogger logg
             Directory.CreateDirectory(folder);
         }
     }
-
-    // TODO: move all YAML parsing to this own class
-    #region YAML
-    /// <summary>
-    /// YamlDotNet parser to loosely parse the YAML file. Used to include all non-matching fields
-    /// into Params.
-    /// </summary>
-    ISerializer yamlDeserializer = new SerializerBuilder()
-        .IgnoreFields()
-        .ConfigureDefaultValuesHandling(
-            DefaultValuesHandling.OmitEmptyCollections
-            | DefaultValuesHandling.OmitDefaults
-            | DefaultValuesHandling.OmitNull)
-        .Build();
-
-    void ExportSiteSettings(SiteSettings siteSettings, string siteSettingsPath)
-    {
-        var siteSettingsConverted = yamlDeserializer.Serialize(siteSettings);
-        File.WriteAllText(siteSettingsPath, siteSettingsConverted);
-    }
-    #endregion YAML
 }
