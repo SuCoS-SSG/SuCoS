@@ -31,29 +31,19 @@ public class Site : ISite
 
     #region SiteSettings
 
-    /// <summary>
-    /// Site Title/Name
-    /// </summary>
+    /// <inheritdoc/>
     public string Title => settings.Title;
 
-    /// <summary>
-    /// Site description
-    /// </summary>
+    /// <inheritdoc/>
     public string? Description => settings.Description;
 
-    /// <summary>
-    /// Copyright information
-    /// </summary>
+    /// <inheritdoc/>
     public string? Copyright => settings.Copyright;
 
-    /// <summary>
-    /// The base URL that will be used to build public links.
-    /// </summary>
+    /// <inheritdoc/>
     public string BaseURL => settings.BaseURL;
 
-    /// <summary>
-    /// The appearance of a URL is either ugly or pretty.
-    /// </summary>
+    /// <inheritdoc/>
     public bool UglyURLs => settings.UglyURLs;
 
     #endregion SiteSettings
@@ -74,11 +64,6 @@ public class Site : ISite
     public string SourceThemePath => Path.Combine(Options.Source, settings.ThemeDir, settings.Theme ?? string.Empty);
 
     /// <summary>
-    /// The path of the static content (that will be copied as is), based on the theme path.
-    /// </summary>
-    public string SourceThemeStaticPath => Path.Combine(SourceThemePath, "static");
-
-    /// <summary>
     /// List of all basic source folders
     /// </summary>
     public IEnumerable<string> SourceFodlers => [
@@ -86,6 +71,11 @@ public class Site : ISite
         SourceStaticPath,
         SourceThemePath
     ];
+
+    /// <summary>
+    /// Theme used.
+    /// </summary>
+    public Theme? Theme { get; set; }
 
     /// <summary>
     /// List of all pages, including generated.
@@ -152,6 +142,9 @@ public class Site : ISite
     /// </summary>
     public int FilesParsedToReport => filesParsedToReport;
 
+    /// <inheritdoc/>
+    public IMetadataParser Parser { get; init; } = new YAMLParser();
+
     private int filesParsedToReport;
 
     private const string indexLeafFileConst = "index.md";
@@ -162,11 +155,6 @@ public class Site : ISite
     /// The synchronization lock object during ProstProcess.
     /// </summary>
     private readonly object syncLockPostProcess = new();
-
-    /// <summary>
-    /// The front matter parser instance. The default is YAML.
-    /// </summary>
-    private readonly IMetadataParser frontMatterParser;
 
     private IEnumerable<IPage>? pagesCache;
 
@@ -191,15 +179,18 @@ public class Site : ISite
         Options = options;
         this.settings = settings;
         Logger = logger;
-        this.frontMatterParser = frontMatterParser;
+        Parser = frontMatterParser;
 
         // Liquid template options, needed to theme the content 
         // but also parse URLs
         TemplateOptions.MemberAccessStrategy.Register<Site>();
         TemplateOptions.MemberAccessStrategy.Register<Page>();
         TemplateOptions.MemberAccessStrategy.Register<Resource>();
+        TemplateOptions.MemberAccessStrategy.Register<Theme>();
 
         this.clock = clock ?? new SystemClock();
+
+        Theme = Theme.CreateFromSite(this);
     }
 
     /// <summary>
@@ -357,7 +348,7 @@ public class Site : ISite
         Page? page = null;
         try
         {
-            var frontMatter = frontMatterParser.ParseFrontmatterAndMarkdownFromFile(filePath, SourceContentPath)
+            var frontMatter = Parser.ParseFrontmatterAndMarkdownFromFile(filePath, SourceContentPath)
                 ?? throw new FormatException($"Error parsing front matter for {filePath}");
 
             if (IsValidPage(frontMatter, Options))

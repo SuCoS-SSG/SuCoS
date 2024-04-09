@@ -89,7 +89,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
         handlers = [
             new PingRequests(),
             new StaticFileRequest(site.SourceStaticPath, false),
-            new StaticFileRequest(site.SourceThemeStaticPath, true),
+            new StaticFileRequest(site.Theme?.StaticFolder, true),
             new RegisteredPageRequest(site),
             new RegisteredPageResourceRequest(site)
         ];
@@ -161,7 +161,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
             }
 
             // Reinitialize the site
-            site = SiteHelper.Init(configFile, options, frontMatterParser, WhereParamsFilter, logger, stopwatch);
+            site = SiteHelper.Init(configFile, options, Parser, WhereParamsFilter, logger, stopwatch);
 
             StartServer(baseURLDefault, portDefault);
         }).ConfigureAwait(false);

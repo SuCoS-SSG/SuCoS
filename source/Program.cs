@@ -44,11 +44,13 @@ public class Program(ILogger logger)
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(BuildOptions))]
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(ServeOptions))]
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CheckLinkOptions))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(NewSiteOptions))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(NewThemeOptions))]
     public async Task<int> RunCommandLine(string[] args)
     {
         OutputLogo();
         OutputWelcome();
-        return await CommandLine.Parser.Default.ParseArguments<BuildOptions, ServeOptions, CheckLinkOptions, NewSiteOptions>(args)
+        return await CommandLine.Parser.Default.ParseArguments<BuildOptions, ServeOptions, CheckLinkOptions, NewSiteOptions, NewThemeOptions>(args)
             .WithParsed<GenerateOptions>(options =>
             {
                 logger = CreateLogger(options.Verbose);
@@ -102,6 +104,11 @@ public class Program(ILogger logger)
                 (NewSiteOptions options) =>
                 {
                     var command = new NewSiteCommand(options, logger);
+                    return Task.FromResult(command.Run());
+                },
+                (NewThemeOptions options) =>
+                {
+                    var command = new NewThemeCommand(options, logger);
                     return Task.FromResult(command.Run());
                 },
                  errs => Task.FromResult(0)

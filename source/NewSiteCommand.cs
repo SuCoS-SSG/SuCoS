@@ -1,7 +1,6 @@
 using Serilog;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
-using SuCoS.Parser;
 
 namespace SuCoS;
 
@@ -41,8 +40,7 @@ public sealed partial class NewSiteCommand(NewSiteOptions options, ILogger logge
 
         try
         {
-            var parser = new YAMLParser();
-            parser.Export(siteSettings, siteSettingsPath);
+            site.Parser.Export(siteSettings, siteSettingsPath);
         }
         catch (Exception ex)
         {

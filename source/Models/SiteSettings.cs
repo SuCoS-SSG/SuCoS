@@ -6,8 +6,9 @@ namespace SuCoS.Models;
 /// The main configuration of the program, extracted from the app.yaml file.
 /// </summary>
 [YamlSerializable]
-public class SiteSettings : IParams
+public class SiteSettings : ISiteSettings
 {
+    #region ISiteSettings
     /// <summary>
     /// Site Title/Name.
     /// </summary>
@@ -27,6 +28,8 @@ public class SiteSettings : IParams
     /// The base URL that will be used to build public links.
     /// </summary>
     public string BaseURL { get; set; } = string.Empty;
+
+    #endregion ISiteSettings
 
     /// <summary>
     /// The global site theme.

@@ -5,7 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- <GenerateDocumentationFile>true</GenerateDocumentationFile> -->
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 		<SignAssembly>true</SignAssembly>

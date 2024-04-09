@@ -5,7 +5,7 @@ namespace SuCoS.Models.CommandLineOptions;
 /// <summary>
 /// Command line options to generate a simple site from scratch.
 /// </summary>
-[Verb("newsite", false, HelpText = "Generate a simple site from scratch")]
+[Verb("new-site", false, HelpText = "Generate a simple site from scratch")]
 public class NewSiteOptions
 {
     /// <summary>

@@ -2,6 +2,7 @@ using Fluid;
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
+using SuCoS.Parser;
 using System.Collections.Concurrent;
 
 namespace SuCoS.Models;
@@ -9,26 +10,12 @@ namespace SuCoS.Models;
 /// <summary>
 /// The main configuration of the program, primarily extracted from the app.yaml file.
 /// </summary>
-public interface ISite : IParams
+public interface ISite : ISiteSettings, IParams
 {
     /// <summary>
     /// Command line options
     /// </summary>
     public IGenerateOptions Options { get; set; }
-
-    #region SiteSettings
-
-    /// <summary>
-    /// Site Title.
-    /// </summary>
-    public string Title { get; }
-
-    /// <summary>
-    /// The appearance of a URL is either ugly or pretty.
-    /// </summary>
-    public bool UglyURLs { get; }
-
-    #endregion SiteSettings
 
     /// <summary>
     /// The path of the content, based on the source path.
@@ -44,11 +31,6 @@ public interface ISite : IParams
     /// The path theme.
     /// </summary>
     public string SourceThemePath { get; }
-
-    /// <summary>
-    /// The path of the static content (that will be copied as is), based on the theme path.
-    /// </summary>
-    public string SourceThemeStaticPath => Path.Combine(SourceThemePath, "static");
 
     /// <summary>
     /// List of all pages, including generated.
@@ -76,6 +58,11 @@ public interface ISite : IParams
     public SiteCacheManager CacheManager { get; }
 
     /// <summary>
+    /// Metadata parser
+    /// </summary>
+    public IMetadataParser Parser { get; }
+
+    /// <summary>
     /// The Fluid parser instance.
     /// </summary>
     public FluidParser FluidParser { get; }
@@ -84,6 +71,7 @@ public interface ISite : IParams
     /// The Fluid/Liquid template options.
     /// </summary>
     public TemplateOptions TemplateOptions { get; }
+
     /// <summary>
     /// The logger instance.
     /// </summary>

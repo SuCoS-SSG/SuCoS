@@ -7,7 +7,7 @@ namespace SuCoS.ServerHandlers;
 /// </summary>
 public class StaticFileRequest : IServerHandlers
 {
-    private readonly string basePath;
+    private readonly string? basePath;
     private readonly bool inTheme;
 
     /// <summary>
@@ -15,7 +15,7 @@ public class StaticFileRequest : IServerHandlers
     /// </summary>
     /// <param name="basePath"></param>
     /// <param name="inTheme"></param>
-    public StaticFileRequest(string basePath, bool inTheme)
+    public StaticFileRequest(string? basePath, bool inTheme)
     {
         this.basePath = basePath;
         this.inTheme = inTheme;
@@ -25,6 +25,11 @@ public class StaticFileRequest : IServerHandlers
     public bool Check(string requestPath)
     {
         ArgumentNullException.ThrowIfNull(requestPath);
+
+        if (string.IsNullOrEmpty(basePath))
+        {
+            return false;
+        }
 
         var fileAbsolutePath = Path.Combine(basePath, requestPath.TrimStart('/'));
         return File.Exists(fileAbsolutePath);
@@ -36,7 +41,7 @@ public class StaticFileRequest : IServerHandlers
         ArgumentNullException.ThrowIfNull(requestPath);
         ArgumentNullException.ThrowIfNull(response);
 
-        var fileAbsolutePath = Path.Combine(basePath, requestPath.TrimStart('/'));
+        var fileAbsolutePath = Path.Combine(basePath!, requestPath.TrimStart('/'));
         response.ContentType = GetContentType(fileAbsolutePath!);
         await using var fileStream = new FileStream(fileAbsolutePath!, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         response.ContentLength64 = fileStream.Length;
