@@ -26,7 +26,7 @@ public abstract class BaseGeneratorCommand
     /// <summary>
     /// The front matter parser instance. The default is YAML.
     /// </summary>
-    protected IFrontMatterParser frontMatterParser { get; } = new YAMLParser();
+    protected IMetadataParser frontMatterParser { get; } = new YAMLParser();
 
     /// <summary>
     /// The stopwatch reporter.

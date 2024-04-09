@@ -27,6 +27,9 @@ sealed partial class Build : NukeBuild
   [Parameter("publish-trimmed (default: false)")]
   readonly bool publishTrimmed = false;
 
+  [Parameter("publish-ready-to-run (default: true)")]
+  readonly bool publishReadyToRun = true;
+
   Target Publish => td => td
       .After(Restore)
       .Executes(() =>
@@ -40,7 +43,7 @@ sealed partial class Build : NukeBuild
             .SetSelfContained(publishSelfContained)
             .SetPublishSingleFile(publishSingleFile)
             .SetPublishTrimmed(publishTrimmed)
-            .SetAuthors("Bruno Massa")
+            .SetPublishReadyToRun(publishReadyToRun)
             .SetVersion(CurrentVersion)
             .SetAssemblyVersion(CurrentVersion)
             .SetInformationalVersion(CurrentVersion)

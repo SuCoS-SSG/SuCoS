@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using YamlDotNet.Serialization;
 
 namespace SuCoS.Models;
@@ -7,48 +6,49 @@ namespace SuCoS.Models;
 /// A scafold structure to help creating system-generated content, like
 /// tag, section or index pages
 /// </summary>
+[YamlSerializable]
 public class FrontMatter : IFrontMatter
 {
     #region IFrontMatter
 
     /// <inheritdoc/>
-    public string? Title { get; init; } = string.Empty;
+    public string? Title { get; set; } = string.Empty;
 
     /// <inheritdoc/>
     public string? Type { get; set; } = "page";
 
     /// <inheritdoc/>
-    public string? URL { get; init; }
+    public string? URL { get; set; }
 
     /// <inheritdoc/>
-    public bool? Draft { get; init; }
+    public bool? Draft { get; set; }
 
     /// <inheritdoc/>
-    public Collection<string>? Aliases { get; init; }
+    public List<string>? Aliases { get; set; }
 
     /// <inheritdoc/>
     public string? Section { get; set; } = string.Empty;
 
     /// <inheritdoc/>
-    public DateTime? Date { get; init; }
+    public DateTime? Date { get; set; }
 
     /// <inheritdoc/>
-    public DateTime? LastMod { get; init; }
+    public DateTime? LastMod { get; set; }
 
     /// <inheritdoc/>
-    public DateTime? PublishDate { get; init; }
+    public DateTime? PublishDate { get; set; }
 
     /// <inheritdoc/>
-    public DateTime? ExpiryDate { get; init; }
+    public DateTime? ExpiryDate { get; set; }
 
     /// <inheritdoc/>
-    public int Weight { get; init; }
+    public int Weight { get; set; }
 
     /// <inheritdoc/>
-    public Collection<string>? Tags { get; init; }
+    public List<string>? Tags { get; set; }
 
     /// <inheritdoc/>
-    public Collection<FrontMatterResources>? ResourceDefinitions { get; set; }
+    public List<FrontMatterResources>? ResourceDefinitions { get; set; }
 
     /// <inheritdoc/>
     [YamlIgnore]

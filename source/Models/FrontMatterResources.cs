@@ -1,10 +1,12 @@
 using Microsoft.Extensions.FileSystemGlobbing;
+using YamlDotNet.Serialization;
 
 namespace SuCoS.Models;
 
 /// <summary>
 /// Basic structure needed to generate user content and system content
 /// </summary>
+[YamlSerializable]
 public class FrontMatterResources : IFrontMatterResources
 {
     /// <inheritdoc/>

@@ -17,7 +17,7 @@ public sealed class SourceFileWatcher : IFileWatcher, IDisposable
     public void Start(string SourceAbsolutePath, Action<object, FileSystemEventArgs> OnSourceFileChanged)
     {
         ArgumentNullException.ThrowIfNull(OnSourceFileChanged);
-
+ 
         fileWatcher = new FileSystemWatcher
         {
             Path = SourceAbsolutePath,

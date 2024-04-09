@@ -4,6 +4,7 @@ using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
 using System.Reflection;
 using CommandLine;
+using System.Diagnostics.CodeAnalysis;
 
 namespace SuCoS;
 
@@ -39,6 +40,10 @@ public class Program(ILogger logger)
     /// </summary>
     /// <param name="args"></param>
     /// <returns></returns>
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(GenerateOptions))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(BuildOptions))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(ServeOptions))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CheckLinkOptions))]
     public async Task<int> RunCommandLine(string[] args)
     {
         OutputLogo();

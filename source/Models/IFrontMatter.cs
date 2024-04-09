@@ -83,7 +83,7 @@ public interface IFrontMatter : IParams, IFile
     /// List URL, it will be parsed as liquid templates, so you can use page variables.
     /// </summary>
     /// <see cref="URL"/>
-    Collection<string>? Aliases { get; }
+    List<string>? Aliases { get; }
 
     /// <summary>
     /// Page weight. Used for sorting by default.
@@ -93,12 +93,12 @@ public interface IFrontMatter : IParams, IFile
     /// <summary>
     /// A list of tags, if any.
     /// </summary>
-    Collection<string>? Tags { get; }
+    List<string>? Tags { get; }
 
     /// <summary>
     /// List of resource definitions.
     /// </summary>
-    Collection<FrontMatterResources>? ResourceDefinitions { get; }
+    List<FrontMatterResources>? ResourceDefinitions { get; set; }
 
     /// <summary>
     /// Raw content from the Markdown file, bellow the front matter.

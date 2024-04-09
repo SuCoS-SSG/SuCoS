@@ -14,8 +14,8 @@ public sealed partial class CheckLinkCommand(CheckLinkOptions settings, ILogger 
 {
 
     [GeneratedRegex(@"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/=]*)")]
-    private static partial Regex MyRegex();
-    private static readonly Regex linkRegex = MyRegex();
+    private static partial Regex URLRegex();
+    private static readonly Regex urlRegex = URLRegex();
     private const int retriesCount = 3;
     private readonly TimeSpan retryInterval = TimeSpan.FromSeconds(1);
     private HttpClient httpClient = null!;
@@ -77,7 +77,7 @@ public sealed partial class CheckLinkCommand(CheckLinkOptions settings, ILogger 
         {
             var fileNameSanitized = filePath[directoryPath.Length..].Trim('/', '\\');
             var fileText = File.ReadAllText(filePath);
-            var matches = linkRegex.Matches(fileText);
+            var matches = urlRegex.Matches(fileText);
             if (matches.Count == 0)
             {
                 LogInformation("{fileName}: no links found", fileNameSanitized);
