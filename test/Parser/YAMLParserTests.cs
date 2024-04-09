@@ -158,7 +158,7 @@ Title
   public void ParseSiteSettings_ShouldReturnSiteWithCorrectSettings()
   {
     // Act
-    var siteSettings = parser.ParseSiteSettings(siteContentCONST);
+    var siteSettings = parser.Parse<SiteSettings>(siteContentCONST);
 
 
     // Assert
@@ -248,7 +248,7 @@ Title
   public void ParseSiteSettings_ShouldReturnSiteSettings()
   {
     // Arrange
-    var siteSettings = parser.ParseSiteSettings(siteContentCONST);
+    var siteSettings = parser.Parse<SiteSettings>(siteContentCONST);
 
     // Assert
     Assert.NotNull(siteSettings);
@@ -277,7 +277,7 @@ Title
   public void SiteParams_ShouldPopulateParamsWithExtraFields()
   {
     // Arrange
-    var siteSettings = parser.ParseSiteSettings(siteContentCONST);
+    var siteSettings = parser.Parse<SiteSettings>(siteContentCONST);
     site = new Site(generateOptionsMock, siteSettings, frontMatterParser, loggerMock, systemClockMock);
 
     // Assert

@@ -25,11 +25,11 @@ public interface IMetadataParser
     IFrontMatter? ParseFrontmatterAndMarkdown(in string fileFullPath, in string fileRelativePath, in string fileContent);
 
     /// <summary>
-    /// Parse the app config file.
+    /// Parse a string content to the T class.
     /// </summary>
-    /// <param name="configFileContent"></param>
+    /// <param name="content"></param>
     /// <returns></returns>
-    SiteSettings ParseSiteSettings(string configFileContent);
+    T Parse<T>(string content);
 
     /// <summary>
     /// Deserialized a object.

@@ -26,7 +26,7 @@ public abstract class BaseGeneratorCommand
     /// <summary>
     /// The front matter parser instance. The default is YAML.
     /// </summary>
-    protected IMetadataParser frontMatterParser { get; } = new YAMLParser();
+    protected IMetadataParser Parser { get; } = new YAMLParser();
 
     /// <summary>
     /// The stopwatch reporter.
@@ -52,7 +52,7 @@ public abstract class BaseGeneratorCommand
 
         logger.Information("Source path: {source}", propertyValue: options.Source);
 
-        site = SiteHelper.Init(configFile, options, frontMatterParser, WhereParamsFilter, logger, stopwatch);
+        site = SiteHelper.Init(configFile, options, Parser, WhereParamsFilter, logger, stopwatch);
     }
 
     /// <summary>

@@ -50,6 +50,8 @@ csharp_new_line_before_members_in_anonymous_types = true:error
 csharp_new_line_within_query_expression_clauses = true:error
 csharp_space_after_keywords_in_control_flow_statements = true
 
+trim_trailing_whitespace = true
+
 # Code quality
 dotnet_diagnostic.CA1062.severity = warning
 dotnet_diagnostic.CA1303.severity = error

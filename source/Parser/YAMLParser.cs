@@ -106,10 +106,10 @@ public class YAMLParser : IMetadataParser
     }
 
     /// <inheritdoc/>
-    public SiteSettings ParseSiteSettings(string yaml)
+    public T Parse<T>(string content)
     {
-        var settings = deserializer.Deserialize<SiteSettings>(yaml);
-        return settings;
+        var data = deserializer.Deserialize<T>(content);
+        return data;
     }
 
     /// <inheritdoc/>
