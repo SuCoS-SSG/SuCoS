@@ -1,4 +1,6 @@
 using NSubstitute;
+using SuCoS.Helpers;
+using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.ServerHandlers;
 using Xunit;
@@ -34,10 +36,14 @@ public class RegisteredPageRequestHandlerTests : TestSetup
     {
         // Arrange
         var siteFullPath = Path.GetFullPath(Path.Combine(testSitesPath, testSitePath));
-        site.Options = new GenerateOptions
+        GenerateOptions options = new()
         {
             SourceArgument = siteFullPath
         };
+        var parser = new SuCoS.Parser.YAMLParser();
+        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser);
+        site = new Site(options, siteSettings, parser, loggerMock, null);
+
         var registeredPageRequest = new RegisteredPageRequest(site);
 
         var response = Substitute.For<IHttpListenerResponse>();

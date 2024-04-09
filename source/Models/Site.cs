@@ -71,7 +71,7 @@ public class Site : ISite
     /// <summary>
     /// The path theme.
     /// </summary>
-    public string SourceThemePath => Path.Combine(Options.Source, "theme");
+    public string SourceThemePath => Path.Combine(Options.Source, settings.ThemeDir, settings.Theme ?? string.Empty);
 
     /// <summary>
     /// The path of the static content (that will be copied as is), based on the theme path.

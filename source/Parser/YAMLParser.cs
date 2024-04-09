@@ -13,14 +13,14 @@ public class YAMLParser : IMetadataParser
     /// <summary>
     /// YamlDotNet parser, strictly set to allow automatically parse only known fields
     /// </summary>
-    private readonly IDeserializer yamlDeserializerRigid;
+    private readonly IDeserializer deserializer;
 
     /// <summary>
     /// ctor
     /// </summary>
     public YAMLParser()
     {
-        yamlDeserializerRigid = new StaticDeserializerBuilder(new StaticAOTContext())
+        deserializer = new StaticDeserializerBuilder(new StaticAOTContext())
             .WithTypeConverter(new ParamsConverter())
             .IgnoreUnmatchedProperties()
             .Build();
@@ -93,7 +93,7 @@ public class YAMLParser : IMetadataParser
     )
     {
         var frontMatter =
-            yamlDeserializerRigid.Deserialize<FrontMatter>(
+            deserializer.Deserialize<FrontMatter>(
                 new StringReader(yaml)
             ) ?? throw new FormatException("Error parsing front matter");
         var section = SiteHelper.GetSection(fileRelativePath);
@@ -108,7 +108,21 @@ public class YAMLParser : IMetadataParser
     /// <inheritdoc/>
     public SiteSettings ParseSiteSettings(string yaml)
     {
-        var settings = yamlDeserializerRigid.Deserialize<SiteSettings>(yaml);
+        var settings = deserializer.Deserialize<SiteSettings>(yaml);
         return settings;
+    }
+
+    /// <inheritdoc/>
+    public void Export<T>(T data, string path)
+    {
+        var deserializer = new SerializerBuilder()
+        .IgnoreFields()
+        .ConfigureDefaultValuesHandling(
+            DefaultValuesHandling.OmitEmptyCollections
+            | DefaultValuesHandling.OmitDefaults
+            | DefaultValuesHandling.OmitNull)
+        .Build();
+        var dataString = deserializer.Serialize(data);
+        File.WriteAllText(path, dataString);
     }
 }

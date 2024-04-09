@@ -25,21 +25,21 @@ public static class SiteHelper
     /// Creates the pages dictionary.
     /// </summary>
     /// <exception cref="FormatException"></exception>
-    public static Site Init(string configFile, IGenerateOptions options, IMetadataParser frontMatterParser, FilterDelegate whereParamsFilter, ILogger logger, StopwatchReporter stopwatch)
+    public static Site Init(string configFile, IGenerateOptions options, IMetadataParser parser, FilterDelegate whereParamsFilter, ILogger logger, StopwatchReporter stopwatch)
     {
         ArgumentNullException.ThrowIfNull(stopwatch);
 
         SiteSettings siteSettings;
         try
         {
-            siteSettings = ParseSettings(configFile, options, frontMatterParser);
+            siteSettings = ParseSettings(configFile, options, parser);
         }
         catch
         {
             throw;
         }
 
-        var site = new Site(options, siteSettings, frontMatterParser, logger, null);
+        var site = new Site(options, siteSettings, parser, logger, null);
 
         // Liquid template options, needed to theme the content 
         // but also parse URLs
@@ -53,7 +53,10 @@ public static class SiteHelper
 
         stopwatch.Stop("Parse", site.FilesParsedToReport);
 
-        site.TemplateOptions.FileProvider = new PhysicalFileProvider(Path.GetFullPath(site.SourceThemePath));
+        if (Directory.Exists(Path.GetFullPath(site.SourceThemePath)))
+        {
+            site.TemplateOptions.FileProvider = new PhysicalFileProvider(Path.GetFullPath(site.SourceThemePath));
+        }
 
         return site;
     }
@@ -89,13 +92,13 @@ public static class SiteHelper
     /// Reads the application settings.
     /// </summary>
     /// <param name="options">The generate options.</param>
-    /// <param name="frontMatterParser">The front matter parser.</param>
+    /// <param name="parser">The front matter parser.</param>
     /// <param name="configFile">The site settings file.</param>
     /// <returns>The site settings.</returns>
-    private static SiteSettings ParseSettings(string configFile, IGenerateOptions options, IMetadataParser frontMatterParser)
+    public static SiteSettings ParseSettings(string configFile, IGenerateOptions options, IMetadataParser parser)
     {
         ArgumentNullException.ThrowIfNull(options);
-        ArgumentNullException.ThrowIfNull(frontMatterParser);
+        ArgumentNullException.ThrowIfNull(parser);
 
         // Read the main configation
         var filePath = Path.Combine(options.Source, configFile);
@@ -105,7 +108,7 @@ public static class SiteHelper
         }
 
         var fileContent = File.ReadAllText(filePath);
-        var siteSettings = frontMatterParser.ParseSiteSettings(fileContent)
+        var siteSettings = parser.ParseSiteSettings(fileContent)
             ?? throw new FormatException($"Error reading app config {configFile}");
         return siteSettings;
     }

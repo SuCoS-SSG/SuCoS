@@ -1,3 +1,4 @@
+using SuCoS.Helpers;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
 using Xunit;
@@ -46,7 +47,7 @@ public class SiteTests : TestSetup
         // Assert
         Assert.NotNull(site.Home);
         Assert.True(site.Home.IsHome);
-		_ = Assert.Single(site.OutputReferences.Values.Where(output => output is IPage page && page.IsHome));
+        _ = Assert.Single(site.OutputReferences.Values.Where(output => output is IPage page && page.IsHome));
     }
 
     [Theory]
@@ -154,8 +155,8 @@ public class SiteTests : TestSetup
         // Act
         site.ParseAndScanSourceFiles(null);
 
-		// Assert
-		_ = site.OutputReferences.TryGetValue("/tags", out var output);
+        // Assert
+        _ = site.OutputReferences.TryGetValue("/tags", out var output);
         var tagSectionPage = output as IPage;
         Assert.NotNull(tagSectionPage);
         Assert.Equal(2, tagSectionPage.Pages.Count());
@@ -177,8 +178,8 @@ public class SiteTests : TestSetup
         // Act
         site.ParseAndScanSourceFiles(null);
 
-		// Assert
-		_ = site.OutputReferences.TryGetValue("/tags/tag1", out var output);
+        // Assert
+        _ = site.OutputReferences.TryGetValue("/tags/tag1", out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(10, page.Pages.Count());
@@ -202,8 +203,8 @@ public class SiteTests : TestSetup
         // Act
         site.ParseAndScanSourceFiles(null);
 
-		// Assert
-		_ = site.OutputReferences.TryGetValue(url, out var output);
+        // Assert
+        _ = site.OutputReferences.TryGetValue(url, out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(expectedContent, page.Content);
@@ -232,13 +233,15 @@ public class SiteTests : TestSetup
         {
             SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST05))
         };
-        site.Options = options;
+        var parser = new SuCoS.Parser.YAMLParser();
+        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser);
+        site = new Site(options, siteSettings, parser, loggerMock, null);
 
         // Act
         site.ParseAndScanSourceFiles(null);
 
-		// Assert
-		_ = site.OutputReferences.TryGetValue(url, out var output);
+        // Assert
+        _ = site.OutputReferences.TryGetValue(url, out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(expectedContentPreRendered, page.ContentPreRendered);
@@ -258,13 +261,15 @@ public class SiteTests : TestSetup
         {
             SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST07))
         };
-        site.Options = options;
+        var parser = new SuCoS.Parser.YAMLParser();
+        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser);
+        site = new Site(options, siteSettings, parser, loggerMock, null);
 
         // Act
         site.ParseAndScanSourceFiles(null);
 
-		// Assert
-		_ = site.OutputReferences.TryGetValue(url, out var output);
+        // Assert
+        _ = site.OutputReferences.TryGetValue(url, out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(string.Empty, page.Content);
@@ -298,13 +303,15 @@ public class SiteTests : TestSetup
         {
             SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST06))
         };
-        site.Options = options;
+        var parser = new SuCoS.Parser.YAMLParser();
+        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser);
+        site = new Site(options, siteSettings, parser, loggerMock, null);
 
         // Act
         site.ParseAndScanSourceFiles(null);
 
-		// Assert
-		_ = site.OutputReferences.TryGetValue(url, out var output);
+        // Assert
+        _ = site.OutputReferences.TryGetValue(url, out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(expectedContentPreRendered, page.ContentPreRendered);

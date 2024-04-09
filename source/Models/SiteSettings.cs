@@ -21,12 +21,22 @@ public class SiteSettings : IParams
     /// <summary>
     /// Copyright information
     /// </summary>
-    public string? Copyright { get; set; } = string.Empty;
+    public string? Copyright { get; set; }
 
     /// <summary>
     /// The base URL that will be used to build public links.
     /// </summary>
     public string BaseURL { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The global site theme.
+    /// </summary>
+    public string? Theme { get; set; }
+
+    /// <summary>
+    /// The theme folder where all themes are placed (if any).
+    /// </summary>
+    public string ThemeDir { get; set; } = "themes";
 
     /// <summary>
     /// The appearance of a URL is either ugly or pretty.

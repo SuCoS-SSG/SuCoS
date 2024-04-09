@@ -30,4 +30,11 @@ public interface IMetadataParser
     /// <param name="configFileContent"></param>
     /// <returns></returns>
     SiteSettings ParseSiteSettings(string configFileContent);
+
+    /// <summary>
+    /// Deserialized a object.
+    /// </summary>
+    /// <param name="data"></param>
+    /// <param name="path"></param>
+    void Export<T>(T data, string path);
 }
