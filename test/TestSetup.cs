@@ -23,7 +23,7 @@ public class TestSetup
     protected const string testSitePathCONST07 = ".TestSites/07-theme-no-baseof-error";
     protected const string testSitePathCONST08 = ".TestSites/08-theme-html";
 
-    protected readonly IFrontMatterParser frontMatterParser = new YAMLParser();
+    protected readonly IMetadataParser frontMatterParser = new SuCoS.Parser.YAMLParser();
     protected readonly IGenerateOptions generateOptionsMock = Substitute.For<IGenerateOptions>();
     protected readonly SiteSettings siteSettingsMock = Substitute.For<SiteSettings>();
     protected readonly ILogger loggerMock = Substitute.For<ILogger>();
@@ -34,7 +34,7 @@ public class TestSetup
         SourceRelativePath = sourcePathCONST
     };
 
-    protected readonly ISite site;
+    protected ISite site;
 
     // based on the compiled test.dll path
     // that is typically "bin/Debug/netX.0/test.dll"
@@ -44,5 +44,11 @@ public class TestSetup
     {
 		_ = systemClockMock.Now.Returns(todayDate);
         site = new Site(generateOptionsMock, siteSettingsMock, frontMatterParser, loggerMock, systemClockMock);
+    }
+
+    public TestSetup(SiteSettings siteSettings)
+    {
+		_ = systemClockMock.Now.Returns(todayDate);
+        site = new Site(generateOptionsMock, siteSettings, frontMatterParser, loggerMock, systemClockMock);
     }
 }

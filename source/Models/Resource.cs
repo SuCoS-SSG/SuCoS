@@ -12,23 +12,14 @@ public class Resource : IResource
     public string? FileName { get; set; }
 
     /// <inheritdoc/>
-    public string SourceFullPath { get; set; }
+    public required string SourceFullPath { get; set; }
 
     /// <inheritdoc/>
-    public string? SourceRelativePath => throw new NotImplementedException();
+    public string? SourceRelativePath => null;
 
     /// <inheritdoc/>
     public string? Permalink { get; set; }
 
     /// <inheritdoc/>
     public Dictionary<string, object> Params { get; set; } = [];
-
-    /// <summary>
-    /// Default constructor.
-    /// </summary>
-    /// <param name="path"></param>
-    public Resource(string path)
-    {
-        SourceFullPath = path;
-    }
 }

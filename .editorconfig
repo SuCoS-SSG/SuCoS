@@ -68,3 +68,5 @@ dotnet_diagnostic.CS8019.severity = warning
 
 [**/obj/**/*.cs]
 dotnet_diagnostic.CS8019.severity = none # disable on debug genereated files
+exclude = true
+generated_code = true

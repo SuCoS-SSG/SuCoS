@@ -3,9 +3,9 @@ using SuCoS.Models;
 namespace SuCoS.Parser;
 
 /// <summary>
-/// Responsible for parsing the content front matter
+/// Responsible for parsing the content metadata
 /// </summary>
-public interface IFrontMatterParser
+public interface IMetadataParser
 {
     /// <summary>
     /// Extract the front matter from the content file.

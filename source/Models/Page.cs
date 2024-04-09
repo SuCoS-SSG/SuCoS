@@ -29,7 +29,7 @@ public class Page : IPage
     public bool? Draft => frontMatter.Draft;
 
     /// <inheritdoc/>
-    public Collection<string>? Aliases => frontMatter.Aliases;
+    public List<string>? Aliases => frontMatter.Aliases;
 
     /// <inheritdoc/>
     public string? Section => frontMatter.Section;
@@ -50,10 +50,14 @@ public class Page : IPage
     public int Weight => frontMatter.Weight;
 
     /// <inheritdoc/>
-    public Collection<string>? Tags => frontMatter.Tags;
+    public List<string>? Tags => frontMatter.Tags;
 
     /// <inheritdoc/>
-    public Collection<FrontMatterResources>? ResourceDefinitions => frontMatter.ResourceDefinitions;
+    public List<FrontMatterResources>? ResourceDefinitions
+    {
+        get => frontMatter.ResourceDefinitions;
+        set => frontMatter.ResourceDefinitions = value;
+    }
 
     /// <inheritdoc/>
     public string RawContent => frontMatter.RawContent;
@@ -445,12 +449,13 @@ endif
                 }
 
                 filename = Path.GetFileNameWithoutExtension(filename) + extention;
-                var resource = new Resource(resourceFilename)
+                var resource = new Resource()
                 {
                     Title = title,
                     FileName = filename,
                     Permalink = Path.Combine(Permalink!, filename),
-                    Params = resourceParams
+                    Params = resourceParams,
+                    SourceFullPath = resourceFilename
                 };
                 Resources.Add(resource);
             }

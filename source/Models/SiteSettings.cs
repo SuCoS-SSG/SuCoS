@@ -1,8 +1,11 @@
+using YamlDotNet.Serialization;
+
 namespace SuCoS.Models;
 
 /// <summary>
 /// The main configuration of the program, extracted from the app.yaml file.
 /// </summary>
+[YamlSerializable]
 public class SiteSettings : IParams
 {
     /// <summary>
@@ -13,12 +16,12 @@ public class SiteSettings : IParams
     /// <summary>
     /// Site description
     /// </summary>
-    public string? Description { get; set; }
+    public string? Description { get; set; } = string.Empty;
 
     /// <summary>
     /// Copyright information
     /// </summary>
-    public string? Copyright { get; set; }
+    public string? Copyright { get; set; } = string.Empty;
 
     /// <summary>
     /// The base URL that will be used to build public links.

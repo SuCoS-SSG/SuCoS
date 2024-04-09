@@ -82,6 +82,10 @@
           "type": "string",
           "description": "publish-directory (default: ./publish/{runtimeIdentifier})"
         },
+        "publishReadyToRun": {
+          "type": "boolean",
+          "description": "publish-ready-to-run (default: true)"
+        },
         "publishSelfContained": {
           "type": "boolean",
           "description": "publish-self-contained (default: true)"

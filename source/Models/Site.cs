@@ -166,7 +166,7 @@ public class Site : ISite
     /// <summary>
     /// The front matter parser instance. The default is YAML.
     /// </summary>
-    private readonly IFrontMatterParser frontMatterParser;
+    private readonly IMetadataParser frontMatterParser;
 
     private IEnumerable<IPage>? pagesCache;
 
@@ -185,7 +185,7 @@ public class Site : ISite
     public Site(
         in IGenerateOptions options,
         in SiteSettings settings,
-        in IFrontMatterParser frontMatterParser,
+        in IMetadataParser frontMatterParser,
         in ILogger logger, ISystemClock? clock)
     {
         Options = options;
