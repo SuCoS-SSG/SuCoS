@@ -182,37 +182,34 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
         string? resultType = null;
         if (handlers is not null)
         {
-            try
+            var response = new HttpListenerResponseWrapper(context.Response);
+            foreach (var item in handlers)
             {
-                var response = new HttpListenerResponseWrapper(context.Response);
-                foreach (var item in handlers)
+                if (!item.Check(requestPath))
                 {
-                    if (!item.Check(requestPath))
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    try
-                    {
-                        resultType = await item.Handle(response, requestPath, serverStartTime).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.Debug(ex, "Error handling the request.");
-                    }
+                try
+                {
+                    resultType = await item.Handle(response, requestPath, serverStartTime).ConfigureAwait(false);
                     break;
                 }
-            }
-            finally
-            {
-                context.Response.OutputStream.Close();
+                catch (Exception ex)
+                {
+                    logger.Debug(ex, "Error handling the request.");
+                }
             }
         }
 
         if (resultType is null)
         {
             resultType = "404";
-            await HandleNotFoundRequest(context).ConfigureAwait(false);
+            await HandleNotFoundRequest(context).ConfigureAwait(true);
+        }
+        else
+        {
+            context.Response.OutputStream.Close();
         }
         logger.Debug("Request {type}\tfor {RequestPath}", resultType, requestPath);
     }
