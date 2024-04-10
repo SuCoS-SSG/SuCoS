@@ -48,15 +48,15 @@ public class RegisteredPageRequestHandlerTests : TestSetup
 
         var response = Substitute.For<IHttpListenerResponse>();
         var stream = new MemoryStream();
-		_ = response.OutputStream.Returns(stream);
+        _ = response.OutputStream.Returns(stream);
 
         // Act
         site.ParseAndScanSourceFiles(Path.Combine(siteFullPath, "content"));
-		_ = registeredPageRequest.Check(requestPath);
+        _ = registeredPageRequest.Check(requestPath);
         var code = await registeredPageRequest.Handle(response, requestPath, DateTime.Now).ConfigureAwait(true);
 
-		// Assert
-		_ = stream.Seek(0, SeekOrigin.Begin);
+        // Assert
+        _ = stream.Seek(0, SeekOrigin.Begin);
         using var reader = new StreamReader(stream);
         var content = await reader.ReadToEndAsync().ConfigureAwait(true);
 

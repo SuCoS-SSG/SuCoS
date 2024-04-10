@@ -73,7 +73,7 @@ public class StopwatchReporter
             _ = itemCounts.TryGetValue(stepName, out var itemCount);
             var duration = stopwatch.ElapsedMilliseconds;
             var durationString = $"{duration} ms";
-            var status = itemCount > 0 ? itemCount.ToString(CultureInfo.InvariantCulture) : "";
+            var status = itemCount > 0 ? itemCount.ToString(CultureInfo.InvariantCulture) : string.Empty;
 
             reportData.Add((Step: stepName, Status: status, DurationString: durationString, Duration: duration));
         }

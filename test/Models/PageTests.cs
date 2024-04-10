@@ -89,7 +89,7 @@ word03 word04 word05 6 7 eight
 
         // Assert
         Assert.Equal(3, site.OutputReferences.Count);
-		_ = site.OutputReferences.TryGetValue(url, out var pageOther);
+        _ = site.OutputReferences.TryGetValue(url, out var pageOther);
         Assert.NotNull(pageOther);
         Assert.Same(page, pageOther);
     }
@@ -179,7 +179,7 @@ word03 word04 word05 6 7 eight
         }, site);
 
         var options = Substitute.For<IGenerateOptions>();
-		_ = options.Draft.Returns(draftOption);
+        _ = options.Draft.Returns(draftOption);
 
         // Assert
         Assert.Equal(expectedValue, site.IsValidPage(page, options));
@@ -199,7 +199,7 @@ word03 word04 word05 6 7 eight
 
         // Act
         var options = Substitute.For<IGenerateOptions>();
-		_ = options.Future.Returns(futureOption);
+        _ = options.Future.Returns(futureOption);
 
         // Assert
         Assert.Equal(expected, site.IsValidDate(page, options));

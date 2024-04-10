@@ -51,7 +51,7 @@ public class BuildCommand : BaseGeneratorCommand
 
             if (output is IPage page)
             {
-                var path = (url + (site.UglyURLs ? "" : "/index.html")).TrimStart('/');
+                var path = (url + (site.UglyURLs ? string.Empty : "/index.html")).TrimStart('/');
 
                 // Generate the output path
                 var outputAbsolutePath = Path.Combine(options.Output, path);
@@ -87,7 +87,7 @@ public class BuildCommand : BaseGeneratorCommand
 
     /// <summary>
     /// Copy a folder content from source into the output folder.
-    /// </summary> 
+    /// </summary>
     /// <param name="source">The source folder to copy from.</param>
     /// <param name="output">The output folder to copy to.</param>
     private static void CopyFolder(string source, string output)
