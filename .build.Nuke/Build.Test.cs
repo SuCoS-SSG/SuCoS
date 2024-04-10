@@ -37,7 +37,9 @@ sealed partial class Build : NukeBuild
                 .SetAssembly(testAssembly)
                 // .SetThreshold(75)
                 .SetOutput(coverageResultFile)
-                .SetFormat(CoverletOutputFormat.cobertura));
+                .SetFormat(CoverletOutputFormat.cobertura)
+                .SetExcludeByFile(["**/*.g.cs"]) // Exclude source generated files
+                );
         });
 
     public Target TestReport => td => td
