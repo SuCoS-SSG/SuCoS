@@ -5,7 +5,7 @@ using Nuke.Common.Utilities.Collections;
 using Serilog;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
-namespace SuCoS;
+namespace SuCoS.Nuke;
 
 /// <summary>
 /// This is the main build file for the project.

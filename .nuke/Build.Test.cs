@@ -9,7 +9,7 @@ using System;
 using static Nuke.Common.Tools.Coverlet.CoverletTasks;
 using static Nuke.Common.Tools.ReportGenerator.ReportGeneratorTasks;
 
-namespace SuCoS;
+namespace SuCoS.Nuke;
 
 /// <summary>
 /// This is the main build file for the project.
@@ -27,7 +27,7 @@ sealed partial class Build : NukeBuild
     static AbsolutePath coverageReportSummaryDirectory => coverageReportDirectory / "Summary.txt";
 
     Target Test => td => td
-        .DependsOn(Compile)
+        .After(Compile)
         .Executes(() =>
         {
             _ = coverageResultDirectory.CreateDirectory();
