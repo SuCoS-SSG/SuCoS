@@ -67,6 +67,7 @@ dotnet_diagnostic.CA2201.severity = error
 dotnet_diagnostic.CA2208.severity = error
 dotnet_diagnostic.CA2214.severity = error
 dotnet_diagnostic.CS8019.severity = warning
+dotnet_diagnostic.IDE0055.severity = warning
 
 [**/obj/**/*.cs]
 dotnet_diagnostic.CS8019.severity = none # disable on debug genereated files

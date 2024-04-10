@@ -12,15 +12,15 @@ public class PingRequestHandlerTests : TestSetup
         // Arrange
         var response = Substitute.For<IHttpListenerResponse>();
         var stream = new MemoryStream();
-		_ = response.OutputStream.Returns(stream);
+        _ = response.OutputStream.Returns(stream);
 
         var pingRequests = new PingRequests();
 
         // Act
         var code = await pingRequests.Handle(response, "ping", todayDate).ConfigureAwait(true);
 
-		// Assert
-		_ = stream.Seek(0, SeekOrigin.Begin);
+        // Assert
+        _ = stream.Seek(0, SeekOrigin.Begin);
         using var reader = new StreamReader(stream);
         var content = await reader.ReadToEndAsync().ConfigureAwait(true);
 

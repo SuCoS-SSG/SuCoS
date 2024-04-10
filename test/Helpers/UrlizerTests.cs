@@ -11,7 +11,7 @@ public class UrlizerTests
     public void Urlize_NullOrEmptyText_ThrowsArgumentNullException(string? text)
     {
         var result = Urlizer.Urlize(text);
-        Assert.Equal("", result);
+        Assert.Equal(string.Empty, result);
     }
 
     [Theory]
@@ -21,7 +21,7 @@ public class UrlizerTests
     {
         var result = Urlizer.UrlizePath(path);
 
-        Assert.Equal("", result);
+        Assert.Equal(string.Empty, result);
     }
 
     [Theory]
@@ -77,7 +77,7 @@ public class UrlizerTests
         const string text = "!@#$%^&*()";
         var result = Urlizer.Urlize(text);
 
-        Assert.Equal("", result);
+        Assert.Equal(string.Empty, result);
     }
 
     [Fact]

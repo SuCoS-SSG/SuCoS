@@ -24,13 +24,13 @@ public static partial class Urlizer
     /// <exception cref="ArgumentNullException"></exception>
     public static string Urlize(string? title, UrlizerOptions? options = null)
     {
-        title ??= "";
+        title ??= string.Empty;
         options ??= new UrlizerOptions(); // Use default options if not provided
 
         var cleanedTitle = !options.LowerCase ? title : title.ToLower(CultureInfo.CurrentCulture);
 
         var replacementChar = options.ReplacementChar ?? '\0';
-        var replacementCharString = options.ReplacementChar.ToString() ?? "";
+        var replacementCharString = options.ReplacementChar.ToString() ?? string.Empty;
 
         // Remove non-alphanumeric characters and replace spaces with the replacement character
         cleanedTitle = (options.ReplaceDot ? UrlizeRegexAlpha() : UrlizeRegexAlphaDot())

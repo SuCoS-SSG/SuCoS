@@ -83,7 +83,7 @@ sealed partial class Build : NukeBuild
                     packageLink,
                     new StreamContent(fileStream)).ConfigureAwait(false);
 
-				_ = response.EnsureSuccessStatusCode();
+                _ = response.EnsureSuccessStatusCode();
             }
             catch (Exception ex)
             {
@@ -116,7 +116,7 @@ sealed partial class Build : NukeBuild
                         description = $"Created {Date}"
                     }).ConfigureAwait(false);
 
-				_ = response.EnsureSuccessStatusCode();
+                _ = response.EnsureSuccessStatusCode();
             }
             catch (Exception ex)
             {
@@ -148,7 +148,7 @@ sealed partial class Build : NukeBuild
                         message = $"Automatic tag creation: {isScheduled} at {Date}"
                     }).ConfigureAwait(false);
 
-				_ = response.EnsureSuccessStatusCode();
+                _ = response.EnsureSuccessStatusCode();
             }
             catch (Exception ex)
             {
@@ -229,7 +229,7 @@ sealed partial class Build : NukeBuild
                     url = itemLink
                 }).ConfigureAwait(false);
 
-			_ = response.EnsureSuccessStatusCode();
+            _ = response.EnsureSuccessStatusCode();
         }
         catch (Exception ex)
         {

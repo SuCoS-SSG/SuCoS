@@ -30,26 +30,26 @@ sealed partial class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
-			_ = coverageResultDirectory.CreateDirectory();
-			_ = Coverlet(s => s
-				.SetTarget("dotnet")
-				.SetTargetArgs("test --no-build --no-restore")
-				.SetAssembly(testAssembly)
-				// .SetThreshold(75)
-				.SetOutput(coverageResultFile)
-				.SetFormat(CoverletOutputFormat.cobertura));
+            _ = coverageResultDirectory.CreateDirectory();
+            _ = Coverlet(s => s
+                .SetTarget("dotnet")
+                .SetTargetArgs("test --no-build --no-restore")
+                .SetAssembly(testAssembly)
+                // .SetThreshold(75)
+                .SetOutput(coverageResultFile)
+                .SetFormat(CoverletOutputFormat.cobertura));
         });
 
     public Target TestReport => td => td
         .DependsOn(Test)
         .Executes(() =>
         {
-			_ = coverageReportDirectory.CreateDirectory();
-			_ = ReportGenerator(s => s
-					.SetTargetDirectory(coverageReportDirectory)
-					.SetReportTypes([ReportTypes.Html, ReportTypes.TextSummary])
-					.SetReports(coverageResultFile)
-					);
+            _ = coverageReportDirectory.CreateDirectory();
+            _ = ReportGenerator(s => s
+                    .SetTargetDirectory(coverageReportDirectory)
+                    .SetReportTypes([ReportTypes.Html, ReportTypes.TextSummary])
+                    .SetReports(coverageResultFile)
+                    );
             var summaryText = coverageReportSummaryDirectory.ReadAllLines();
             Log.Information(string.Join(Environment.NewLine, summaryText));
         });
