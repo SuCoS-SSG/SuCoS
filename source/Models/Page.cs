@@ -393,8 +393,14 @@ endif
 
     private void ScanForResources()
     {
-        if (string.IsNullOrEmpty(SourceFullPathDirectory)) return;
-        if (BundleType == BundleType.none) return;
+        if (string.IsNullOrEmpty(SourceFullPathDirectory))
+        {
+            return;
+        }
+        if (BundleType == BundleType.none)
+        {
+            return;
+        }
 
         try
         {

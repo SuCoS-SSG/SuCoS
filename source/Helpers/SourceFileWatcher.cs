@@ -1,5 +1,3 @@
-using System;
-
 namespace SuCoS.Helpers;
 
 /// <summary>
@@ -48,7 +46,7 @@ public sealed class SourceFileWatcher : IFileWatcher, IDisposable
         GC.SuppressFinalize(this);
     }
 
-    void Dispose(bool disposing)
+    private void Dispose(bool disposing)
     {
         if (disposing)
         {
