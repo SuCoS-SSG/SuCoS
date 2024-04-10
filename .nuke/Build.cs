@@ -1,7 +1,7 @@
 using Nuke.Common;
 using Nuke.Common.CI;
 
-namespace SuCoS;
+namespace SuCoS.Nuke;
 
 /// <summary>
 /// This is the main build file for the project.

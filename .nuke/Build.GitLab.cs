@@ -11,7 +11,7 @@ using System.IO.Compression;
 using System.Net.Http;
 using System.Net.Http.Json;
 
-namespace SuCoS;
+namespace SuCoS.Nuke;
 
 /// <summary>
 /// This is the main build file for the project.

@@ -4,7 +4,7 @@ using Nuke.Common.Tools.GitVersion;
 using Serilog;
 using System.Linq;
 
-namespace SuCoS;
+namespace SuCoS.Nuke;
 
 /// <summary>
 /// This is the main build file for the project.

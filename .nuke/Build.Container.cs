@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SuCoS;
+namespace SuCoS.Nuke;
 
 /// <summary>
 /// This is the main build file for the project.
