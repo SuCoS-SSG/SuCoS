@@ -32,7 +32,7 @@ public class Program(ILogger logger)
     public static async Task<int> Main(string[] args)
     {
         var program = new Program(CreateLogger());
-        return await program.RunCommandLine(args);
+        return await program.RunCommandLine(args).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -112,7 +112,7 @@ public class Program(ILogger logger)
                     return Task.FromResult(command.Run());
                 },
                  errs => Task.FromResult(0)
-                );
+                ).ConfigureAwait(false);
     }
 
     /// <summary>

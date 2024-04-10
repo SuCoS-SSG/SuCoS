@@ -205,7 +205,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
         if (resultType is null)
         {
             resultType = "404";
-            await HandleNotFoundRequest(context).ConfigureAwait(true);
+            await HandleNotFoundRequest(context).ConfigureAwait(false);
         }
         else
         {
@@ -228,7 +228,10 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <param name="e">The FileSystemEventArgs containing information about the file change.</param>
     private void OnSourceFileChanged(object sender, FileSystemEventArgs e)
     {
-        if (e.FullPath.Contains("\\.git\\", StringComparison.InvariantCulture)) return;
+        if (e.FullPath.Contains("\\.git\\", StringComparison.InvariantCulture))
+        {
+            return;
+        }
 
         // File changes are firing multiple events in a short time.
         // Debounce the event handler to prevent multiple events from firing in a short time

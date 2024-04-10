@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using SuCoS.Models.CommandLineOptions;
 
 namespace SuCoS.Models;

@@ -26,7 +26,9 @@ public static class FileUtils
 
         // Check if the template content is already cached
         if (cache.TryGetValue(index, out var content))
+        {
             return content;
+        }
 
         var templatePaths = GetTemplateLookupOrder(themePath, page, isBaseTemplate);
         content = GetTemplate(templatePaths);

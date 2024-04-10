@@ -12,7 +12,6 @@ namespace SuCoS;
 /// </summary>
 public sealed partial class CheckLinkCommand(CheckLinkOptions settings, ILogger logger)
 {
-
     [GeneratedRegex(@"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/=]*)")]
     private static partial Regex URLRegex();
     private static readonly Regex urlRegex = URLRegex();
@@ -40,7 +39,7 @@ public sealed partial class CheckLinkCommand(CheckLinkOptions settings, ILogger 
         httpClient = GetHttpClient();
 
         var files = GetFiles(directoryPath, settings.Filters);
-        var linksAreValid = await CheckLinks(directoryPath, files, httpClient);
+        var linksAreValid = await CheckLinks(directoryPath, files, httpClient).ConfigureAwait(false);
 
         if (!linksAreValid)
         {
@@ -120,7 +119,7 @@ public sealed partial class CheckLinkCommand(CheckLinkOptions settings, ILogger 
                 var linkIsValid = false;
                 for (var j = 0; j < retriesCount && !linkIsValid; j++)
                 {
-                    linkIsValid |= await CheckLink(fileNameSanitized, link, httpClient);
+                    linkIsValid |= await CheckLink(fileNameSanitized, link, httpClient).ConfigureAwait(false);
                     if (!linkIsValid && j < retriesCount - 1)
                     {
                         LogInformation("{fileName}: {link} retrying...", fileNameSanitized, link);
@@ -140,7 +139,7 @@ public sealed partial class CheckLinkCommand(CheckLinkOptions settings, ILogger 
 
                 result &= linkIsValid;
             }
-        });
+        }).ConfigureAwait(false);
 
         return result;
     }
@@ -201,22 +200,23 @@ public sealed partial class CheckLinkCommand(CheckLinkOptions settings, ILogger 
         return files;
     }
 
-    void LogInformation(string message, string fileName, string? link = null, string? arg = null)
+	private void LogInformation(string message, string fileName, string? link = null, string? arg = null)
     {
-        if (settings.Verbose && false)
+        if (settings.Verbose)
         {
             logger.Information(message, fileName, link, arg);
         }
     }
 
-    void LogError(string message, string fileName, string? link = null, string? arg = null)
+	private void LogError(string message, string fileName, string? link = null, string? arg = null)
     {
         if (settings.Verbose)
         {
             logger.Error(message, fileName, link, arg);
         }
     }
-    void LogError(string message, string fileName, string? link, HttpStatusCode arg)
+    
+    private void LogError(string message, string fileName, string? link, HttpStatusCode arg)
     {
         if (settings.Verbose)
         {

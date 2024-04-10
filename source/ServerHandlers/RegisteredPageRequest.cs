@@ -8,7 +8,7 @@ namespace SuCoS.ServerHandlers;
 /// </summary>
 public class RegisteredPageRequest : IServerHandlers
 {
-    readonly ISite site;
+    private readonly ISite site;
 
     /// <summary>
     /// Constructor
