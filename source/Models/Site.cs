@@ -1,8 +1,8 @@
-using Fluid;
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.Parser;
+using SuCoS.TemplateEngine;
 using System.Collections.Concurrent;
 
 namespace SuCoS.Models;
@@ -123,16 +123,6 @@ public class Site : ISite
     public SiteCacheManager CacheManager { get; } = new();
 
     /// <summary>
-    /// The Fluid parser instance.
-    /// </summary>
-    public FluidParser FluidParser { get; } = new();
-
-    /// <summary>
-    /// The Fluid/Liquid template options.
-    /// </summary>
-    public TemplateOptions TemplateOptions { get; } = new();
-
-    /// <summary>
     /// The logger instance.
     /// </summary>
     public ILogger Logger { get; }
@@ -167,6 +157,9 @@ public class Site : ISite
     /// </summary>
     private readonly ISystemClock clock;
 
+    /// <inheritdoc/>
+    public ITemplateEngine TemplateEngine { get; set; }
+
     /// <summary>
     /// Constructor
     /// </summary>
@@ -180,13 +173,7 @@ public class Site : ISite
         this.settings = settings;
         Logger = logger;
         Parser = frontMatterParser;
-
-        // Liquid template options, needed to theme the content 
-        // but also parse URLs
-        TemplateOptions.MemberAccessStrategy.Register<Site>();
-        TemplateOptions.MemberAccessStrategy.Register<Page>();
-        TemplateOptions.MemberAccessStrategy.Register<Resource>();
-        TemplateOptions.MemberAccessStrategy.Register<Theme>();
+        TemplateEngine = new FluidTemplateEngine();
 
         this.clock = clock ?? new SystemClock();
 
