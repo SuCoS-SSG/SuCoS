@@ -1,3 +1,6 @@
+using Serilog;
+using SuCoS.Helpers;
+using SuCoS.Parser;
 using YamlDotNet.Serialization;
 
 namespace SuCoS.Models;
@@ -103,5 +106,59 @@ public class FrontMatter : IFrontMatter
         Title = title;
         SourceRelativePath = sourcePath;
         SourceFullPath = sourcePath;
+    }
+
+    /// <summary>
+    /// Create a front matter from a given metadata + content
+    /// </summary>
+    /// <param name="metadata"></param>
+    /// <param name="rawContent"></param>
+    /// <param name="fileFullPath"></param>
+    /// <param name="fileRelativePath"></param>
+    /// <param name="parser"></param>
+    /// <returns></returns>
+    public static FrontMatter Parse(
+        string metadata,
+        in string rawContent,
+        in string fileFullPath,
+        in string fileRelativePath,
+        IMetadataParser parser
+    )
+    {
+        ArgumentNullException.ThrowIfNull(fileFullPath);
+        ArgumentNullException.ThrowIfNull(fileRelativePath);
+        ArgumentNullException.ThrowIfNull(parser);
+
+        var frontMatter = parser.Parse<FrontMatter>(metadata);
+        var section = SiteHelper.GetSection(fileRelativePath);
+        frontMatter.RawContent = rawContent;
+        frontMatter.Section = section;
+        frontMatter.SourceRelativePath = fileRelativePath;
+        frontMatter.SourceFullPath = fileFullPath;
+        frontMatter.Type ??= section;
+        return frontMatter;
+    }
+
+    /// <summary>
+    /// Create a front matter from a given content
+    /// </summary>
+    /// <param name="fileFullPath"></param>
+    /// <param name="fileRelativePath"></param>
+    /// <param name="parser"></param>
+    /// <param name="content"></param>
+    /// <returns></returns>
+    public static FrontMatter Parse(
+        in string fileFullPath,
+        in string fileRelativePath,
+        IMetadataParser parser,
+        string content
+    )
+    {
+        ArgumentNullException.ThrowIfNull(fileFullPath);
+        ArgumentNullException.ThrowIfNull(fileRelativePath);
+        ArgumentNullException.ThrowIfNull(parser);
+
+        var (metadata, rawContent) = parser.SplitFrontMatter(content);
+        return Parse(metadata, rawContent, fileFullPath, fileRelativePath, parser);
     }
 }

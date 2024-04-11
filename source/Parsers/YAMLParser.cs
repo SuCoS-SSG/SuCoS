@@ -1,4 +1,5 @@
 using System.Text;
+using FolkerKinzel.Strings;
 using SuCoS.Helpers;
 using SuCoS.Models;
 using YamlDotNet.Serialization;
@@ -26,90 +27,52 @@ public class YAMLParser : IMetadataParser
             .Build();
     }
 
-    /// <inheritdoc/>
-    public IFrontMatter ParseFrontmatterAndMarkdownFromFile(
-        in string fileFullPath,
-        in string? sourceContentPath = null
-    )
-    {
-        ArgumentNullException.ThrowIfNull(fileFullPath);
+    // /// <inheritdoc/>
+    // public IFrontMatter ParseFrontmatterAndMarkdown(
+    //     in string fileFullPath,
+    //     in string fileRelativePath,
+    //     in string fileContent
+    // )
+    // {
+    //     var (yaml, rawContent) = SplitFrontMatter(fileContent);
 
-        string? fileContent;
-        string? fileRelativePath;
-        try
-        {
-            fileContent = File.ReadAllText(fileFullPath);
-            fileRelativePath = Path.GetRelativePath(
-                sourceContentPath ?? string.Empty,
-                fileFullPath
-            );
-        }
-        catch (Exception ex)
-        {
-            throw new FileNotFoundException(fileFullPath, ex);
-        }
+    //     // Now, you can parse the YAML front matter
+    //     var page = ParseYAML(fileFullPath, fileRelativePath, yaml, rawContent);
 
-        return ParseFrontmatterAndMarkdown(
-            fileFullPath,
-            fileRelativePath,
-            fileContent
-        );
-    }
+    //     return page;
+    // }
 
-    /// <inheritdoc/>
-    public IFrontMatter ParseFrontmatterAndMarkdown(
-        in string fileFullPath,
-        in string fileRelativePath,
-        in string fileContent
-    )
-    {
-        ArgumentNullException.ThrowIfNull(fileRelativePath);
-
-        using var content = new StringReader(fileContent);
-        var frontMatterBuilder = new StringBuilder();
-        string? line;
-
-        while ((line = content.ReadLine()) != null && line != "---") { }
-        while ((line = content.ReadLine()) != null && line != "---")
-        {
-            _ = frontMatterBuilder.AppendLine(line);
-        }
-
-        // Join the read lines to form the front matter
-        var yaml = frontMatterBuilder.ToString();
-        var rawContent = content.ReadToEnd();
-
-        // Now, you can parse the YAML front matter
-        var page = ParseYAML(fileFullPath, fileRelativePath, yaml, rawContent);
-
-        return page;
-    }
-
-    private FrontMatter ParseYAML(
-        in string fileFullPath,
-        in string fileRelativePath,
-        string yaml,
-        in string rawContent
-    )
-    {
-        var frontMatter =
-            deserializer.Deserialize<FrontMatter>(
-                new StringReader(yaml)
-            ) ?? throw new FormatException("Error parsing front matter");
-        var section = SiteHelper.GetSection(fileRelativePath);
-        frontMatter.RawContent = rawContent;
-        frontMatter.Section = section;
-        frontMatter.SourceRelativePath = fileRelativePath;
-        frontMatter.SourceFullPath = fileFullPath;
-        frontMatter.Type ??= section;
-        return frontMatter;
-    }
+    // private FrontMatter ParseYAML(
+    //     in string fileFullPath,
+    //     in string fileRelativePath,
+    //     string yaml,
+    //     in string rawContent
+    // )
+    // {
+    //     var frontMatter =
+    //         deserializer.Deserialize<FrontMatter>(
+    //             new StringReader(yaml)
+    //         ) ?? throw new FormatException("Error parsing front matter");
+    //     var section = SiteHelper.GetSection(fileRelativePath);
+    //     frontMatter.RawContent = rawContent;
+    //     frontMatter.Section = section;
+    //     frontMatter.SourceRelativePath = fileRelativePath;
+    //     frontMatter.SourceFullPath = fileFullPath;
+    //     frontMatter.Type ??= section;
+    //     return frontMatter;
+    // }
 
     /// <inheritdoc/>
     public T Parse<T>(string content)
     {
-        var data = deserializer.Deserialize<T>(content);
-        return data;
+        try
+        {
+            return deserializer.Deserialize<T>(content);
+        }
+        catch
+        {
+            throw new FormatException("Error parsing front matter");
+        }
     }
 
     /// <inheritdoc/>
@@ -124,5 +87,26 @@ public class YAMLParser : IMetadataParser
         .Build();
         var dataString = deserializer.Serialize(data);
         File.WriteAllText(path, dataString);
+    }
+
+    /// <inheritdoc/>
+    public (string, string) SplitFrontMatter(in string fileContent)
+    {
+        using var content = new StringReader(fileContent);
+        var frontMatterBuilder = new StringBuilder();
+        string? line;
+
+        while ((line = content.ReadLine()) != null && line != "---") { }
+        while ((line = content.ReadLine()) != null && line != "---")
+        {
+            _ = frontMatterBuilder.AppendLine(line);
+        }
+        frontMatterBuilder.TrimEnd();
+
+        // Join the read lines to form the front matter
+        var yaml = frontMatterBuilder.ToString();
+        var rawContent = content.ReadToEnd();
+
+        return (yaml, rawContent);
     }
 }
