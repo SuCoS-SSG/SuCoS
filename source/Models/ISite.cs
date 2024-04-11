@@ -1,8 +1,8 @@
-using Fluid;
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.Parser;
+using SuCoS.TemplateEngine;
 using System.Collections.Concurrent;
 
 namespace SuCoS.Models;
@@ -63,14 +63,9 @@ public interface ISite : ISiteSettings, IParams
     public IMetadataParser Parser { get; }
 
     /// <summary>
-    /// The Fluid parser instance.
+    /// The template engine.
     /// </summary>
-    public FluidParser FluidParser { get; }
-
-    /// <summary>
-    /// The Fluid/Liquid template options.
-    /// </summary>
-    public TemplateOptions TemplateOptions { get; }
+    public ITemplateEngine TemplateEngine { get; }
 
     /// <summary>
     /// The logger instance.

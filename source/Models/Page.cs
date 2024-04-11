@@ -1,4 +1,3 @@
-using Fluid;
 using Markdig;
 using Microsoft.Extensions.FileSystemGlobbing;
 using SuCoS.Helpers;
@@ -327,17 +326,7 @@ endif
 
         try
         {
-            if (Site.FluidParser.TryParse(URLforce, out var template, out var error))
-            {
-                var context = new TemplateContext(Site.TemplateOptions)
-                    .SetValue("page", this)
-                    .SetValue("site", Site);
-                permaLink = template.Render(context);
-            }
-            else
-            {
-                throw new FormatException(error);
-            }
+            permaLink = Site.TemplateEngine.Parse(URLforce, Site, this);
         }
         catch (Exception ex)
         {
@@ -433,22 +422,8 @@ endif
                         var file = new InMemoryDirectoryInfo("./", new[] { filenameOriginal });
                         if (resourceDefinition.GlobMatcher.Execute(file).HasMatches)
                         {
-                            if (Site.FluidParser.TryParse(resourceDefinition.Name, out var templateFileName, out var errorFileName))
-                            {
-                                var context = new TemplateContext(Site.TemplateOptions)
-                                    .SetValue("page", this)
-                                    .SetValue("site", Site)
-                                    .SetValue("counter", counter);
-                                filename = templateFileName.Render(context);
-                            }
-                            if (Site.FluidParser.TryParse(resourceDefinition.Title, out var templateTitle, out var errorTitle))
-                            {
-                                var context = new TemplateContext(Site.TemplateOptions)
-                                    .SetValue("page", this)
-                                    .SetValue("site", Site)
-                                    .SetValue("counter", counter);
-                                title = templateTitle.Render(context);
-                            }
+                            filename = Site.TemplateEngine.ParseResource(resourceDefinition.Name, Site, this, counter) ?? filename;
+                            title = Site.TemplateEngine.ParseResource(resourceDefinition.Title, Site, this, counter) ?? filename;
                             resourceParams = resourceDefinition.Params ?? [];
                         }
                     }
@@ -480,24 +455,14 @@ endif
             return isBaseTemplate ? Content : ContentPreRendered;
         }
 
-        if (Site.FluidParser.TryParse(fileContents, out var template, out var error))
+        try
         {
-            var context = new TemplateContext(Site.TemplateOptions)
-                .SetValue("page", this)
-                .SetValue("site", Site);
-            try
-            {
-                var rendered = template.Render(context);
-                return rendered;
-            }
-            catch (Exception ex)
-            {
-                Site.Logger.Error(ex, errorMessage, error);
-                return string.Empty;
-            }
+            return Site.TemplateEngine.Parse(fileContents, Site, this);
         }
-
-        Site.Logger.Error(errorMessage, error);
-        return string.Empty;
+        catch (FormatException ex)
+        {
+            Site.Logger.Error(ex, errorMessage);
+            return string.Empty;
+        }
     }
 }

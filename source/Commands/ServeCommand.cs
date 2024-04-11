@@ -161,7 +161,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
             }
 
             // Reinitialize the site
-            site = SiteHelper.Init(configFile, options, Parser, WhereParamsFilter, logger, stopwatch);
+            site = SiteHelper.Init(configFile, options, Parser, logger, stopwatch);
 
             StartServer(baseURLDefault, portDefault);
         }).ConfigureAwait(false);

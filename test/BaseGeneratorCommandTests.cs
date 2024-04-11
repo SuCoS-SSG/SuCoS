@@ -1,6 +1,7 @@
 using Serilog;
 using SuCoS;
 using SuCoS.Models.CommandLineOptions;
+using SuCoS.TemplateEngine;
 using System.Reflection;
 using Xunit;
 
@@ -36,7 +37,7 @@ public class BaseGeneratorCommandTests
     [Fact]
     public void CheckValueInDictionary_ShouldWorkCorrectly()
     {
-        var type = typeof(BaseGeneratorCommand);
+        var type = typeof(FluidTemplateEngine);
         var method = type.GetMethod("CheckValueInDictionary", BindingFlags.NonPublic | BindingFlags.Static);
         var parameters = new object[] { new[] { "key" }, new Dictionary<string, object> { { "key", "value" } }, "value" };
 

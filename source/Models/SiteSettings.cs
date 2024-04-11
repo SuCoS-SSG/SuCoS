@@ -9,25 +9,24 @@ namespace SuCoS.Models;
 public class SiteSettings : ISiteSettings
 {
     #region ISiteSettings
-    /// <summary>
-    /// Site Title/Name.
-    /// </summary>
+
+    /// <inheritdoc/>
     public string Title { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Site description
-    /// </summary>
+
+    /// <inheritdoc/>
     public string? Description { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Copyright information
-    /// </summary>
+
+    /// <inheritdoc/>
     public string? Copyright { get; set; }
 
-    /// <summary>
-    /// The base URL that will be used to build public links.
-    /// </summary>
+
+    /// <inheritdoc/>
     public string BaseURL { get; set; } = string.Empty;
+
+    /// <inheritdoc/>
+    public Dictionary<string, List<string>> Outputs { get; set; } = [];
 
     #endregion ISiteSettings
 

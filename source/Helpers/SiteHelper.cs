@@ -1,6 +1,4 @@
-using Fluid;
 using Markdig;
-using Microsoft.Extensions.FileProviders;
 using Serilog;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
@@ -25,7 +23,7 @@ public static class SiteHelper
     /// Creates the pages dictionary.
     /// </summary>
     /// <exception cref="FormatException"></exception>
-    public static Site Init(string configFile, IGenerateOptions options, IMetadataParser parser, FilterDelegate whereParamsFilter, ILogger logger, StopwatchReporter stopwatch)
+    public static Site Init(string configFile, IGenerateOptions options, IMetadataParser parser, ILogger logger, StopwatchReporter stopwatch)
     {
         ArgumentNullException.ThrowIfNull(stopwatch);
 
@@ -41,10 +39,6 @@ public static class SiteHelper
 
         var site = new Site(options, siteSettings, parser, logger, null);
 
-        // Liquid template options, needed to theme the content 
-        // but also parse URLs
-        site.TemplateOptions.Filters.AddFilter("whereParams", whereParamsFilter);
-
         site.ResetCache();
 
         stopwatch.Start("Parse");
@@ -55,7 +49,7 @@ public static class SiteHelper
 
         if (Directory.Exists(Path.GetFullPath(site.SourceThemePath)))
         {
-            site.TemplateOptions.FileProvider = new PhysicalFileProvider(Path.GetFullPath(site.SourceThemePath));
+            site.TemplateEngine.Initialize(site);
         }
 
         return site;
