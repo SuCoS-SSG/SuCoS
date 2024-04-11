@@ -5,9 +5,13 @@ namespace SuCoS.ServerHandlers;
 /// <summary>
 /// Provides a wrapper for the <see cref="HttpListenerResponse"/>.
 /// </summary>
-public class HttpListenerResponseWrapper : IHttpListenerResponse
+/// <remarks>
+/// Wrap the HttpListenerResponse
+/// </remarks>
+/// <param name="response"></param>
+public class HttpListenerResponseWrapper(HttpListenerResponse response) : IHttpListenerResponse
 {
-    private readonly HttpListenerResponse response;
+    private readonly HttpListenerResponse response = response;
 
     /// <inheritdoc />
     public Stream OutputStream => response.OutputStream;
@@ -24,14 +28,5 @@ public class HttpListenerResponseWrapper : IHttpListenerResponse
     {
         get => response.ContentLength64;
         set => response.ContentLength64 = value;
-    }
-
-    /// <summary>
-    /// Wrap the HttpListenerResponse
-    /// </summary>
-    /// <param name="response"></param>
-    public HttpListenerResponseWrapper(HttpListenerResponse response)
-    {
-        this.response = response;
     }
 }
