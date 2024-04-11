@@ -1,3 +1,4 @@
+using CommandLine;
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
@@ -330,13 +331,20 @@ public class Site : ISite
         }
     }
 
-    private Page? ParseSourceFile(in string filePath, in IPage? parent, BundleType bundleType = BundleType.none)
+    private Page? ParseSourceFile(in string fileFullPath, in IPage? parent, BundleType bundleType = BundleType.none)
     {
         Page? page = null;
         try
         {
-            var frontMatter = Parser.ParseFrontmatterAndMarkdownFromFile(filePath, SourceContentPath)
-                ?? throw new FormatException($"Error parsing front matter for {filePath}");
+            var fileContent = File.ReadAllText(fileFullPath);
+            var fileRelativePath = Path.GetRelativePath(
+                SourceContentPath ?? string.Empty,
+                fileFullPath
+            );
+            // var frontMatter = Parser.ParseFrontmatterAndMarkdown(fileFullPath, fileRelativePath, fileContent)
+            //  ?? throw new FormatException($"Error parsing front matter for {fileFullPath}");
+            var frontMatter = FrontMatter.Parse(fileFullPath, fileRelativePath, Parser, fileContent)
+                ?? throw new FormatException($"Error parsing front matter for {fileFullPath}");
 
             if (IsValidPage(frontMatter, Options))
             {
@@ -349,7 +357,7 @@ public class Site : ISite
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error parsing file {file}", filePath);
+            Logger.Error(ex, "Error parsing file {file}", fileFullPath);
         }
 
         // Use interlocked to safely increment the counter in a multi-threaded environment

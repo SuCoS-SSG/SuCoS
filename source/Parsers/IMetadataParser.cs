@@ -8,21 +8,11 @@ namespace SuCoS.Parser;
 public interface IMetadataParser
 {
     /// <summary>
-    /// Extract the front matter from the content file.
-    /// </summary>
-    /// <param name="fileFullPath"></param>
-    /// <param name="sourceContentPath"></param>
-    /// <returns></returns>
-    IFrontMatter? ParseFrontmatterAndMarkdownFromFile(in string fileFullPath, in string sourceContentPath);
-
-    /// <summary>
     /// Extract the front matter from the content.
     /// </summary>
-    /// <param name="fileFullPath"></param>
     /// <param name="fileContent"></param>
-    /// <param name="fileRelativePath"></param>
     /// <returns></returns>
-    IFrontMatter? ParseFrontmatterAndMarkdown(in string fileFullPath, in string fileRelativePath, in string fileContent);
+    (string, string) SplitFrontMatter(in string fileContent);
 
     /// <summary>
     /// Parse a string content to the T class.

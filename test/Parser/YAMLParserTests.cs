@@ -93,7 +93,7 @@ Date: 2023-04-01
     public void ParseFrontmatter_ShouldParseTitleCorrectly(string fileContent, string expectedTitle)
     {
         // Arrange
-        var frontMatter = parser.ParseFrontmatterAndMarkdown(fileRelativePathCONST, fileFullPathCONST, fileContent);
+        var frontMatter = FrontMatter.Parse(fileRelativePathCONST, fileFullPathCONST, parser, fileContent);
 
         // Assert
         Assert.Equal(expectedTitle, frontMatter.Title);
@@ -114,7 +114,7 @@ Date: 2023/01/01
         var expectedDate = DateTime.Parse(expectedDateString, CultureInfo.InvariantCulture);
 
         // Act
-        var frontMatter = parser.ParseFrontmatterAndMarkdown(fileRelativePathCONST, fileFullPathCONST, fileContent);
+        var frontMatter = FrontMatter.Parse(fileRelativePathCONST, fileFullPathCONST, parser, fileContent);
 
         // Assert
         Assert.Equal(expectedDate, frontMatter.Date);
@@ -130,7 +130,7 @@ Date: 2023/01/01
         var expectedExpiryDate = DateTime.Parse("2024-06-01", CultureInfo.InvariantCulture);
 
         // Act
-        var frontMatter = parser.ParseFrontmatterAndMarkdown(fileRelativePathCONST, fileFullPathCONST, pageContent);
+        var frontMatter = FrontMatter.Parse(fileRelativePathCONST, fileFullPathCONST, parser, pageContent);
 
         // Assert
         Assert.Equal("Test Title", frontMatter.Title);
@@ -142,7 +142,7 @@ Date: 2023/01/01
     }
 
     [Fact]
-    public void ParseFrontmatter_ShouldThrowException_WhenInvalidYAMLSyntax()
+    public void ParseFrontmatter_ShouldThrowFormatException_WhenInvalidYAMLSyntax()
     {
         // Arrange
         const string fileContent = @"---
@@ -151,7 +151,8 @@ Title
 ";
 
         // Assert
-        Assert.Throws<InvalidCastException>(() => parser.ParseFrontmatterAndMarkdown(fileRelativePathCONST, fileFullPathCONST, fileContent));
+        Assert.Throws<FormatException>(() =>
+            FrontMatter.Parse(fileRelativePathCONST, fileFullPathCONST, parser, fileContent));
     }
 
     [Fact]
@@ -172,7 +173,8 @@ Title
     public void ParseParams_ShouldFillParamsWithNonMatchingFields()
     {
         // Arrange
-        var page = new Page(parser.ParseFrontmatterAndMarkdown(string.Empty, string.Empty, pageContent), site);
+        var frontMatter = FrontMatter.Parse(string.Empty, string.Empty, parser, pageContent);
+        var page = new Page(frontMatter, site);
 
         // Assert
         Assert.False(page.Params.ContainsKey("customParam"));
@@ -184,7 +186,7 @@ Title
     {
         // Arrange
         var date = DateTime.Parse("2023-07-01", CultureInfo.InvariantCulture);
-        var frontMatter = parser.ParseFrontmatterAndMarkdown(string.Empty, string.Empty, pageContent);
+        var frontMatter = FrontMatter.Parse(string.Empty, string.Empty, parser, pageContent);
         Page page = new(frontMatter, site);
 
         // Act
@@ -198,7 +200,7 @@ Title
     public void ParseFrontmatter_ShouldCreateTags()
     {
         // Arrange
-        var frontMatter = parser.ParseFrontmatterAndMarkdown(string.Empty, string.Empty, pageContent);
+        var frontMatter = FrontMatter.Parse(string.Empty, string.Empty, parser, pageContent);
         Page page = new(frontMatter, site);
 
         // Act
@@ -209,39 +211,26 @@ Title
     }
 
     [Fact]
-    public void ParseFrontmatter_ShouldThrowExceptionWhenSiteIsNull()
+    public void FrontMatterParse_RawContentNull()
     {
-        _ = Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdownFromFile(null!, "fakeFilePath"));
-    }
-
-    [Fact]
-    public void ParseFrontmatter_ShouldThrowExceptionWhenFilePathIsNull()
-    {
-        _ = Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdownFromFile(null!));
-    }
-
-    [Fact]
-    public void ParseFrontmatter_ShouldThrowExceptionWhenFilePathDoesNotExist()
-    {
-        _ = Assert.Throws<FileNotFoundException>(() => parser.ParseFrontmatterAndMarkdownFromFile("fakePath"));
-    }
-
-    [Fact]
-    public void ParseFrontmatter_ShouldThrowExceptionWhenFilePathDoesNotExist2()
-    {
-        _ = Assert.Throws<ArgumentNullException>(() => parser.ParseFrontmatterAndMarkdown(null!, null!, "fakeContent"));
-    }
-
-    [Fact]
-    public void ParseFrontmatter_ShouldHandleEmptyFileContent()
-    {
-        _ = Assert.Throws<FormatException>(() => parser.ParseFrontmatterAndMarkdown("fakeFilePath", "/fakeFilePath", string.Empty));
+        _ = Assert.Throws<FormatException>(() => FrontMatter.Parse("invalidFrontmatter", "", "fakePath", "fakePath", frontMatterParser));
     }
 
     [Fact]
     public void ParseYAML_ShouldThrowExceptionWhenFrontmatterIsInvalid()
     {
-        _ = Assert.Throws<FormatException>(() => parser.ParseFrontmatterAndMarkdown("fakeFilePath", "/fakeFilePath", "invalidFrontmatter"));
+        _ = Assert.Throws<FormatException>(() => parser.Parse<FrontMatter>("invalidFrontmatter"));
+    }
+
+    [Fact]
+    public void ParseYAML_ShouldSplitTheMetadata()
+    {
+        // Act
+        var (metadata, rawContent) = parser.SplitFrontMatter(pageContent);
+
+        // Assert
+        Assert.Equal(pageFrontmaterCONST.TrimEnd(), metadata);
+        Assert.Equal(pageMarkdownCONST, rawContent);
     }
 
     [Fact]
@@ -254,16 +243,6 @@ Title
         Assert.NotNull(siteSettings);
         Assert.Equal("My Site", siteSettings.Title);
         Assert.Equal("https://www.example.com/", siteSettings.BaseURL);
-    }
-
-    [Fact]
-    public void ParseSiteSettings_ShouldReturnContent()
-    {
-        // Arrange
-        var frontMatter = parser.ParseFrontmatterAndMarkdown("fakeFilePath", "/fakeFilePath", pageContent);
-
-        // Assert
-        Assert.Equal(pageMarkdownCONST, frontMatter.RawContent);
     }
 
 
