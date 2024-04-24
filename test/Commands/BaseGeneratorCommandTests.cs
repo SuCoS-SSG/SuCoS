@@ -5,7 +5,7 @@ using SuCoS.TemplateEngine;
 using System.Reflection;
 using Xunit;
 
-namespace Tests;
+namespace Tests.Commands;
 
 public class BaseGeneratorCommandTests
 {
@@ -16,11 +16,8 @@ public class BaseGeneratorCommandTests
 
     private static readonly ILogger testLogger = new LoggerConfiguration().CreateLogger();
 
-    private class BaseGeneratorCommandStub : BaseGeneratorCommand
-    {
-        public BaseGeneratorCommandStub(IGenerateOptions options, ILogger logger)
-            : base(options, logger) { }
-    }
+    private class BaseGeneratorCommandStub(IGenerateOptions options, ILogger logger)
+        : BaseGeneratorCommand(options, logger);
 
     [Fact]
     public void Constructor_ShouldThrowArgumentNullException_WhenOptionsIsNull()
