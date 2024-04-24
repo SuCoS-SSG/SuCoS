@@ -1,4 +1,3 @@
-using CommandLine;
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
@@ -64,10 +63,8 @@ public class Site : ISite
     /// </summary>
     public string SourceThemePath => Path.Combine(Options.Source, settings.ThemeDir, settings.Theme ?? string.Empty);
 
-    /// <summary>
-    /// List of all basic source folders
-    /// </summary>
-    public IEnumerable<string> SourceFodlers => [
+    /// <inheritdoc/>
+    public IEnumerable<string> SourceFolders => [
         SourceContentPath,
         SourceStaticPath,
         SourceThemePath
@@ -167,13 +164,13 @@ public class Site : ISite
     public Site(
         in IGenerateOptions options,
         in SiteSettings settings,
-        in IMetadataParser frontMatterParser,
+        in IMetadataParser parser,
         in ILogger logger, ISystemClock? clock)
     {
         Options = options;
         this.settings = settings;
         Logger = logger;
-        Parser = frontMatterParser;
+        Parser = parser;
         TemplateEngine = new FluidTemplateEngine();
 
         this.clock = clock ?? new SystemClock();

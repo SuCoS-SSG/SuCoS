@@ -24,17 +24,17 @@ public class NewSiteOptions
     /// Site title.
     /// </summary>
     [Option("title", Required = false, HelpText = "Site title")]
-    public required string Title { get; init; } = "My Site";
+    public string Title { get; init; } = "My Site";
 
     /// <summary>
     /// Site description.
     /// </summary>
     [Option("description", Required = false, HelpText = "Site description")]
-    public required string Description { get; init; } = string.Empty;
+    public string Description { get; init; } = string.Empty;
 
     /// <summary>
     /// Site base url.
     /// </summary>
     [Option("url", Required = false, HelpText = "Site base url")]
-    public required string BaseURL { get; init; } = "https://example.org/";
+    public string BaseURL { get; init; } = "https://example.org/";
 }

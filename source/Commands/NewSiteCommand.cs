@@ -1,45 +1,59 @@
 using Serilog;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
+using SuCoS.Parser;
 
 namespace SuCoS;
 
 /// <summary>
 /// Check links of a given site.
 /// </summary>
-public sealed partial class NewSiteCommand(NewSiteOptions options, ILogger logger)
+public sealed partial class NewSiteCommand(NewSiteOptions options, ILogger logger, IFileSystem fileSystem, ISite site)
 {
+    private static SiteSettings siteSettings = null!;
+
     /// <summary>
-    /// Run the app
+    /// Generate the needed data for the class
     /// </summary>
+    /// <param name="options"></param>
+    /// <param name="logger"></param>
+    /// <param name="fileSystem"></param>
     /// <returns></returns>
-    public int Run()
+    public static NewSiteCommand Create(NewSiteOptions options, ILogger logger, IFileSystem fileSystem)
     {
-        var siteSettings = new SiteSettings()
+        ArgumentNullException.ThrowIfNull(options);
+
+        siteSettings = new SiteSettings()
         {
             Title = options.Title,
             Description = options.Description,
             BaseURL = options.BaseURL
         };
 
-        // TODO: Refactor Site class to not need YAML parser nor FrontMatterParser
-        var site = new Site(new ServeOptions() { SourceOption = options.Output }, siteSettings, null!, logger, null);
+        var site = new Site(new GenerateOptions() { SourceOption = options.Output }, siteSettings, new YAMLParser(), null!, null);
+        return new NewSiteCommand(options, logger, fileSystem, site);
+    }
 
-        var outputPath = Path.GetFullPath(options.Output);
-        var siteSettingsPath = Path.Combine(outputPath, "sucos.yaml");
+    /// <summary>
+    /// Run the app
+    /// </summary>
+    /// <returns></returns>
+    public int Run()
+    {
+        var outputPath = fileSystem.GetFullPath(options.Output);
+        var siteSettingsPath = fileSystem.Combine(outputPath, "sucos.yaml");
 
-        if (File.Exists(siteSettingsPath) && !options.Force)
+        if (fileSystem.FileExists(siteSettingsPath) && !options.Force)
         {
             logger.Error("{directoryPath} already exists", outputPath);
             return 1;
         }
 
-        logger.Information("Creating a new site: {title} at {outputPath}", siteSettings.Title, outputPath);
-
-        CreateFolders(site.SourceFodlers);
+        logger.Information("Creating a new site: {title} at {outputPath}", site.Title, outputPath);
 
         try
         {
+            CreateFolders(site.SourceFolders);
             site.Parser.Export(siteSettings, siteSettingsPath);
         }
         catch (Exception ex)
@@ -61,7 +75,7 @@ public sealed partial class NewSiteCommand(NewSiteOptions options, ILogger logge
         foreach (var folder in folders)
         {
             logger.Information("Creating {folder}", folder);
-            Directory.CreateDirectory(folder);
+            fileSystem.CreateDirectory(folder);
         }
     }
 }

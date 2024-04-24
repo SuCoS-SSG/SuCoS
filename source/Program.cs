@@ -103,7 +103,8 @@ public class Program(ILogger logger)
                 },
                 (NewSiteOptions options) =>
                 {
-                    var command = new NewSiteCommand(options, logger);
+                    var fileSystem = new FileSystem();
+                    var command = NewSiteCommand.Create(options, logger, fileSystem);
                     return Task.FromResult(command.Run());
                 },
                 (NewThemeOptions options) =>

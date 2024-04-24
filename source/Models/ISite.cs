@@ -73,6 +73,11 @@ public interface ISite : ISiteSettings, IParams
     public ILogger Logger { get; }
 
     /// <summary>
+    /// List of all basic source folders
+    /// </summary>
+    public IEnumerable<string> SourceFolders { get; }
+
+    /// <summary>
     /// Resets the template cache to force a reload of all templates.
     /// </summary>
     public void ResetCache();
