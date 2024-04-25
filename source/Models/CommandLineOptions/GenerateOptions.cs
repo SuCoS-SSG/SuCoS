@@ -15,14 +15,6 @@ public class GenerateOptions : IGenerateOptions
     public string Source => string.IsNullOrEmpty(SourceOption) ? SourceArgument : SourceOption;
 
     /// <inheritdoc/>
-    [Value(0)]
-    public string SourceArgument { private get; init; } = "./";
-
-    /// <inheritdoc/>
-    [Option('s', "source", Required = false, HelpText = "Source directory path")]
-    public string SourceOption { private get; init; } = string.Empty;
-
-    /// <inheritdoc/>
     [Option('d', "draft", Required = false, HelpText = "Include draft content")]
     public bool Draft { get; init; }
 
@@ -33,4 +25,16 @@ public class GenerateOptions : IGenerateOptions
     /// <inheritdoc/>
     [Option('e', "expired", Required = false, HelpText = "Include content with ExpiredDate dates from the past")]
     public bool Expired { get; init; }
+
+    /// <summary>
+    /// The path of the source files
+    /// </summary>
+    [Value(0)]
+    public string SourceArgument { private get; init; } = "./";
+
+    /// <summary>
+    /// The path of the source files, as --source commandline option
+    /// </summary>
+    [Option('s', "source", Required = false, HelpText = "Source directory path")]
+    public string SourceOption { private get; init; } = string.Empty;
 }

@@ -74,7 +74,6 @@ public class NewSiteCommandTests
     {
         // Arrange
         var options = new NewSiteOptions { Output = "test", Title = "Test", Description = "Test", BaseURL = "http://test.com", Force = false };
-        var site = Substitute.For<ISite>();
         site.SourceFolders.Returns(["folder1", "folder2"]);
         fileSystem.FileExists(Arg.Any<string>()).Returns(false);
 
@@ -93,7 +92,6 @@ public class NewSiteCommandTests
     {
         // Arrange
         var options = new NewSiteOptions { Output = "test", Title = "Test", Description = "Test", BaseURL = "http://test.com", Force = false };
-        var site = Substitute.For<ISite>();
         site.SourceFolders.Returns(["folder1", "folder2"]);
         fileSystem.FileExists(Arg.Any<string>()).Returns(false);
         fileSystem.When(x => x.DirectoryCreateDirectory(Arg.Any<string>()))

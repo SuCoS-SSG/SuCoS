@@ -49,8 +49,6 @@ public class RegisteredPageRequestHandlerTests : TestSetup
             SourceArgument = siteFullPath
         };
         var parser = new SuCoS.Parser.YAMLParser();
-        // FIXME: make it an argument
-        var fs = new FileSystem();
         var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser, fs);
         site = new Site(options, siteSettings, parser, loggerMock, null);
 

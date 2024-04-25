@@ -295,7 +295,10 @@ public class Site : ISite
                 : markdownFiles.Where(file => file != selectedFile).ToArray();
 
             page = ParseSourceFile(selectedFile!, parent, bundleType);
-            if (page is null) return;
+            if (page is null)
+            {
+                return;
+            }
 
             if (level == 0)
             {

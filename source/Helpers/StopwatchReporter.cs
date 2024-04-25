@@ -1,6 +1,7 @@
 using Serilog;
 using System.Diagnostics;
 using System.Globalization;
+using System.Text;
 
 namespace SuCoS.Helpers;
 
@@ -80,25 +81,27 @@ public class StopwatchReporter
 
         var totalDurationAllSteps = stopwatches.Values.Sum(sw => sw.ElapsedMilliseconds);
 
-        var report = $@"Site '{siteTitle}' created!
-═════════════════════════════════════════════";
+        var report = new StringBuilder($@"Site '{siteTitle}' created!
+═════════════════════════════════════════════");
 
         for (var i = 0; i < reportData.Count; i++)
         {
             if (i == 1 || i == reportData.Count)
             {
-                report += @"
-─────────────────────────────────────────────";
+                report.Append(@"
+─────────────────────────────────────────────");
             }
-            report += $"\n{reportData[i].Step,-20} {reportData[i].Status,-15} {reportData[i].DurationString,-10}";
+            report.Append(CultureInfo.InvariantCulture,
+                $"\n{reportData[i].Step,-20} {reportData[i].Status,-15} {reportData[i].DurationString,-10}");
         }
 
-        report += $@"
+        report.Append(CultureInfo.InvariantCulture,
+            $@"
 ─────────────────────────────────────────────
 Total                     {totalDurationAllSteps} ms
-═════════════════════════════════════════════";
+═════════════════════════════════════════════");
 
         // Log the report
-        logger.Information(report, siteTitle);
+        logger.Information(report.ToString(), siteTitle);
     }
 }

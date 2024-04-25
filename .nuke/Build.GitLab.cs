@@ -10,6 +10,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Threading.Tasks;
 
 namespace SuCoS.Nuke;
 
@@ -92,7 +93,7 @@ sealed partial class Build : NukeBuild
                 throw;
             }
 
-            GitLabCreateReleaseLink(package, packageLink);
+            await GitLabCreateReleaseLink(package, packageLink);
         });
 
     /// <summary>
@@ -164,7 +165,7 @@ sealed partial class Build : NukeBuild
     public Target GitLabPushContainer => td => td
         .DependsOn(CreateContainer)
         .OnlyWhenStatic(() => runtimeIdentifier != "win-x64")
-        .Executes(() =>
+        .Executes(async () =>
         {
             var tags = ContainerTags();
 
@@ -184,7 +185,7 @@ sealed partial class Build : NukeBuild
 
                 // Create a link to the GitLab release
                 var tagLink = GitLabAPIUrl($"?orderBy=NAME&sort=asc&search[]={tag}");
-                GitLabCreateReleaseLink($"docker-{tag}", tagLink);
+                await GitLabCreateReleaseLink($"docker-{tag}", tagLink);
             }
         });
     /// <summary>
@@ -217,7 +218,7 @@ sealed partial class Build : NukeBuild
         return apiUrl;
     }
 
-    async void GitLabCreateReleaseLink(string itemName, string itemLink)
+    async Task GitLabCreateReleaseLink(string itemName, string itemLink)
     {
         try
         {

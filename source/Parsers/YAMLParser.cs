@@ -1,7 +1,5 @@
 using System.Text;
 using FolkerKinzel.Strings;
-using SuCoS.Helpers;
-using SuCoS.Models;
 using YamlDotNet.Serialization;
 
 namespace SuCoS.Parser;
@@ -27,41 +25,6 @@ public class YAMLParser : IMetadataParser
             .Build();
     }
 
-    // /// <inheritdoc/>
-    // public IFrontMatter ParseFrontmatterAndMarkdown(
-    //     in string fileFullPath,
-    //     in string fileRelativePath,
-    //     in string fileContent
-    // )
-    // {
-    //     var (yaml, rawContent) = SplitFrontMatter(fileContent);
-
-    //     // Now, you can parse the YAML front matter
-    //     var page = ParseYAML(fileFullPath, fileRelativePath, yaml, rawContent);
-
-    //     return page;
-    // }
-
-    // private FrontMatter ParseYAML(
-    //     in string fileFullPath,
-    //     in string fileRelativePath,
-    //     string yaml,
-    //     in string rawContent
-    // )
-    // {
-    //     var frontMatter =
-    //         deserializer.Deserialize<FrontMatter>(
-    //             new StringReader(yaml)
-    //         ) ?? throw new FormatException("Error parsing front matter");
-    //     var section = SiteHelper.GetSection(fileRelativePath);
-    //     frontMatter.RawContent = rawContent;
-    //     frontMatter.Section = section;
-    //     frontMatter.SourceRelativePath = fileRelativePath;
-    //     frontMatter.SourceFullPath = fileFullPath;
-    //     frontMatter.Type ??= section;
-    //     return frontMatter;
-    // }
-
     /// <inheritdoc/>
     public T Parse<T>(string content)
     {
@@ -78,14 +41,14 @@ public class YAMLParser : IMetadataParser
     /// <inheritdoc/>
     public void Export<T>(T data, string path)
     {
-        var deserializer = new SerializerBuilder()
+        var serializer = new SerializerBuilder()
         .IgnoreFields()
         .ConfigureDefaultValuesHandling(
             DefaultValuesHandling.OmitEmptyCollections
             | DefaultValuesHandling.OmitDefaults
             | DefaultValuesHandling.OmitNull)
         .Build();
-        var dataString = deserializer.Serialize(data);
+        var dataString = serializer.Serialize(data);
         File.WriteAllText(path, dataString);
     }
 
@@ -96,7 +59,9 @@ public class YAMLParser : IMetadataParser
         var frontMatterBuilder = new StringBuilder();
         string? line;
 
+        // find the start of the block
         while ((line = content.ReadLine()) != null && line != "---") { }
+        // find the end of the block
         while ((line = content.ReadLine()) != null && line != "---")
         {
             _ = frontMatterBuilder.AppendLine(line);

@@ -29,14 +29,7 @@ public static class SiteHelper
         ArgumentNullException.ThrowIfNull(fs);
 
         SiteSettings siteSettings;
-        try
-        {
-            siteSettings = ParseSettings(configFile, options, parser, fs);
-        }
-        catch
-        {
-            throw;
-        }
+        siteSettings = ParseSettings(configFile, options, parser, fs);
 
         var site = new Site(options, siteSettings, parser, logger, null);
 
