@@ -61,7 +61,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <param name="logger">The logger instance. Injectable for testing</param>
     /// <param name="fileWatcher"></param>
     /// <param name="fs"></param>
-    public ServeCommand(ServeOptions options, ILogger logger, IFileWatcher fileWatcher, IFileSystem fs) 
+    public ServeCommand(ServeOptions options, ILogger logger, IFileWatcher fileWatcher, IFileSystem fs)
         : base(options, logger, fs)
     {
         this.options = options ?? throw new ArgumentNullException(nameof(options));
@@ -76,10 +76,27 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <summary>
     /// Starts the server asynchronously.
     /// </summary>
+    public void StartServer()
+    {
+        StartServer(baseURLDefault, portDefault);
+    }
+
+    /// <summary>
+    /// Starts the server asynchronously.
+    /// </summary>
+    /// <param name="baseURL"></param>
+    public void StartServer(string baseURL)
+    {
+        StartServer(baseURL, portDefault);
+    }
+
+    /// <summary>
+    /// Starts the server asynchronously.
+    /// </summary>
     /// <param name="baseURL">The base URL for the server.</param>
     /// <param name="port">The port number for the server.</param>
     /// <returns>A Task representing the asynchronous operation.</returns>
-    public void StartServer(string baseURL = baseURLDefault, int port = portDefault)
+    public void StartServer(string baseURL, int port)
     {
         logger.Information("Starting server...");
 
@@ -165,7 +182,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
             // Reinitialize the site
             site = SiteHelper.Init(configFile, options, Parser, logger, stopwatch, fs);
 
-            StartServer(baseURLDefault, portDefault);
+            StartServer();
         }).ConfigureAwait(false);
 
         lastRestartTask = lastRestartTask.ContinueWith(t => t.Exception != null

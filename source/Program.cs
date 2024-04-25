@@ -19,7 +19,7 @@ public class Program(ILogger logger)
     /// <summary>
     /// Basic logo of the program, for fun
     /// </summary>
-    public const string helloWorld = @"
+    private static readonly string helloWorld = @"
 ░█▀▀░░░░░█▀▀░░░░░█▀▀
 ░▀▀█░█░█░█░░░█▀█░▀▀█
 ░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀";

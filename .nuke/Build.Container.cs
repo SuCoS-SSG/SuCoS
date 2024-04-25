@@ -42,9 +42,13 @@ sealed partial class Build : NukeBuild
                 .SetProcessLogger((outputType, output) =>
                 {
                     if (outputType == OutputType.Std)
+                    {
                         Log.Information(output);
+                    }
                     else
+                    {
                         Log.Debug(output);
+                    }
                 })
                 );
         });

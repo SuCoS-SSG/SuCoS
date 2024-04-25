@@ -12,14 +12,12 @@ namespace Tests.Helpers;
 public class StopwatchReporterTests
 {
     private readonly ILogger logger;
-    private readonly StopwatchReporter stopwatchReporter;
     private readonly InMemorySink inMemorySink;
 
     public StopwatchReporterTests()
     {
         inMemorySink = new InMemorySink();
         logger = new LoggerConfiguration().WriteTo.Sink(inMemorySink).CreateLogger();
-        stopwatchReporter = new StopwatchReporter(logger);
     }
 
     [Fact]
@@ -50,6 +48,7 @@ public class StopwatchReporterTests
         var siteTitle = "TestSite";
         var duration = 123;
 
+        var stopwatchReporter = new StopwatchReporter(logger);
         stopwatchReporter.Start(stepName);
         Thread.Sleep(duration); // Let's wait a bit to simulate some processing.
         stopwatchReporter.Stop(stepName, 1);
@@ -69,6 +68,7 @@ public class StopwatchReporterTests
     public void Stop_ThrowsExceptionWhenStopCalledWithoutStart()
     {
         var stepName = "TestStep";
+        var stopwatchReporter = new StopwatchReporter(logger);
 
         // Don't call Start for stepName
 

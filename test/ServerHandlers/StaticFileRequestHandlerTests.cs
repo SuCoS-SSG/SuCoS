@@ -8,7 +8,7 @@ public class StaticFileRequestHandlerTests : TestSetup, IDisposable
 {
     private readonly string tempFilePath;
 
-    public StaticFileRequestHandlerTests() : base()
+    public StaticFileRequestHandlerTests()
     {
         // Creating a temporary file for testing purposes
         tempFilePath = Path.GetTempFileName();

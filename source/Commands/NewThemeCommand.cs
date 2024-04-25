@@ -34,17 +34,15 @@ public sealed partial class NewThemeCommand(NewThemeOptions options, ILogger log
 
         CreateFolders(theme.Folders);
 
-        foreach (var themeFolder in theme.Folders)
-
-            try
-            {
-                new YAMLParser().Export(theme, themePath);
-            }
-            catch (Exception ex)
-            {
-                logger.Error("Failed to export site settings: {ex}", ex);
-                return 1;
-            }
+        try
+        {
+            new YAMLParser().Export(theme, themePath);
+        }
+        catch (Exception ex)
+        {
+            logger.Error("Failed to export site settings: {ex}", ex);
+            return 1;
+        }
 
         logger.Information("Done");
         return 0;
