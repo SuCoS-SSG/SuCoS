@@ -72,12 +72,15 @@ sealed partial class Build : NukeBuild
         {
             return ["local", $"local-{ContainerRuntimeIdentifier.Item1}"];
         }
-        List<string> tagsOriginal = [Version, VersionMajorMinor, VersionMajor];
+        List<string> tagsOriginal = [Version, VersionMajorMinor, VersionMajor, string.Empty];
         if (ContainerRuntimeIdentifier.Item2)
         {
             tagsOriginal.Add("latest");
         }
-        var tags = tagsOriginal.Select(tag => $"{ContainerRuntimeIdentifier.Item1}-{tag}").ToList();
+        var tags = tagsOriginal.Select(tag =>
+            string.IsNullOrEmpty(tag)
+            ? $"{ContainerRuntimeIdentifier.Item1}"
+            : $"{ContainerRuntimeIdentifier.Item1}-{tag}").ToList();
         if (containerDefaultRID == runtimeIdentifier)
         {
             tags.AddRange(tagsOriginal);
