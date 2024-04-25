@@ -54,7 +54,7 @@ sealed partial class Build : NukeBuild
             var lastCommmit = GitTasks.Git("log -1").FirstOrDefault().Text;
             var status = GitTasks.Git("status").FirstOrDefault().Text;
             Log.Information("Current version:  {Version}", CurrentVersion);
-            Log.Information("Current tag:     {Version}", CurrentTag);
+            Log.Information("Current tag:      {Version}", CurrentTag);
             Log.Information("Next version:     {Version}", Version);
         });
 

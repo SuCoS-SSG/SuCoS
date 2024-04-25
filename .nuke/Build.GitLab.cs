@@ -50,7 +50,8 @@ sealed partial class Build : NukeBuild
         .Executes(async () =>
         {
             // The package name constructed using packageName, runtimeIdentifier, and Version
-            var package = $"{packageName}-{runtimeIdentifier}-{CurrentTag}";
+            var rid = runtimeIdentifier != "linux-musl-x64" ? runtimeIdentifier : "alpine";
+            var package = $"{packageName}-{rid}-{CurrentTag}";
 
             // The filename of the package, constructed using the package variable
             var filename = $"{package}.zip";
