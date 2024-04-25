@@ -60,7 +60,9 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <param name="options">ServeOptions object specifying the serve options.</param>
     /// <param name="logger">The logger instance. Injectable for testing</param>
     /// <param name="fileWatcher"></param>
-    public ServeCommand(ServeOptions options, ILogger logger, IFileWatcher fileWatcher) : base(options, logger)
+    /// <param name="fs"></param>
+    public ServeCommand(ServeOptions options, ILogger logger, IFileWatcher fileWatcher, IFileSystem fs) 
+        : base(options, logger, fs)
     {
         this.options = options ?? throw new ArgumentNullException(nameof(options));
         this.fileWatcher = fileWatcher ?? throw new ArgumentNullException(nameof(fileWatcher));
@@ -161,7 +163,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
             }
 
             // Reinitialize the site
-            site = SiteHelper.Init(configFile, options, Parser, logger, stopwatch);
+            site = SiteHelper.Init(configFile, options, Parser, logger, stopwatch, fs);
 
             StartServer(baseURLDefault, portDefault);
         }).ConfigureAwait(false);

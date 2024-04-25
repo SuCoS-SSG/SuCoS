@@ -37,19 +37,26 @@ public abstract class BaseGeneratorCommand
     protected ILogger logger { get; }
 
     /// <summary>
+    /// File system functions (file and directory)
+    /// </summary>
+    protected readonly IFileSystem fs;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="BaseGeneratorCommand"/> class.
     /// </summary>
     /// <param name="options">The generate options.</param>
     /// <param name="logger">The logger instance. Injectable for testing</param>
-    protected BaseGeneratorCommand(IGenerateOptions options, ILogger logger)
+    /// <param name="fs"></param>
+    protected BaseGeneratorCommand(IGenerateOptions options, ILogger logger, IFileSystem fs)
     {
         ArgumentNullException.ThrowIfNull(options);
 
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         stopwatch = new(logger);
+        this.fs = fs;
 
         logger.Information("Source path: {source}", propertyValue: options.Source);
 
-        site = SiteHelper.Init(configFile, options, Parser, logger, stopwatch);
+        site = SiteHelper.Init(configFile, options, Parser, logger, stopwatch, fs);
     }
 }

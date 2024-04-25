@@ -84,8 +84,8 @@ public class NewSiteCommandTests
         newSiteCommand.Run();
 
         // Assert
-        fileSystem.Received(1).CreateDirectory("folder1");
-        fileSystem.Received(1).CreateDirectory("folder2");
+        fileSystem.Received(1).DirectoryCreateDirectory("folder1");
+        fileSystem.Received(1).DirectoryCreateDirectory("folder2");
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public class NewSiteCommandTests
         var site = Substitute.For<ISite>();
         site.SourceFolders.Returns(["folder1", "folder2"]);
         fileSystem.FileExists(Arg.Any<string>()).Returns(false);
-        fileSystem.When(x => x.CreateDirectory(Arg.Any<string>()))
+        fileSystem.When(x => x.DirectoryCreateDirectory(Arg.Any<string>()))
             .Do(x => { throw new ArgumentNullException(); });
 
         var newSiteCommand = new NewSiteCommand(options, logger, fileSystem, site);
@@ -189,6 +189,6 @@ public class NewSiteCommandTests
         newSiteCommand.Run();
 
         // Assert
-        fileSystem.Received(2).CreateDirectory(Arg.Any<string>());
+        fileSystem.Received(2).DirectoryCreateDirectory(Arg.Any<string>());
     }
 }

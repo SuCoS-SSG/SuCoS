@@ -1,3 +1,4 @@
+using SuCoS;
 using SuCoS.Helpers;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
@@ -10,6 +11,13 @@ namespace Tests.Models;
 /// </summary>
 public class SiteTests : TestSetup
 {
+    readonly IFileSystem fs;
+
+    public SiteTests()
+    {
+        fs = new FileSystem();
+    }
+
     [Theory]
     [InlineData("test01.md")]
     [InlineData("date-ok.md")]
@@ -23,7 +31,7 @@ public class SiteTests : TestSetup
         };
 
         // Act
-        site.ParseAndScanSourceFiles(Path.Combine(siteFullPath, "content"));
+        site.ParseAndScanSourceFiles(fs, Path.Combine(siteFullPath, "content"));
 
         // Assert
         Assert.Contains(site.Pages, page => page.SourceRelativePathDirectory!.Length == 0);
@@ -42,7 +50,7 @@ public class SiteTests : TestSetup
         site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(site.SourceContentPath);
+        site.ParseAndScanSourceFiles(fs, site.SourceContentPath);
 
         // Assert
         Assert.NotNull(site.Home);
@@ -63,7 +71,7 @@ public class SiteTests : TestSetup
         site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(null);
+        site.ParseAndScanSourceFiles(fs, null);
 
         // Assert
         Assert.Equal(expectedQuantity, site.OutputReferences.Values.Where(output => output is IPage page && page.IsSection).Count());
@@ -83,7 +91,7 @@ public class SiteTests : TestSetup
         site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(null);
+        site.ParseAndScanSourceFiles(fs, null);
 
         // Assert
         Assert.Equal(expectedQuantity, site.OutputReferences.Values.Where(output => output is IPage page).Count());
@@ -103,7 +111,7 @@ public class SiteTests : TestSetup
         site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(null);
+        site.ParseAndScanSourceFiles(fs, null);
 
         // Assert
         Assert.Equal(expectedQuantity, site.OutputReferences.Values.Where(output => output is IPage page && page.IsPage).Count());
@@ -119,7 +127,7 @@ public class SiteTests : TestSetup
         site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(null);
+        site.ParseAndScanSourceFiles(fs, null);
 
         // Assert
         Assert.Equal(100, site.RegularPages.First().Weight);
@@ -136,7 +144,7 @@ public class SiteTests : TestSetup
         site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(null);
+        site.ParseAndScanSourceFiles(fs, null);
 
         // Assert
         Assert.Equal(0, site.RegularPages.First().Weight);
@@ -153,7 +161,7 @@ public class SiteTests : TestSetup
         site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(null);
+        site.ParseAndScanSourceFiles(fs, null);
 
         // Assert
         _ = site.OutputReferences.TryGetValue("/tags", out var output);
@@ -176,7 +184,7 @@ public class SiteTests : TestSetup
         site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(null);
+        site.ParseAndScanSourceFiles(fs, null);
 
         // Assert
         _ = site.OutputReferences.TryGetValue("/tags/tag1", out var output);
@@ -201,7 +209,7 @@ public class SiteTests : TestSetup
         site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(null);
+        site.ParseAndScanSourceFiles(fs, null);
 
         // Assert
         _ = site.OutputReferences.TryGetValue(url, out var output);
@@ -234,11 +242,11 @@ public class SiteTests : TestSetup
             SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST05))
         };
         var parser = new SuCoS.Parser.YAMLParser();
-        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser);
+        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser, fs);
         site = new Site(options, siteSettings, parser, loggerMock, null);
 
         // Act
-        site.ParseAndScanSourceFiles(null);
+        site.ParseAndScanSourceFiles(fs, null);
 
         // Assert
         _ = site.OutputReferences.TryGetValue(url, out var output);
@@ -262,11 +270,11 @@ public class SiteTests : TestSetup
             SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST07))
         };
         var parser = new SuCoS.Parser.YAMLParser();
-        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser);
+        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser, fs);
         site = new Site(options, siteSettings, parser, loggerMock, null);
 
         // Act
-        site.ParseAndScanSourceFiles(null);
+        site.ParseAndScanSourceFiles(fs, null);
 
         // Assert
         _ = site.OutputReferences.TryGetValue(url, out var output);
@@ -304,11 +312,11 @@ public class SiteTests : TestSetup
             SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST06))
         };
         var parser = new SuCoS.Parser.YAMLParser();
-        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser);
+        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser, fs);
         site = new Site(options, siteSettings, parser, loggerMock, null);
 
         // Act
-        site.ParseAndScanSourceFiles(null);
+        site.ParseAndScanSourceFiles(fs, null);
 
         // Assert
         _ = site.OutputReferences.TryGetValue(url, out var output);

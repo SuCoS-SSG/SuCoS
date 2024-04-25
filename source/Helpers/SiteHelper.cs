@@ -23,14 +23,15 @@ public static class SiteHelper
     /// Creates the pages dictionary.
     /// </summary>
     /// <exception cref="FormatException"></exception>
-    public static Site Init(string configFile, IGenerateOptions options, IMetadataParser parser, ILogger logger, StopwatchReporter stopwatch)
+    public static Site Init(string configFile, IGenerateOptions options, IMetadataParser parser, ILogger logger, StopwatchReporter stopwatch, IFileSystem fs)
     {
         ArgumentNullException.ThrowIfNull(stopwatch);
+        ArgumentNullException.ThrowIfNull(fs);
 
         SiteSettings siteSettings;
         try
         {
-            siteSettings = ParseSettings(configFile, options, parser);
+            siteSettings = ParseSettings(configFile, options, parser, fs);
         }
         catch
         {
@@ -43,11 +44,11 @@ public static class SiteHelper
 
         stopwatch.Start("Parse");
 
-        site.ParseAndScanSourceFiles(site.SourceContentPath);
+        site.ParseAndScanSourceFiles(fs, site.SourceContentPath);
 
         stopwatch.Stop("Parse", site.FilesParsedToReport);
 
-        if (Directory.Exists(Path.GetFullPath(site.SourceThemePath)))
+        if (fs.DirectoryExists(Path.GetFullPath(site.SourceThemePath)))
         {
             site.TemplateEngine.Initialize(site);
         }
@@ -87,21 +88,23 @@ public static class SiteHelper
     /// </summary>
     /// <param name="options">The generate options.</param>
     /// <param name="parser">The front matter parser.</param>
+    /// <param name="fs"></param>
     /// <param name="configFile">The site settings file.</param>
     /// <returns>The site settings.</returns>
-    public static SiteSettings ParseSettings(string configFile, IGenerateOptions options, IMetadataParser parser)
+    public static SiteSettings ParseSettings(string configFile, IGenerateOptions options, IMetadataParser parser, IFileSystem fs)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(parser);
+        ArgumentNullException.ThrowIfNull(fs);
 
         // Read the main configation
         var filePath = Path.Combine(options.Source, configFile);
-        if (!File.Exists(filePath))
+        if (!fs.FileExists(filePath))
         {
             throw new FileNotFoundException($"The {configFile} file was not found in the specified source directory: {options.Source}");
         }
 
-        var fileContent = File.ReadAllText(filePath);
+        var fileContent = fs.FileReadAllText(filePath);
         var siteSettings = parser.Parse<SiteSettings>(fileContent)
             ?? throw new FormatException($"Error reading app config {configFile}");
         return siteSettings;

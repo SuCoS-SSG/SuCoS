@@ -86,11 +86,12 @@ public interface ISite : ISiteSettings, IParams
     /// Search recursively for all markdown files in the content folder, then
     /// parse their content for front matter meta data and markdown.
     /// </summary>
+    /// <param name="fs"></param>
     /// <param name="directory">Folder to scan</param>
     /// <param name="level">Folder recursive level</param>
     /// <param name="parent">Page of the upper directory</param>
     /// <returns></returns>
-    public void ParseAndScanSourceFiles(string? directory, int level = 0, IPage? parent = null);
+    public void ParseAndScanSourceFiles(IFileSystem fs, string? directory, int level = 0, IPage? parent = null);
 
     /// <summary>
     /// Extra calculation and automatic data for each page.
