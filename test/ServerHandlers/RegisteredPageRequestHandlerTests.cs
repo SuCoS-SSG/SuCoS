@@ -1,4 +1,5 @@
 using NSubstitute;
+using SuCoS;
 using SuCoS.Helpers;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
@@ -9,6 +10,13 @@ namespace Tests.ServerHandlers;
 
 public class RegisteredPageRequestHandlerTests : TestSetup
 {
+    readonly IFileSystem fs;
+
+    public RegisteredPageRequestHandlerTests()
+    {
+        fs = new FileSystem();
+    }
+
     [Theory]
     [InlineData("/", true)]
     [InlineData("/testPage", false)]
@@ -23,7 +31,7 @@ public class RegisteredPageRequestHandlerTests : TestSetup
         var registeredPageRequest = new RegisteredPageRequest(site);
 
         // Act
-        site.ParseAndScanSourceFiles(Path.Combine(siteFullPath, "content"));
+        site.ParseAndScanSourceFiles(fs, Path.Combine(siteFullPath, "content"));
 
         // Assert
         Assert.Equal(exist, registeredPageRequest.Check(requestPath));
@@ -41,7 +49,9 @@ public class RegisteredPageRequestHandlerTests : TestSetup
             SourceArgument = siteFullPath
         };
         var parser = new SuCoS.Parser.YAMLParser();
-        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser);
+        // FIXME: make it an argument
+        var fs = new FileSystem();
+        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser, fs);
         site = new Site(options, siteSettings, parser, loggerMock, null);
 
         var registeredPageRequest = new RegisteredPageRequest(site);
@@ -51,7 +61,7 @@ public class RegisteredPageRequestHandlerTests : TestSetup
         _ = response.OutputStream.Returns(stream);
 
         // Act
-        site.ParseAndScanSourceFiles(Path.Combine(siteFullPath, "content"));
+        site.ParseAndScanSourceFiles(fs, Path.Combine(siteFullPath, "content"));
         _ = registeredPageRequest.Check(requestPath);
         var code = await registeredPageRequest.Handle(response, requestPath, DateTime.Now).ConfigureAwait(true);
 

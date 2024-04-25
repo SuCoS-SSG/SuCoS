@@ -1,3 +1,4 @@
+using NSubstitute;
 using Serilog;
 using SuCoS;
 using SuCoS.Models.CommandLineOptions;
@@ -16,19 +17,26 @@ public class BaseGeneratorCommandTests
 
     private static readonly ILogger testLogger = new LoggerConfiguration().CreateLogger();
 
-    private class BaseGeneratorCommandStub(IGenerateOptions options, ILogger logger)
-        : BaseGeneratorCommand(options, logger);
+    private class BaseGeneratorCommandStub(IGenerateOptions options, ILogger logger, IFileSystem fs)
+        : BaseGeneratorCommand(options, logger, fs);
+
+    readonly IFileSystem fs;
+
+    public BaseGeneratorCommandTests()
+    {
+        fs = Substitute.For<IFileSystem>();
+    }
 
     [Fact]
     public void Constructor_ShouldThrowArgumentNullException_WhenOptionsIsNull()
     {
-        _ = Assert.Throws<ArgumentNullException>(() => new BaseGeneratorCommandStub(null!, testLogger));
+        _ = Assert.Throws<ArgumentNullException>(() => new BaseGeneratorCommandStub(null!, testLogger, fs));
     }
 
     [Fact]
     public void Constructor_ShouldThrowArgumentNullException_WhenLoggerIsNull()
     {
-        _ = Assert.Throws<ArgumentNullException>(() => new BaseGeneratorCommandStub(testOptions, null!));
+        _ = Assert.Throws<ArgumentNullException>(() => new BaseGeneratorCommandStub(testOptions, null!, fs));
     }
 
     [Fact]

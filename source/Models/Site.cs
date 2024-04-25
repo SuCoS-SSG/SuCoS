@@ -15,7 +15,6 @@ public class Site : ISite
     #region IParams
 
     /// <inheritdoc/>
-    /// <inheritdoc/>
     public Dictionary<string, object> Params
     {
         get => settings.Params;
@@ -187,19 +186,14 @@ public class Site : ISite
         OutputReferences.Clear();
     }
 
-    /// <summary>
-    /// Search recursively for all markdown files in the content folder, then
-    /// parse their content for front matter meta data and markdown.
-    /// </summary>
-    /// <param name="directory">Folder to scan</param>
-    /// <param name="level">Folder recursive level</param>
-    /// <param name="parent">Page of the upper directory</param>
-    /// <returns></returns>
-    public void ParseAndScanSourceFiles(string? directory, int level = 0, IPage? parent = null)
+    /// <inheritdoc/>
+    public void ParseAndScanSourceFiles(IFileSystem fs, string? directory, int level = 0, IPage? parent = null)
     {
+        ArgumentNullException.ThrowIfNull(fs);
+
         directory ??= SourceContentPath;
 
-        var markdownFiles = Directory.GetFiles(directory, "*.md");
+        var markdownFiles = fs.DirectoryGetFiles(directory, "*.md");
 
         ParseIndexPage(directory, level, ref parent, ref markdownFiles);
 
@@ -208,10 +202,10 @@ public class Site : ISite
             _ = ParseSourceFile(filePath, parent);
         });
 
-        var subdirectories = Directory.GetDirectories(directory);
+        var subdirectories = fs.DirectoryGetDirectories(directory);
         _ = Parallel.ForEach(subdirectories, subdirectory =>
         {
-            ParseAndScanSourceFiles(subdirectory, level + 1, parent);
+            ParseAndScanSourceFiles(fs, subdirectory, level + 1, parent);
         });
     }
 

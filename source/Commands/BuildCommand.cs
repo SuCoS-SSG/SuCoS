@@ -10,17 +10,24 @@ namespace SuCoS;
 public class BuildCommand : BaseGeneratorCommand
 {
     private readonly BuildOptions options;
-
     /// <summary>
     /// Entry point of the build command. It will be called by the main program
     /// in case the build command is invoked (which is by default).
     /// </summary>
     /// <param name="options">Command line options</param>
     /// <param name="logger">The logger instance. Injectable for testing</param>
-    public BuildCommand(BuildOptions options, ILogger logger) : base(options, logger)
+    /// <param name="fs"></param>
+    public BuildCommand(BuildOptions options, ILogger logger, IFileSystem fs)
+        : base(options, logger, fs)
     {
         this.options = options ?? throw new ArgumentNullException(nameof(options));
+    }
 
+    /// <summary>
+    /// Run the commmand
+    /// </summary>
+    public int Run()
+    {
         logger.Information("Output path: {output}", options.Output);
 
         // Generate the site pages
@@ -37,6 +44,8 @@ public class BuildCommand : BaseGeneratorCommand
 
         // Generate the build report
         stopwatch.LogReport(site.Title);
+
+        return 0;
     }
 
     private void CreateOutputFiles()
@@ -57,11 +66,11 @@ public class BuildCommand : BaseGeneratorCommand
                 var outputAbsolutePath = Path.Combine(options.Output, path);
 
                 var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
-                _ = Directory.CreateDirectory(outputDirectory!);
+                fs.DirectoryCreateDirectory(outputDirectory!);
 
                 // Save the processed output to the final file
                 var result = page.CompleteContent;
-                File.WriteAllText(outputAbsolutePath, result);
+                fs.FileWriteAllText(outputAbsolutePath, result);
 
                 // Log
                 logger.Debug("Page created: {Permalink}", outputAbsolutePath);
@@ -74,10 +83,10 @@ public class BuildCommand : BaseGeneratorCommand
                 var outputAbsolutePath = Path.Combine(options.Output, resource.Permalink!.TrimStart('/'));
 
                 var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
-                _ = Directory.CreateDirectory(outputDirectory!);
+                fs.DirectoryCreateDirectory(outputDirectory!);
 
                 // Copy the file to the output folder
-                File.Copy(resource.SourceFullPath, outputAbsolutePath, overwrite: true);
+                fs.FileCopy(resource.SourceFullPath, outputAbsolutePath, overwrite: true);
             }
         });
 
@@ -90,19 +99,19 @@ public class BuildCommand : BaseGeneratorCommand
     /// </summary>
     /// <param name="source">The source folder to copy from.</param>
     /// <param name="output">The output folder to copy to.</param>
-    private static void CopyFolder(string source, string output)
+    public void CopyFolder(string source, string output)
     {
         // Check if the source folder even exists
-        if (!Directory.Exists(source))
+        if (!fs.DirectoryExists(source))
         {
             return;
         }
 
         // Create the output folder if it doesn't exist
-        _ = Directory.CreateDirectory(output);
+        fs.DirectoryCreateDirectory(output);
 
         // Get all files in the source folder
-        var files = Directory.GetFiles(source);
+        var files = fs.DirectoryGetFiles(source);
 
         foreach (var fileFullPath in files)
         {
@@ -113,7 +122,7 @@ public class BuildCommand : BaseGeneratorCommand
             var destinationFullPath = Path.Combine(output, fileName);
 
             // Copy the file to the output folder
-            File.Copy(fileFullPath, destinationFullPath, overwrite: true);
+            fs.FileCopy(fileFullPath, destinationFullPath, overwrite: true);
         }
     }
 }

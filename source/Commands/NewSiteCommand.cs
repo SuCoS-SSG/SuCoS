@@ -40,8 +40,8 @@ public sealed partial class NewSiteCommand(NewSiteOptions options, ILogger logge
     /// <returns></returns>
     public int Run()
     {
-        var outputPath = fileSystem.GetFullPath(options.Output);
-        var siteSettingsPath = fileSystem.Combine(outputPath, "sucos.yaml");
+        var outputPath = Path.GetFullPath(options.Output);
+        var siteSettingsPath = Path.Combine(outputPath, "sucos.yaml");
 
         if (fileSystem.FileExists(siteSettingsPath) && !options.Force)
         {
@@ -75,7 +75,7 @@ public sealed partial class NewSiteCommand(NewSiteOptions options, ILogger logge
         foreach (var folder in folders)
         {
             logger.Information("Creating {folder}", folder);
-            fileSystem.CreateDirectory(folder);
+            fileSystem.DirectoryCreateDirectory(folder);
         }
     }
 }

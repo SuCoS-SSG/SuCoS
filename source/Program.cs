@@ -64,20 +64,20 @@ public class Program(ILogger logger)
                 {
                     try
                     {
-                        _ = new BuildCommand(options, logger);
+                        var command = new BuildCommand(options, logger, new FileSystem());
+                        return Task.FromResult(command.Run());
                     }
                     catch (Exception ex)
                     {
                         logger.Error($"Build failed: {ex.Message}");
                         return Task.FromResult(1);
                     }
-                    return Task.FromResult(0);
                 },
                 async (ServeOptions options) =>
                 {
                     try
                     {
-                        var serveCommand = new ServeCommand(options, logger, new SourceFileWatcher());
+                        var serveCommand = new ServeCommand(options, logger, new SourceFileWatcher(), new FileSystem());
                         serveCommand.StartServer();
                         await Task.Delay(-1).ConfigureAwait(false);  // Wait forever.
                     }
