@@ -5,9 +5,13 @@ namespace SuCoS.Models;
 /// </summary>
 public interface IResource : IFile, IOutput, IParams
 {
-    /// <inheritdoc/>
+    /// <summary>
+    /// Resource name.
+    /// </summary>
     public string? Title { get; set; }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Resource file name.
+    /// </summary>
     public string? FileName { get; set; }
 }

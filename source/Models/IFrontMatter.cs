@@ -15,15 +15,15 @@ public interface IFrontMatter : IParams, IFile
     /// <summary>
     /// The first directory where the content is located, inside content.
     /// </summary>
-    /// 
+    ///
     /// <example>
-    /// If the content is located at <c>content/blog/2021-01-01-Hello-World.md</c>, 
+    /// If the content is located at <c>content/blog/2021-01-01-Hello-World.md</c>,
     /// then the value of this property will be <c>blog</c>.
     /// </example>
     string? Section { get; }
 
     /// <summary>
-    /// The type of content. It's the will be "page", if not specified.
+    /// The type of content. It will be "page", if not specified.
     /// </summary>
     string? Type { get; }
 
@@ -36,7 +36,7 @@ public interface IFrontMatter : IParams, IFile
     /// <code>
     /// URL: my-page
     /// </code>
-    /// will be converted to <code>/my-page</code>, independetly of the page title.
+    /// will be converted to <code>/my-page</code>, independently of the page title.
     /// </example>
     /// <example>
     /// <code>
@@ -47,8 +47,8 @@ public interface IFrontMatter : IParams, IFile
     string? URL { get; }
 
     /// <summary>
-    /// True for draft content. It will not be rendered unless 
-    /// a option <see cref="IGenerateOptions.Draft"/> is set to <c>true</c>.
+    /// True for draft content. It will not be rendered unless
+    /// an option <see cref="IGenerateOptions.Draft"/> is set to <c>true</c>.
     /// </summary>
     bool? Draft { get; }
 
@@ -111,7 +111,7 @@ public interface IFrontMatter : IParams, IFile
     Kind Kind { get; }
 
     /// <summary>
-    /// The date to be considered as the publish date.
+    /// The date to be considered as the publishing date.
     /// </summary>
     DateTime? GetPublishDate => PublishDate ?? Date;
 }

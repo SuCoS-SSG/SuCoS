@@ -18,7 +18,7 @@ public class PingRequests : IServerHandlers
 
         var content = serverStartTime.ToString("o");
 
-        using var writer = new StreamWriter(response.OutputStream, leaveOpen: true);
+        await using var writer = new StreamWriter(response.OutputStream, leaveOpen: true);
         await writer.WriteAsync(content).ConfigureAwait(false);
         await writer.FlushAsync().ConfigureAwait(false);
 

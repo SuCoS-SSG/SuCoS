@@ -50,3 +50,4 @@ project.lock.json
 **/coverage-results/
 .idea/
 qodana.yaml
+qodana.sarif.json

@@ -11,8 +11,6 @@ namespace SuCoS.ServerHandlers;
 /// <param name="response"></param>
 public class HttpListenerResponseWrapper(HttpListenerResponse response) : IHttpListenerResponse
 {
-    private readonly HttpListenerResponse response = response;
-
     /// <inheritdoc />
     public Stream OutputStream => response.OutputStream;
 

@@ -1,6 +1,4 @@
-using SuCoS.Models;
-
-namespace SuCoS.Parser;
+namespace SuCoS.Parsers;
 
 /// <summary>
 /// Responsible for parsing the content metadata
@@ -22,7 +20,7 @@ public interface IMetadataParser
     T Parse<T>(string content);
 
     /// <summary>
-    /// Deserialized a object.
+    /// Deserialized an object.
     /// </summary>
     /// <param name="data"></param>
     /// <param name="path"></param>

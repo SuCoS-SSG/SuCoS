@@ -8,7 +8,7 @@ namespace Tests.Models;
 
 public class PageTests : TestSetup
 {
-    private const string markdown1CONST = @"
+    private const string Markdown1Const = """
 # word01 word02
 
 word03 word04 word05 6 7 eight
@@ -17,43 +17,49 @@ word03 word04 word05 6 7 eight
 
 ```cs
 console.WriteLine('hello word')
-```";
-    private const string markdown2CONST = @"
+```
+""";
+    private const string Markdown2Const = """
 # word01 word02
 
-word03 word04 word05 6 7 [eight](http://example.com)";
-    private const string markdownPlain1CONST = @"word01 word02
-word03 word04 word05 6 7 eight
-nine
-console.WriteLine('hello word')
-";
-    private const string markdownPlain2CONST = @"word01 word02
-word03 word04 word05 6 7 eight
-";
+word03 word04 word05 6 7 [eight](https://example.com)
+""";
+    private const string MarkdownPlain1Const = """
+                                               word01 word02
+                                               word03 word04 word05 6 7 eight
+                                               nine
+                                               console.WriteLine('hello word')
+
+                                               """;
+    private const string MarkdownPlain2Const = """
+                                               word01 word02
+                                               word03 word04 word05 6 7 eight
+
+                                               """;
 
     [Theory]
     [InlineData("Test Title", "/path/to/file.md", "file", "/path/to")]
-    public void Frontmatter_ShouldCreateWithCorrectProperties(string title, string sourcePath, string sourceFileNameWithoutExtension, string sourcePathDirectory)
+    public void FrontMatter_ShouldCreateWithCorrectProperties(string title, string sourcePath, string sourceFileNameWithoutExtension, string sourcePathDirectory)
     {
-        var page = new Page(frontMatterMock, site);
+        var page = new Page(FrontMatterMock, Site);
 
         // Assert
         Assert.Equal(title, page.Title);
         Assert.Equal(sourcePath, page.SourceRelativePath);
-        Assert.Same(site, page.Site);
+        Assert.Same(Site, page.Site);
         Assert.Equal(sourceFileNameWithoutExtension, page.SourceFileNameWithoutExtension);
         Assert.Equal(sourcePathDirectory, page.SourceRelativePathDirectory);
     }
 
     [Fact]
-    public void Frontmatter_ShouldHaveDefaultValuesForOptionalProperties()
+    public void FrontMatter_ShouldHaveDefaultValuesForOptionalProperties()
     {
         // Arrange
-        var page = new Page(frontMatterMock, site);
+        var page = new Page(FrontMatterMock, Site);
 
         // Assert
         Assert.Equal(string.Empty, page.Section);
-        Assert.Equal(Kind.single, page.Kind);
+        Assert.Equal(Kind.Single, page.Kind);
         Assert.Equal("page", page.Type);
         Assert.Null(page.URL);
         Assert.Empty(page.Params);
@@ -63,13 +69,13 @@ word03 word04 word05 6 7 eight
         Assert.Null(page.ExpiryDate);
         Assert.Null(page.AliasesProcessed);
         Assert.Null(page.Permalink);
-        Assert.Empty(page.AllOutputURLs);
+        Assert.Empty(page.AllOutputUrLs);
         Assert.Equal(string.Empty, page.RawContent);
         Assert.Empty(page.TagsReference);
         Assert.Empty(page.PagesReferences);
         Assert.Empty(page.RegularPages);
-        Assert.False(site.IsDateExpired(page));
-        Assert.True(site.IsDatePublishable(page));
+        Assert.False(Site.IsDateExpired(page));
+        Assert.True(Site.IsDatePublishable(page));
     }
 
     [Theory]
@@ -79,17 +85,17 @@ word03 word04 word05 6 7 eight
     {
         var page = new Page(new FrontMatter
         {
-            Title = titleCONST,
-            SourceRelativePath = sourcePathCONST,
-            Aliases = new() { "v123", "{{ page.Title }}", "{{ page.Title }}-2" }
-        }, site);
+            Title = TitleConst,
+            SourceRelativePath = SourcePathConst,
+            Aliases = ["v123", "{{ page.Title }}", "{{ page.Title }}-2"]
+        }, Site);
 
         // Act
-        site.PostProcessPage(page);
+        Site.PostProcessPage(page);
 
         // Assert
-        Assert.Equal(3, site.OutputReferences.Count);
-        _ = site.OutputReferences.TryGetValue(url, out var pageOther);
+        Assert.Equal(3, Site.OutputReferences.Count);
+        _ = Site.OutputReferences.TryGetValue(url, out var pageOther);
         Assert.NotNull(pageOther);
         Assert.Same(page, pageOther);
     }
@@ -101,13 +107,13 @@ word03 word04 word05 6 7 eight
     {
         var page = new Page(new FrontMatter
         {
-            Title = titleCONST,
-            SourceRelativePath = sourcePathCONST,
-            ExpiryDate = systemClockMock.Now.AddDays(days)
-        }, site);
+            Title = TitleConst,
+            SourceRelativePath = SourcePathConst,
+            ExpiryDate = SystemClockMock.Now.AddDays(days)
+        }, Site);
 
         // Assert
-        Assert.Equal(expected, site.IsDateExpired(page));
+        Assert.Equal(expected, Site.IsDateExpired(page));
     }
 
     [Theory]
@@ -120,14 +126,14 @@ word03 word04 word05 6 7 eight
     {
         var page = new Page(new FrontMatter
         {
-            Title = titleCONST,
-            SourceRelativePath = sourcePathCONST,
+            Title = TitleConst,
+            SourceRelativePath = SourcePathConst,
             PublishDate = publishDate is null ? null : DateTime.Parse(publishDate, CultureInfo.InvariantCulture),
             Date = date is null ? null : DateTime.Parse(date, CultureInfo.InvariantCulture)
-        }, site);
+        }, Site);
 
         // Assert
-        Assert.Equal(expectedValue, site.IsDatePublishable(page));
+        Assert.Equal(expectedValue, Site.IsDatePublishable(page));
     }
 
     [Theory]
@@ -171,18 +177,18 @@ word03 word04 word05 6 7 eight
     {
         var page = new Page(new FrontMatter
         {
-            Title = titleCONST,
-            SourceRelativePath = sourcePathCONST,
+            Title = TitleConst,
+            SourceRelativePath = SourcePathConst,
             PublishDate = publishDate is null ? null : DateTime.Parse(publishDate, CultureInfo.InvariantCulture),
             Date = date is null ? null : DateTime.Parse(date, CultureInfo.InvariantCulture),
             Draft = draft
-        }, site);
+        }, Site);
 
         var options = Substitute.For<IGenerateOptions>();
         _ = options.Draft.Returns(draftOption);
 
         // Assert
-        Assert.Equal(expectedValue, site.IsValidPage(page, options));
+        Assert.Equal(expectedValue, Site.IsValidPage(page, options));
     }
 
     [Theory]
@@ -192,17 +198,17 @@ word03 word04 word05 6 7 eight
     {
         var page = new Page(new FrontMatter
         {
-            Title = titleCONST,
-            SourceRelativePath = sourcePathCONST,
-            Date = systemClockMock.Now.AddDays(1)
-        }, site);
+            Title = TitleConst,
+            SourceRelativePath = SourcePathConst,
+            Date = SystemClockMock.Now.AddDays(1)
+        }, Site);
 
         // Act
         var options = Substitute.For<IGenerateOptions>();
         _ = options.Future.Returns(futureOption);
 
         // Assert
-        Assert.Equal(expected, site.IsValidDate(page, options));
+        Assert.Equal(expected, Site.IsValidDate(page, options));
     }
 
     [Theory]
@@ -212,9 +218,9 @@ word03 word04 word05 6 7 eight
     {
         var page = new Page(new FrontMatter
         {
-            Title = titleCONST,
+            Title = TitleConst,
             SourceRelativePath = sourcePath
-        }, site);
+        }, Site);
 
         // Assert
         Assert.Equal(expectedUrl, page.CreatePermalink());
@@ -227,10 +233,10 @@ word03 word04 word05 6 7 eight
     {
         var page = new Page(new FrontMatter
         {
-            Title = titleCONST,
-            SourceRelativePath = sourcePathCONST,
+            Title = TitleConst,
+            SourceRelativePath = SourcePathConst,
             URL = urlTemplate
-        }, site);
+        }, Site);
         var actualPermalink = page.CreatePermalink();
 
         // Assert
@@ -238,43 +244,43 @@ word03 word04 word05 6 7 eight
     }
 
     [Theory]
-    [InlineData(Kind.single, true)]
-    [InlineData(Kind.list, false)]
+    [InlineData(Kind.Single, true)]
+    [InlineData(Kind.List, false)]
     public void RegularPages_ShouldReturnCorrectPages_WhenKindIsSingle(Kind kind, bool isExpectedPage)
     {
-        var page = new Page(frontMatterMock, site) { Kind = kind };
+        var page = new Page(FrontMatterMock, Site) { Kind = kind };
 
         // Act
-        site.PostProcessPage(page);
+        Site.PostProcessPage(page);
 
         // Assert
-        Assert.Equal(isExpectedPage, site.RegularPages.Contains(page));
+        Assert.Equal(isExpectedPage, Site.RegularPages.Contains(page));
     }
 
     [Theory]
-    [InlineData(markdown1CONST, 13)]
-    [InlineData(markdown2CONST, 8)]
+    [InlineData(Markdown1Const, 13)]
+    [InlineData(Markdown2Const, 8)]
     public void WordCount_ShouldReturnCorrectCounts(string rawContent, int wordCountExpected)
     {
         var page = new Page(new FrontMatter
         {
             RawContent = rawContent
-        }, site);
+        }, Site);
 
         // Assert
         Assert.Equal(wordCountExpected, page.WordCount);
     }
 
     [Theory]
-    [InlineData(markdown1CONST, markdownPlain1CONST)]
-    [InlineData(markdown2CONST, markdownPlain2CONST)]
+    [InlineData(Markdown1Const, MarkdownPlain1Const)]
+    [InlineData(Markdown2Const, MarkdownPlain2Const)]
     public void Plain_ShouldReturnCorrectPlainString(string rawContent, string plain)
     {
         ArgumentException.ThrowIfNullOrEmpty(plain);
         var page = new Page(new FrontMatter
         {
             RawContent = rawContent
-        }, site);
+        }, Site);
         // Required to make the test pass on Windows
         plain = plain.Replace("\r\n", "\n", StringComparison.Ordinal);
 

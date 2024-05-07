@@ -1,42 +1,38 @@
 using NSubstitute;
 using Serilog;
-using SuCoS;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.TemplateEngine;
 using System.Reflection;
+using SuCoS.Commands;
+using SuCoS.Helpers;
 using Xunit;
 
 namespace Tests.Commands;
 
 public class BaseGeneratorCommandTests
 {
-    private static readonly IGenerateOptions testOptions = new GenerateOptions
+    private static readonly IGenerateOptions TestOptions = new GenerateOptions
     {
         SourceArgument = "test_source"
     };
 
-    private static readonly ILogger testLogger = new LoggerConfiguration().CreateLogger();
+    private static readonly ILogger TestLogger = new LoggerConfiguration().CreateLogger();
 
     private class BaseGeneratorCommandStub(IGenerateOptions options, ILogger logger, IFileSystem fs)
         : BaseGeneratorCommand(options, logger, fs);
 
-    readonly IFileSystem fs;
-
-    public BaseGeneratorCommandTests()
-    {
-        fs = Substitute.For<IFileSystem>();
-    }
+    private readonly IFileSystem _fs = Substitute.For<IFileSystem>();
 
     [Fact]
     public void Constructor_ShouldThrowArgumentNullException_WhenOptionsIsNull()
     {
-        _ = Assert.Throws<ArgumentNullException>(() => new BaseGeneratorCommandStub(null!, testLogger, fs));
+        _ = Assert.Throws<ArgumentNullException>(() => new BaseGeneratorCommandStub(null!, TestLogger, _fs));
     }
 
     [Fact]
     public void Constructor_ShouldThrowArgumentNullException_WhenLoggerIsNull()
     {
-        _ = Assert.Throws<ArgumentNullException>(() => new BaseGeneratorCommandStub(testOptions, null!, fs));
+        _ = Assert.Throws<ArgumentNullException>(() => new BaseGeneratorCommandStub(TestOptions, null!, _fs));
     }
 
     [Fact]

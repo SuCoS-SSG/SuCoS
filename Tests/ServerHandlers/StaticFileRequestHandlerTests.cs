@@ -6,21 +6,21 @@ namespace Tests.ServerHandlers;
 
 public class StaticFileRequestHandlerTests : TestSetup, IDisposable
 {
-    private readonly string tempFilePath;
+    private readonly string _tempFilePath;
 
     public StaticFileRequestHandlerTests()
     {
         // Creating a temporary file for testing purposes
-        tempFilePath = Path.GetTempFileName();
-        File.WriteAllText(tempFilePath, "test");
+        _tempFilePath = Path.GetTempFileName();
+        File.WriteAllText(_tempFilePath, "test");
     }
 
     [Fact]
     public void Check_ReturnsTrueForExistingFile()
     {
         // Arrange
-        var requestPath = Path.GetFileName(tempFilePath);
-        var basePath = Path.GetDirectoryName(tempFilePath)
+        var requestPath = Path.GetFileName(_tempFilePath);
+        var basePath = Path.GetDirectoryName(_tempFilePath)
             ?? throw new InvalidOperationException("Unable to determine directory of temporary file.");
 
         var staticFileRequest = new StaticFileRequest(basePath, false);
@@ -36,8 +36,8 @@ public class StaticFileRequestHandlerTests : TestSetup, IDisposable
     public async Task Handle_ReturnsExpectedContent()
     {
         // Arrange
-        var requestPath = Path.GetFileName(tempFilePath);
-        var basePath = Path.GetDirectoryName(tempFilePath)
+        var requestPath = Path.GetFileName(_tempFilePath);
+        var basePath = Path.GetDirectoryName(_tempFilePath)
             ?? throw new InvalidOperationException("Unable to determine directory of temporary file.");
         var staticFileRequest = new StaticFileRequest(basePath, true);
 
@@ -63,9 +63,9 @@ public class StaticFileRequestHandlerTests : TestSetup, IDisposable
     public void Dispose()
     {
         // Cleaning up the temporary file after tests run
-        if (File.Exists(tempFilePath))
+        if (File.Exists(_tempFilePath))
         {
-            File.Delete(tempFilePath);
+            File.Delete(_tempFilePath);
         }
 
         GC.SuppressFinalize(this);

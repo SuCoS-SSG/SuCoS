@@ -5,6 +5,7 @@ using SuCoS.Models.CommandLineOptions;
 using System.Reflection;
 using CommandLine;
 using System.Diagnostics.CodeAnalysis;
+using SuCoS.Commands;
 
 namespace SuCoS;
 
@@ -19,7 +20,7 @@ public class Program(ILogger logger)
     /// <summary>
     /// Basic logo of the program, for fun
     /// </summary>
-    private static readonly string helloWorld = @"
+    private static readonly string HelloWorld = @"
 ░█▀▀░░░░░█▀▀░░░░░█▀▀
 ░▀▀█░█░█░█░░░█▀█░▀▀█
 ░▀▀▀░▀▀▀░▀▀▀░▀▀▀░▀▀▀";
@@ -50,7 +51,7 @@ public class Program(ILogger logger)
     {
         OutputLogo();
         OutputWelcome();
-        return await CommandLine.Parser.Default.ParseArguments<BuildOptions, ServeOptions, CheckLinkOptions, NewSiteOptions, NewThemeOptions>(args)
+        return await Parser.Default.ParseArguments<BuildOptions, ServeOptions, CheckLinkOptions, NewSiteOptions, NewThemeOptions>(args)
             .WithParsed<GenerateOptions>(options =>
             {
                 logger = CreateLogger(options.Verbose);
@@ -112,12 +113,12 @@ public class Program(ILogger logger)
                     var command = new NewThemeCommand(options, logger);
                     return Task.FromResult(command.Run());
                 },
-                 errs => Task.FromResult(0)
+                 _ => Task.FromResult(0)
                 ).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Create a log (normally from Serilog), depending the verbose option
+    /// Create a log (normally from Serilog), depending on the verbose option
     /// </summary>
     /// <param name="verbose"></param>
     /// <returns></returns>
@@ -144,6 +145,6 @@ public class Program(ILogger logger)
     /// </summary>
     public void OutputLogo()
     {
-        logger.Information(helloWorld);
+        logger.Information(HelloWorld);
     }
 }

@@ -11,32 +11,32 @@ public sealed class SourceFileWatcher : IFileWatcher, IDisposable
     /// remains up-to-date. The FileSystemWatcher is configured with the source directory
     /// at construction and starts watching immediately.
     /// </summary>
-    private FileSystemWatcher? fileWatcher;
+    private FileSystemWatcher? _fileWatcher;
 
     /// <inheritdoc/>
-    public void Start(string SourceAbsolutePath, Action<object, FileSystemEventArgs> OnSourceFileChanged)
+    public void Start(string sourceAbsolutePath, Action<object, FileSystemEventArgs> onSourceFileChanged)
     {
-        ArgumentNullException.ThrowIfNull(OnSourceFileChanged);
+        ArgumentNullException.ThrowIfNull(onSourceFileChanged);
 
-        fileWatcher = new FileSystemWatcher
+        _fileWatcher = new FileSystemWatcher
         {
-            Path = SourceAbsolutePath,
+            Path = sourceAbsolutePath,
             NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName,
             IncludeSubdirectories = true,
             EnableRaisingEvents = true
         };
 
         // Subscribe to the desired events
-        fileWatcher.Changed += new FileSystemEventHandler(OnSourceFileChanged.Invoke);
-        fileWatcher.Created += new FileSystemEventHandler(OnSourceFileChanged.Invoke);
-        fileWatcher.Deleted += new FileSystemEventHandler(OnSourceFileChanged.Invoke);
-        fileWatcher.Renamed += new RenamedEventHandler(OnSourceFileChanged);
+        _fileWatcher.Changed += new FileSystemEventHandler(onSourceFileChanged.Invoke);
+        _fileWatcher.Created += new FileSystemEventHandler(onSourceFileChanged.Invoke);
+        _fileWatcher.Deleted += new FileSystemEventHandler(onSourceFileChanged.Invoke);
+        _fileWatcher.Renamed += new RenamedEventHandler(onSourceFileChanged);
     }
 
     /// <inheritdoc/>
     public void Stop()
     {
-        fileWatcher?.Dispose();
+        _fileWatcher?.Dispose();
     }
 
     /// <inheritdoc/>
@@ -50,7 +50,7 @@ public sealed class SourceFileWatcher : IFileWatcher, IDisposable
     {
         if (disposing)
         {
-            fileWatcher?.Dispose();
+            _fileWatcher?.Dispose();
         }
     }
 }

@@ -1,12 +1,11 @@
-using Serilog;
 using SuCoS.Helpers;
-using SuCoS.Parser;
+using SuCoS.Parsers;
 using YamlDotNet.Serialization;
 
 namespace SuCoS.Models;
 
 /// <summary>
-/// A scafold structure to help creating system-generated content, like
+/// A scaffold structure to help creating system-generated content, like
 /// tag, section or index pages
 /// </summary>
 [YamlSerializable]
@@ -59,7 +58,7 @@ public class FrontMatter : IFrontMatter
 
     /// <inheritdoc/>
     [YamlIgnore]
-    public Kind Kind { get; set; } = Kind.single;
+    public Kind Kind { get; set; } = Kind.Single;
 
     /// <inheritdoc/>
     [YamlIgnore]

@@ -2,7 +2,7 @@ using Markdig;
 using Serilog;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
-using SuCoS.Parser;
+using SuCoS.Parsers;
 
 namespace SuCoS.Helpers;
 
@@ -20,7 +20,7 @@ public static class SiteHelper
             .Build();
 
     /// <summary>
-    /// Creates the pages dictionary.
+    /// Creates the pages' dictionary.
     /// </summary>
     /// <exception cref="FormatException"></exception>
     public static Site Init(string configFile, IGenerateOptions options, IMetadataParser parser, ILogger logger, StopwatchReporter stopwatch, IFileSystem fs)
@@ -28,8 +28,7 @@ public static class SiteHelper
         ArgumentNullException.ThrowIfNull(stopwatch);
         ArgumentNullException.ThrowIfNull(fs);
 
-        SiteSettings siteSettings;
-        siteSettings = ParseSettings(configFile, options, parser, fs);
+        var siteSettings = ParseSettings(configFile, options, parser, fs);
 
         var site = new Site(options, siteSettings, parser, logger, null);
 
@@ -90,7 +89,7 @@ public static class SiteHelper
         ArgumentNullException.ThrowIfNull(parser);
         ArgumentNullException.ThrowIfNull(fs);
 
-        // Read the main configation
+        // Read the main configuration
         var filePath = Path.Combine(options.Source, configFile);
         if (!fs.FileExists(filePath))
         {

@@ -22,7 +22,7 @@ public static class FileUtils
 
         var index = (page.Section, page.Kind, page.Type);
 
-        var cache = isBaseTemplate ? cacheManager.baseTemplateCache : cacheManager.contentTemplateCache;
+        var cache = isBaseTemplate ? cacheManager.BaseTemplateCache : cacheManager.ContentTemplateCache;
 
         // Check if the template content is already cached
         if (cache.TryGetValue(index, out var content))
@@ -72,11 +72,11 @@ public static class FileUtils
         ArgumentNullException.ThrowIfNull(page);
 
         // Generate the lookup order for template files based on the theme path, page section, type, and kind
-        var sections = page.Section is not null ? new[] { page.Section, string.Empty } : new[] { string.Empty };
+        string[] sections = page.Section is not null ? [page.Section, string.Empty] : [string.Empty];
         var types = new[] { page.Type, "_default" };
-        var kinds = isBaseTemplate
-            ? new[] { page.Kind + "-baseof", "baseof" }
-            : new[] { page.Kind.ToString() };
+        string[] kinds = isBaseTemplate
+            ? [page.Kind.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture) + "-baseof", "baseof"]
+            : [page.Kind.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)];
 
         // for each section, each type and each kind
         return (from section in sections

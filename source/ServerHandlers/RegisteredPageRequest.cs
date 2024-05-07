@@ -8,7 +8,7 @@ namespace SuCoS.ServerHandlers;
 /// </summary>
 public class RegisteredPageRequest : IServerHandlers
 {
-    private readonly ISite site;
+    private readonly ISite _site;
 
     /// <summary>
     /// Constructor
@@ -16,7 +16,7 @@ public class RegisteredPageRequest : IServerHandlers
     /// <param name="site"></param>
     public RegisteredPageRequest(ISite site)
     {
-        this.site = site;
+        _site = site;
     }
 
     /// <inheritdoc />
@@ -24,7 +24,7 @@ public class RegisteredPageRequest : IServerHandlers
     {
         ArgumentNullException.ThrowIfNull(requestPath);
 
-        return site.OutputReferences.TryGetValue(requestPath, out var item) && item is IPage _;
+        return _site.OutputReferences.TryGetValue(requestPath, out var item) && item is IPage;
     }
 
     /// <inheritdoc />
@@ -32,18 +32,17 @@ public class RegisteredPageRequest : IServerHandlers
     {
         ArgumentNullException.ThrowIfNull(response);
 
-        if (site.OutputReferences.TryGetValue(requestPath, out var output) && output is IPage page)
-        {
-            var content = page.CompleteContent;
-            content = InjectReloadScript(content);
-            using var writer = new StreamWriter(response.OutputStream, leaveOpen: true);
-            await writer.WriteAsync(content).ConfigureAwait(false);
-            return "dict";
-        }
-        else
+        if (!_site.OutputReferences.TryGetValue(requestPath, out var output) ||
+            output is not IPage page)
         {
             return "404";
         }
+        var content = page.CompleteContent;
+        content = InjectReloadScript(content);
+        await using var writer = new StreamWriter(response.OutputStream, leaveOpen: true);
+        await writer.WriteAsync(content).ConfigureAwait(false);
+        return "dict";
+
     }
 
     /// <summary>
@@ -52,15 +51,14 @@ public class RegisteredPageRequest : IServerHandlers
     /// </summary>
     /// <param name="content">The content to inject the reload script into.</param>
     /// <returns>The content with the reload script injected.</returns>
-    private string InjectReloadScript(string content)
+    private static string InjectReloadScript(string content)
     {
         // Read the content of the JavaScript file
-        string scriptContent;
         var assembly = Assembly.GetExecutingAssembly();
         using var stream = assembly.GetManifestResourceStream("SuCoS.wwwroot.js.reload.js")
             ?? throw new FileNotFoundException("Could not find the embedded JavaScript resource.");
         using var reader = new StreamReader(stream);
-        scriptContent = reader.ReadToEnd();
+        var scriptContent = reader.ReadToEnd();
 
         // Inject the JavaScript content
         var reloadScript = $"<script>{scriptContent}</script>";

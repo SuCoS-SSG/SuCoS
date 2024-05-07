@@ -8,15 +8,15 @@ public enum Kind
     /// <summary>
     /// A single content page.
     /// </summary>
-    single,
+    Single,
 
     /// <summary>
     /// List of contents
     /// </summary>
-    list,
+    List,
 
     /// <summary>
     /// Special page, like the home page. It will be rendered as index.html.
     /// </summary>
-    index
+    Index
 }

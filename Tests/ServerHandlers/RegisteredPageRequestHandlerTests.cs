@@ -1,8 +1,8 @@
 using NSubstitute;
-using SuCoS;
 using SuCoS.Helpers;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
+using SuCoS.Parsers;
 using SuCoS.ServerHandlers;
 using Xunit;
 
@@ -10,12 +10,7 @@ namespace Tests.ServerHandlers;
 
 public class RegisteredPageRequestHandlerTests : TestSetup
 {
-    readonly IFileSystem fs;
-
-    public RegisteredPageRequestHandlerTests()
-    {
-        fs = new FileSystem();
-    }
+    private readonly IFileSystem _fs = new FileSystem();
 
     [Theory]
     [InlineData("/", true)]
@@ -23,43 +18,43 @@ public class RegisteredPageRequestHandlerTests : TestSetup
     public void Check_ReturnsTrueForRegisteredPage(string requestPath, bool exist)
     {
         // Arrange
-        var siteFullPath = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST06));
-        site.Options = new GenerateOptions
+        var siteFullPath = Path.GetFullPath(Path.Combine(TestSitesPath, TestSitePathConst06));
+        Site.Options = new GenerateOptions
         {
             SourceArgument = siteFullPath
         };
-        var registeredPageRequest = new RegisteredPageRequest(site);
+        var registeredPageRequest = new RegisteredPageRequest(Site);
 
         // Act
-        site.ParseAndScanSourceFiles(fs, Path.Combine(siteFullPath, "content"));
+        Site.ParseAndScanSourceFiles(_fs, Path.Combine(siteFullPath, "content"));
 
         // Assert
         Assert.Equal(exist, registeredPageRequest.Check(requestPath));
     }
 
     [Theory]
-    [InlineData("/", testSitePathCONST06, false)]
-    [InlineData("/", testSitePathCONST08, true)]
+    [InlineData("/", TestSitePathConst06, false)]
+    [InlineData("/", TestSitePathConst08, true)]
     public async Task Handle_ReturnsExpectedContent2(string requestPath, string testSitePath, bool contains)
     {
         // Arrange
-        var siteFullPath = Path.GetFullPath(Path.Combine(testSitesPath, testSitePath));
+        var siteFullPath = Path.GetFullPath(Path.Combine(TestSitesPath, testSitePath));
         GenerateOptions options = new()
         {
             SourceArgument = siteFullPath
         };
-        var parser = new SuCoS.Parser.YAMLParser();
-        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser, fs);
-        site = new Site(options, siteSettings, parser, loggerMock, null);
+        var parser = new YamlParser();
+        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser, _fs);
+        Site = new Site(options, siteSettings, parser, LoggerMock, null);
 
-        var registeredPageRequest = new RegisteredPageRequest(site);
+        var registeredPageRequest = new RegisteredPageRequest(Site);
 
         var response = Substitute.For<IHttpListenerResponse>();
         var stream = new MemoryStream();
         _ = response.OutputStream.Returns(stream);
 
         // Act
-        site.ParseAndScanSourceFiles(fs, Path.Combine(siteFullPath, "content"));
+        Site.ParseAndScanSourceFiles(_fs, Path.Combine(siteFullPath, "content"));
         _ = registeredPageRequest.Check(requestPath);
         var code = await registeredPageRequest.Handle(response, requestPath, DateTime.Now).ConfigureAwait(true);
 
@@ -79,7 +74,7 @@ public class RegisteredPageRequestHandlerTests : TestSetup
         }
         else
         {
-            Assert.DoesNotContain("</cript>", content, StringComparison.InvariantCulture);
+            Assert.DoesNotContain("</script>", content, StringComparison.InvariantCulture);
             Assert.DoesNotContain("</script>", content, StringComparison.InvariantCulture);
         }
         Assert.Contains("Index Content", content, StringComparison.InvariantCulture);

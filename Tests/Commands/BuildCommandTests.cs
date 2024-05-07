@@ -2,32 +2,33 @@ using SuCoS.Models.CommandLineOptions;
 using Xunit;
 using NSubstitute;
 using Serilog;
-using SuCoS;
+using SuCoS.Commands;
+using SuCoS.Helpers;
 
 namespace Tests.Commands;
 
 public class BuildCommandTests
 {
-    readonly ILogger logger;
-    readonly IFileSystem fileSystem;
-    readonly BuildOptions options;
+    private readonly ILogger _logger;
+    private readonly IFileSystem _fileSystem;
+    private readonly BuildOptions _options;
 
     public BuildCommandTests()
     {
-        logger = Substitute.For<ILogger>();
-        fileSystem = Substitute.For<IFileSystem>();
-        fileSystem.FileExists("./sucos.yaml").Returns(true);
-        fileSystem.FileReadAllText("./sucos.yaml").Returns("""
-Ttile: test
+        _logger = Substitute.For<ILogger>();
+        _fileSystem = Substitute.For<IFileSystem>();
+        _fileSystem.FileExists("./sucos.yaml").Returns(true);
+        _fileSystem.FileReadAllText("./sucos.yaml").Returns("""
+Title: test
 """);
-        options = new BuildOptions { Output = "test" };
+        _options = new BuildOptions { Output = "test" };
     }
 
     [Fact]
     public void Constructor_ShouldNotThrowException_WhenParametersAreValid()
     {
         // Act
-        var result = new BuildCommand(options, logger, fileSystem);
+        var result = new BuildCommand(_options, _logger, _fileSystem);
 
         // Assert
         Assert.IsType<BuildCommand>(result);
@@ -37,14 +38,14 @@ Ttile: test
     public void Constructor_ShouldThrowArgumentNullException_WhenOptionsIsNull()
     {
         // Act and Assert
-        Assert.Throws<ArgumentNullException>(() => new BuildCommand(null!, logger, fileSystem));
+        Assert.Throws<ArgumentNullException>(() => new BuildCommand(null!, _logger, _fileSystem));
     }
 
     [Fact]
     public void Run()
     {
         // Act
-        var command = new BuildCommand(options, logger, fileSystem);
+        var command = new BuildCommand(_options, _logger, _fileSystem);
         var result = command.Run();
 
         // Assert
@@ -95,27 +96,27 @@ Ttile: test
     public void CopyFolder_ShouldCallCreateDirectory_WhenSourceFolderExists()
     {
         // Arrange
-        fileSystem.DirectoryExists("sourceFolder").Returns(true);
-        var buildCommand = new BuildCommand(options, logger, fileSystem);
+        _fileSystem.DirectoryExists("sourceFolder").Returns(true);
+        var buildCommand = new BuildCommand(_options, _logger, _fileSystem);
 
         // Act
         buildCommand.CopyFolder("sourceFolder", "outputFolder");
 
         // Assert
-        fileSystem.Received(1).DirectoryCreateDirectory("outputFolder");
+        _fileSystem.Received(1).DirectoryCreateDirectory("outputFolder");
     }
 
     [Fact]
     public void CopyFolder_ShouldNotCallCreateDirectory_WhenSourceFolderDoesNotExist()
     {
         // Arrange
-        fileSystem.DirectoryExists("sourceFolder").Returns(false);
-        var buildCommand = new BuildCommand(options, logger, fileSystem);
+        _fileSystem.DirectoryExists("sourceFolder").Returns(false);
+        var buildCommand = new BuildCommand(_options, _logger, _fileSystem);
 
         // Act
         buildCommand.CopyFolder("sourceFolder", "outputFolder");
 
         // Assert
-        fileSystem.DidNotReceive().DirectoryCreateDirectory(Arg.Any<string>());
+        _fileSystem.DidNotReceive().DirectoryCreateDirectory(Arg.Any<string>());
     }
 }

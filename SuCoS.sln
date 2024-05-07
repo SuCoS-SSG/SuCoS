@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuCoS", "source\SuCoS.cspro
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_nuke", ".nuke\_nuke.csproj", "{26DB04F6-DA88-43D7-8F4B-535D4D68C24E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "test", "test\test.csproj", "{F3D789FD-6AC5-4A45-B9AC-079035F5909C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{F3D789FD-6AC5-4A45-B9AC-079035F5909C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

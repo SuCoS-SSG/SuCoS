@@ -1,15 +1,16 @@
 using Serilog;
+using SuCoS.Helpers;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
 
-namespace SuCoS;
+namespace SuCoS.Commands;
 
 /// <summary>
 /// Build Command will build the site based on the source files.
 /// </summary>
 public class BuildCommand : BaseGeneratorCommand
 {
-    private readonly BuildOptions options;
+    private readonly BuildOptions _options;
     /// <summary>
     /// Entry point of the build command. It will be called by the main program
     /// in case the build command is invoked (which is by default).
@@ -20,78 +21,78 @@ public class BuildCommand : BaseGeneratorCommand
     public BuildCommand(BuildOptions options, ILogger logger, IFileSystem fs)
         : base(options, logger, fs)
     {
-        this.options = options ?? throw new ArgumentNullException(nameof(options));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
     /// <summary>
-    /// Run the commmand
+    /// Run the command
     /// </summary>
     public int Run()
     {
-        logger.Information("Output path: {output}", options.Output);
+        Logger.Information("Output path: {output}", _options.Output);
 
         // Generate the site pages
         CreateOutputFiles();
 
         // Copy theme static folder files into the root of the output folder
-        if (site.Theme is not null)
+        if (Site.Theme is not null)
         {
-            CopyFolder(site.Theme.StaticFolder, options.Output);
+            CopyFolder(Site.Theme.StaticFolder, _options.Output);
         }
 
         // Copy static folder files into the root of the output folder
-        CopyFolder(site.SourceStaticPath, options.Output);
+        CopyFolder(Site.SourceStaticPath, _options.Output);
 
         // Generate the build report
-        stopwatch.LogReport(site.Title);
+        Stopwatch.LogReport(Site.Title);
 
         return 0;
     }
 
     private void CreateOutputFiles()
     {
-        stopwatch.Start("Create");
+        Stopwatch.Start("Create");
 
         // Print each page
         var pagesCreated = 0; // counter to keep track of the number of pages created
-        _ = Parallel.ForEach(site.OutputReferences, pair =>
+        _ = Parallel.ForEach(Site.OutputReferences, pair =>
         {
             var (url, output) = pair;
 
             if (output is IPage page)
             {
-                var path = (url + (site.UglyURLs ? string.Empty : "/index.html")).TrimStart('/');
+                var path = (url + (Site.UglyURLs ? string.Empty : "/index.html")).TrimStart('/');
 
                 // Generate the output path
-                var outputAbsolutePath = Path.Combine(options.Output, path);
+                var outputAbsolutePath = Path.Combine(_options.Output, path);
 
                 var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
-                fs.DirectoryCreateDirectory(outputDirectory!);
+                Fs.DirectoryCreateDirectory(outputDirectory!);
 
                 // Save the processed output to the final file
                 var result = page.CompleteContent;
-                fs.FileWriteAllText(outputAbsolutePath, result);
+                Fs.FileWriteAllText(outputAbsolutePath, result);
 
                 // Log
-                logger.Debug("Page created: {Permalink}", outputAbsolutePath);
+                Logger.Debug("Page created: {Permalink}", outputAbsolutePath);
 
-                // Use interlocked to safely increment the counter in a multi-threaded environment
+                // Use interlocked to safely increment the counter in a multithreaded environment
                 _ = Interlocked.Increment(ref pagesCreated);
             }
             else if (output is IResource resource)
             {
-                var outputAbsolutePath = Path.Combine(options.Output, resource.Permalink!.TrimStart('/'));
+                var outputAbsolutePath = Path.Combine(_options.Output, resource.Permalink!.TrimStart('/'));
 
                 var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
-                fs.DirectoryCreateDirectory(outputDirectory!);
+                Fs.DirectoryCreateDirectory(outputDirectory!);
 
                 // Copy the file to the output folder
-                fs.FileCopy(resource.SourceFullPath, outputAbsolutePath, overwrite: true);
+                Fs.FileCopy(resource.SourceFullPath, outputAbsolutePath, overwrite: true);
             }
         });
 
         // Stop the stopwatch
-        stopwatch.Stop("Create", pagesCreated);
+        Stopwatch.Stop("Create", pagesCreated);
     }
 
     /// <summary>
@@ -102,16 +103,16 @@ public class BuildCommand : BaseGeneratorCommand
     public void CopyFolder(string source, string output)
     {
         // Check if the source folder even exists
-        if (!fs.DirectoryExists(source))
+        if (!Fs.DirectoryExists(source))
         {
             return;
         }
 
         // Create the output folder if it doesn't exist
-        fs.DirectoryCreateDirectory(output);
+        Fs.DirectoryCreateDirectory(output);
 
         // Get all files in the source folder
-        var files = fs.DirectoryGetFiles(source);
+        var files = Fs.DirectoryGetFiles(source);
 
         foreach (var fileFullPath in files)
         {
@@ -122,7 +123,7 @@ public class BuildCommand : BaseGeneratorCommand
             var destinationFullPath = Path.Combine(output, fileName);
 
             // Copy the file to the output folder
-            fs.FileCopy(fileFullPath, destinationFullPath, overwrite: true);
+            Fs.FileCopy(fileFullPath, destinationFullPath, overwrite: true);
         }
     }
 }

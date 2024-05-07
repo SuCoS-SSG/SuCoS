@@ -8,10 +8,10 @@ public interface IFileWatcher
     /// <summary>
     /// Starts the file watcher to monitor file changes in the specified source path.
     /// </summary>
-    /// <param name="SourceAbsolutePath">The path to the source directory.</param>
-    /// <param name="OnSourceFileChanged"></param>
+    /// <param name="sourceAbsolutePath">The path to the source directory.</param>
+    /// <param name="onSourceFileChanged"></param>
     /// <returns>The created FileSystemWatcher object.</returns>
-    void Start(string SourceAbsolutePath, Action<object, FileSystemEventArgs> OnSourceFileChanged);
+    void Start(string sourceAbsolutePath, Action<object, FileSystemEventArgs> onSourceFileChanged);
 
     /// <summary>
     /// Disposes the file watcher

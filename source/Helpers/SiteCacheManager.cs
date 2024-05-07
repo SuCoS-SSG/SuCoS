@@ -11,25 +11,25 @@ public class SiteCacheManager
     /// <summary>
     /// Cache for content templates.
     /// </summary>
-    public Dictionary<(string?, Kind?, string?), string> contentTemplateCache { get; } = [];
+    public Dictionary<(string?, Kind?, string?), string> ContentTemplateCache { get; } = [];
 
     /// <summary>
     /// Cache for base templates.
     /// </summary>
-    public Dictionary<(string?, Kind?, string?), string> baseTemplateCache { get; } = [];
+    public Dictionary<(string?, Kind?, string?), string> BaseTemplateCache { get; } = [];
 
     /// <summary>
     /// Cache for tag page.
     /// </summary>
-    public ConcurrentDictionary<string, Lazy<IPage>> automaticContentCache { get; } = new();
+    public ConcurrentDictionary<string, Lazy<IPage>> AutomaticContentCache { get; } = new();
 
     /// <summary>
     /// Resets the template cache to force a reload of all templates.
     /// </summary>
     public void ResetCache()
     {
-        baseTemplateCache.Clear();
-        contentTemplateCache.Clear();
-        automaticContentCache.Clear();
+        BaseTemplateCache.Clear();
+        ContentTemplateCache.Clear();
+        AutomaticContentCache.Clear();
     }
 }

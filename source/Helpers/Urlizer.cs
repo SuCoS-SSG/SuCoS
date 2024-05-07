@@ -8,10 +8,10 @@ namespace SuCoS.Helpers;
 /// </summary>
 public static partial class Urlizer
 {
-    [GeneratedRegex(@"[^a-zA-Z0-9]+")]
+    [GeneratedRegex("[^a-zA-Z0-9]+")]
     private static partial Regex UrlizeRegexAlpha();
 
-    [GeneratedRegex(@"[^a-zA-Z0-9.]+")]
+    [GeneratedRegex("[^a-zA-Z0-9.]+")]
     private static partial Regex UrlizeRegexAlphaDot();
 
     /// <summary>

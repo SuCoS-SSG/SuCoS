@@ -70,7 +70,7 @@ sealed partial class Build : NukeBuild
         _ => throw new ArgumentException($"There is no container image for: {runtimeIdentifier}"),
     };
 
-    private List<string> ContainerTags()
+    List<string> ContainerTags()
     {
         if (IsLocalBuild)
         {

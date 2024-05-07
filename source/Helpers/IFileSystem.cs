@@ -1,4 +1,4 @@
-namespace SuCoS;
+namespace SuCoS.Helpers;
 
 /// <summary>
 /// Interface for the System.File class

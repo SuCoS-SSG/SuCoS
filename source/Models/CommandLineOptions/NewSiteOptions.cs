@@ -5,7 +5,7 @@ namespace SuCoS.Models.CommandLineOptions;
 /// <summary>
 /// Command line options to generate a simple site from scratch.
 /// </summary>
-[Verb("new-site", false, HelpText = "Generate a simple site from scratch")]
+[Verb("new-site", HelpText = "Generate a simple site from scratch")]
 public class NewSiteOptions
 {
     /// <summary>
@@ -36,5 +36,5 @@ public class NewSiteOptions
     /// Site base url.
     /// </summary>
     [Option("url", Required = false, HelpText = "Site base url")]
-    public string BaseURL { get; init; } = "https://example.org/";
+    public string BaseUrl { get; init; } = "https://example.org/";
 }

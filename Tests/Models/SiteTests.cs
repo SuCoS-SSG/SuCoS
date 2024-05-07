@@ -1,7 +1,7 @@
-using SuCoS;
 using SuCoS.Helpers;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
+using SuCoS.Parsers;
 using Xunit;
 
 namespace Tests.Models;
@@ -11,110 +11,114 @@ namespace Tests.Models;
 /// </summary>
 public class SiteTests : TestSetup
 {
-    readonly IFileSystem fs;
-
-    public SiteTests()
-    {
-        fs = new FileSystem();
-    }
+    private readonly IFileSystem _fs = new FileSystem();
 
     [Theory]
     [InlineData("test01.md")]
     [InlineData("date-ok.md")]
-    public void ScanAllMarkdownFiles_ShouldCountainFilenames(string fileName)
+    public void ScanAllMarkdownFiles_ShouldContainFilenames(string fileName)
     {
         var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
-        var siteFullPath = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST01));
-        site.Options = new GenerateOptions
+        var siteFullPath = Path.GetFullPath(Path.Combine(TestSitesPath, TestSitePathConst01));
+        Site.Options = new GenerateOptions
         {
             SourceArgument = siteFullPath
         };
 
         // Act
-        site.ParseAndScanSourceFiles(fs, Path.Combine(siteFullPath, "content"));
+        Site.ParseAndScanSourceFiles(_fs, Path.Combine(siteFullPath, "content"));
 
         // Assert
-        Assert.Contains(site.Pages, page => page.SourceRelativePathDirectory!.Length == 0);
-        Assert.Contains(site.Pages, page => page.SourceFileNameWithoutExtension == fileNameWithoutExtension);
+        Assert.Contains(Site.Pages, page => page.SourceRelativePathDirectory!.Length == 0);
+        Assert.Contains(Site.Pages, page => page.SourceFileNameWithoutExtension == fileNameWithoutExtension);
     }
 
     [Theory]
-    [InlineData(testSitePathCONST01)]
-    [InlineData(testSitePathCONST02)]
+    [InlineData(TestSitePathConst01)]
+    [InlineData(TestSitePathConst02)]
     public void Home_ShouldReturnAHomePage(string sitePath)
     {
         GenerateOptions options = new()
         {
-            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, sitePath))
         };
-        site.Options = options;
+        Site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(fs, site.SourceContentPath);
+        Site.ParseAndScanSourceFiles(_fs, Site.SourceContentPath);
 
         // Assert
-        Assert.NotNull(site.Home);
-        Assert.True(site.Home.IsHome);
-        _ = Assert.Single(site.OutputReferences.Values.Where(output => output is IPage page && page.IsHome));
+        Assert.NotNull(Site.Home);
+        Assert.True(Site.Home.IsHome);
+        _ = Assert.Single(Site.OutputReferences.Values.Where(output => output is IPage
+        {
+            IsHome: true
+        }));
     }
 
     [Theory]
-    [InlineData(testSitePathCONST01, 0)]
-    [InlineData(testSitePathCONST02, 0)]
-    [InlineData(testSitePathCONST03, 1)]
+    [InlineData(TestSitePathConst01, 0)]
+    [InlineData(TestSitePathConst02, 0)]
+    [InlineData(TestSitePathConst03, 1)]
     public void Page_IsSection_ShouldReturnExpectedQuantityOfPages(string sitePath, int expectedQuantity)
     {
         GenerateOptions options = new()
         {
-            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, sitePath))
         };
-        site.Options = options;
+        Site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(fs, null);
+        Site.ParseAndScanSourceFiles(_fs, null);
 
         // Assert
-        Assert.Equal(expectedQuantity, site.OutputReferences.Values.Where(output => output is IPage page && page.IsSection).Count());
+        Assert.Equal(expectedQuantity, Site.OutputReferences.Values.Count(output => output is IPage
+        {
+            IsSection: true
+        }));
     }
 
     [Theory]
-    [InlineData(testSitePathCONST01, 5)]
-    [InlineData(testSitePathCONST02, 1)]
-    [InlineData(testSitePathCONST03, 13)]
-    [InlineData(testSitePathCONST04, 26)]
+    [InlineData(TestSitePathConst01, 5)]
+    [InlineData(TestSitePathConst02, 1)]
+    [InlineData(TestSitePathConst03, 13)]
+    [InlineData(TestSitePathConst04, 26)]
     public void PagesReference_ShouldReturnExpectedQuantityOfPages(string sitePath, int expectedQuantity)
     {
         GenerateOptions options = new()
         {
-            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, sitePath))
         };
-        site.Options = options;
+        Site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(fs, null);
+        Site.ParseAndScanSourceFiles(_fs, null);
 
         // Assert
-        Assert.Equal(expectedQuantity, site.OutputReferences.Values.Where(output => output is IPage page).Count());
+        Assert.Equal(expectedQuantity, Site.OutputReferences.Values.Count(output => output is IPage));
     }
 
     [Theory]
-    [InlineData(testSitePathCONST01, 4)]
-    [InlineData(testSitePathCONST02, 0)]
-    [InlineData(testSitePathCONST03, 11)]
-    [InlineData(testSitePathCONST04, 21)]
+    [InlineData(TestSitePathConst01, 4)]
+    [InlineData(TestSitePathConst02, 0)]
+    [InlineData(TestSitePathConst03, 11)]
+    [InlineData(TestSitePathConst04, 21)]
     public void Page_IsPage_ShouldReturnExpectedQuantityOfPages(string sitePath, int expectedQuantity)
     {
         GenerateOptions options = new()
         {
-            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, sitePath))
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, sitePath))
         };
-        site.Options = options;
+        Site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(fs, null);
+        Site.ParseAndScanSourceFiles(_fs, null);
 
         // Assert
-        Assert.Equal(expectedQuantity, site.OutputReferences.Values.Where(output => output is IPage page && page.IsPage).Count());
+        Assert.Equal(expectedQuantity, Site.OutputReferences.Values.Count(output => output is IPage
+        {
+            IsPage: true
+        }));
     }
 
     [Fact]
@@ -122,16 +126,16 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST03))
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, TestSitePathConst03))
         };
-        site.Options = options;
+        Site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(fs, null);
+        Site.ParseAndScanSourceFiles(_fs, null);
 
         // Assert
-        Assert.Equal(100, site.RegularPages.First().Weight);
-        Assert.Equal(-100, site.RegularPages.Last().Weight);
+        Assert.Equal(100, Site.RegularPages.First().Weight);
+        Assert.Equal(-100, Site.RegularPages.Last().Weight);
     }
 
     [Fact]
@@ -139,16 +143,16 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST01))
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, TestSitePathConst01))
         };
-        site.Options = options;
+        Site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(fs, null);
+        Site.ParseAndScanSourceFiles(_fs, null);
 
         // Assert
-        Assert.Equal(0, site.RegularPages.First().Weight);
-        Assert.Equal(0, site.RegularPages.Last().Weight);
+        Assert.Equal(0, Site.RegularPages.First().Weight);
+        Assert.Equal(0, Site.RegularPages.Last().Weight);
     }
 
     [Fact]
@@ -156,15 +160,15 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST04))
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, TestSitePathConst04))
         };
-        site.Options = options;
+        Site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(fs, null);
+        Site.ParseAndScanSourceFiles(_fs, null);
 
         // Assert
-        _ = site.OutputReferences.TryGetValue("/tags", out var output);
+        _ = Site.OutputReferences.TryGetValue("/tags", out var output);
         var tagSectionPage = output as IPage;
         Assert.NotNull(tagSectionPage);
         Assert.Equal(2, tagSectionPage.Pages.Count());
@@ -179,15 +183,15 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST04))
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, TestSitePathConst04))
         };
-        site.Options = options;
+        Site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(fs, null);
+        Site.ParseAndScanSourceFiles(_fs, null);
 
         // Assert
-        _ = site.OutputReferences.TryGetValue("/tags/tag1", out var output);
+        _ = Site.OutputReferences.TryGetValue("/tags/tag1", out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(10, page.Pages.Count());
@@ -204,15 +208,15 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST04))
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, TestSitePathConst04))
         };
-        site.Options = options;
+        Site.Options = options;
 
         // Act
-        site.ParseAndScanSourceFiles(fs, null);
+        Site.ParseAndScanSourceFiles(_fs, null);
 
         // Assert
-        _ = site.OutputReferences.TryGetValue(url, out var output);
+        _ = Site.OutputReferences.TryGetValue(url, out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(expectedContent, page.Content);
@@ -239,17 +243,17 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST05))
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, TestSitePathConst05))
         };
-        var parser = new SuCoS.Parser.YAMLParser();
-        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser, fs);
-        site = new Site(options, siteSettings, parser, loggerMock, null);
+        var parser = new YamlParser();
+        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser, _fs);
+        Site = new Site(options, siteSettings, parser, LoggerMock, null);
 
         // Act
-        site.ParseAndScanSourceFiles(fs, null);
+        Site.ParseAndScanSourceFiles(_fs, null);
 
         // Assert
-        _ = site.OutputReferences.TryGetValue(url, out var output);
+        _ = Site.OutputReferences.TryGetValue(url, out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(expectedContentPreRendered, page.ContentPreRendered);
@@ -267,17 +271,17 @@ public class SiteTests : TestSetup
     {
         GenerateOptions options = new()
         {
-            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST07))
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, TestSitePathConst07))
         };
-        var parser = new SuCoS.Parser.YAMLParser();
-        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser, fs);
-        site = new Site(options, siteSettings, parser, loggerMock, null);
+        var parser = new YamlParser();
+        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser, _fs);
+        Site = new Site(options, siteSettings, parser, LoggerMock, null);
 
         // Act
-        site.ParseAndScanSourceFiles(fs, null);
+        Site.ParseAndScanSourceFiles(_fs, null);
 
         // Assert
-        _ = site.OutputReferences.TryGetValue(url, out var output);
+        _ = Site.OutputReferences.TryGetValue(url, out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(string.Empty, page.Content);
@@ -305,25 +309,25 @@ public class SiteTests : TestSetup
     "<p>Test Content 1</p>\n",
     "SINGLE-<p>Test Content 1</p>\n",
     "BASEOF-SINGLE-<p>Test Content 1</p>\n")]
-    public void Page_Content_ShouldReturnThemeContent(string url, string expectedContentPreRendered, string expectedContent, string expectedOutputfile)
+    public void Page_Content_ShouldReturnThemeContent(string url, string expectedContentPreRendered, string expectedContent, string expectedOutputFile)
     {
         GenerateOptions options = new()
         {
-            SourceArgument = Path.GetFullPath(Path.Combine(testSitesPath, testSitePathCONST06))
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, TestSitePathConst06))
         };
-        var parser = new SuCoS.Parser.YAMLParser();
-        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser, fs);
-        site = new Site(options, siteSettings, parser, loggerMock, null);
+        var parser = new YamlParser();
+        var siteSettings = SiteHelper.ParseSettings("sucos.yaml", options, parser, _fs);
+        Site = new Site(options, siteSettings, parser, LoggerMock, null);
 
         // Act
-        site.ParseAndScanSourceFiles(fs, null);
+        Site.ParseAndScanSourceFiles(_fs, null);
 
         // Assert
-        _ = site.OutputReferences.TryGetValue(url, out var output);
+        _ = Site.OutputReferences.TryGetValue(url, out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(expectedContentPreRendered, page.ContentPreRendered);
         Assert.Equal(expectedContent, page.Content);
-        Assert.Equal(expectedOutputfile, page.CompleteContent);
+        Assert.Equal(expectedOutputFile, page.CompleteContent);
     }
 }

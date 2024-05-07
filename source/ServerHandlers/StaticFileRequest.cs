@@ -7,8 +7,8 @@ namespace SuCoS.ServerHandlers;
 /// </summary>
 public class StaticFileRequest : IServerHandlers
 {
-    private readonly string? basePath;
-    private readonly bool inTheme;
+    private readonly string? _basePath;
+    private readonly bool _inTheme;
 
     /// <summary>
     /// Constructor
@@ -17,8 +17,8 @@ public class StaticFileRequest : IServerHandlers
     /// <param name="inTheme"></param>
     public StaticFileRequest(string? basePath, bool inTheme)
     {
-        this.basePath = basePath;
-        this.inTheme = inTheme;
+        _basePath = basePath;
+        _inTheme = inTheme;
     }
 
     /// <inheritdoc />
@@ -26,12 +26,12 @@ public class StaticFileRequest : IServerHandlers
     {
         ArgumentNullException.ThrowIfNull(requestPath);
 
-        if (string.IsNullOrEmpty(basePath))
+        if (string.IsNullOrEmpty(_basePath))
         {
             return false;
         }
 
-        var fileAbsolutePath = Path.Combine(basePath, requestPath.TrimStart('/'));
+        var fileAbsolutePath = Path.Combine(_basePath, requestPath.TrimStart('/'));
         return File.Exists(fileAbsolutePath);
     }
 
@@ -41,16 +41,16 @@ public class StaticFileRequest : IServerHandlers
         ArgumentNullException.ThrowIfNull(requestPath);
         ArgumentNullException.ThrowIfNull(response);
 
-        var fileAbsolutePath = Path.Combine(basePath!, requestPath.TrimStart('/'));
-        response.ContentType = GetContentType(fileAbsolutePath!);
-        await using var fileStream = new FileStream(fileAbsolutePath!, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        var fileAbsolutePath = Path.Combine(_basePath!, requestPath.TrimStart('/'));
+        response.ContentType = GetContentType(fileAbsolutePath);
+        await using var fileStream = new FileStream(fileAbsolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         response.ContentLength64 = fileStream.Length;
         await fileStream.CopyToAsync(response.OutputStream).ConfigureAwait(false);
-        return inTheme ? "themeSt" : "static";
+        return _inTheme ? "themeSt" : "static";
     }
 
     /// <summary>
-    /// Retrieves the content type of a file based on its extension.
+    /// Retrieves the content type of file based on its extension.
     /// If the content type cannot be determined, the default value "application/octet-stream" is returned.
     /// </summary>
     /// <param name="filePath">The path of the file.</param>

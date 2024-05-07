@@ -3,7 +3,7 @@ using SuCoS.Models;
 namespace SuCoS.TemplateEngine;
 
 /// <summary>
-/// Interface for all Templace Engines (Liquid)
+/// Interface for all Template Engines (Liquid)
 /// </summary>
 public interface ITemplateEngine
 {
