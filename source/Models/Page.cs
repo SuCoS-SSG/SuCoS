@@ -11,83 +11,83 @@ namespace SuCoS.Models;
 /// </summary>
 public class Page : IPage
 {
-    private readonly IFrontMatter frontMatter;
+    private readonly IFrontMatter _frontMatter;
 
     #region IFrontMatter
 
     /// <inheritdoc/>
-    public string? Title => frontMatter.Title;
+    public string? Title => _frontMatter.Title;
 
     /// <inheritdoc/>
-    public string? Type => frontMatter.Type;
+    public string? Type => _frontMatter.Type;
 
     /// <inheritdoc/>
-    public string? URL => frontMatter.URL;
+    public string? URL => _frontMatter.URL;
 
     /// <inheritdoc/>
-    public bool? Draft => frontMatter.Draft;
+    public bool? Draft => _frontMatter.Draft;
 
     /// <inheritdoc/>
-    public List<string>? Aliases => frontMatter.Aliases;
+    public List<string>? Aliases => _frontMatter.Aliases;
 
     /// <inheritdoc/>
-    public string? Section => frontMatter.Section;
+    public string? Section => _frontMatter.Section;
 
     /// <inheritdoc/>
-    public DateTime? Date => frontMatter.Date;
+    public DateTime? Date => _frontMatter.Date;
 
     /// <inheritdoc/>
-    public DateTime? LastMod => frontMatter.LastMod;
+    public DateTime? LastMod => _frontMatter.LastMod;
 
     /// <inheritdoc/>
-    public DateTime? PublishDate => frontMatter.PublishDate;
+    public DateTime? PublishDate => _frontMatter.PublishDate;
 
     /// <inheritdoc/>
-    public DateTime? ExpiryDate => frontMatter.ExpiryDate;
+    public DateTime? ExpiryDate => _frontMatter.ExpiryDate;
 
     /// <inheritdoc/>
-    public int Weight => frontMatter.Weight;
+    public int Weight => _frontMatter.Weight;
 
     /// <inheritdoc/>
-    public List<string>? Tags => frontMatter.Tags;
+    public List<string>? Tags => _frontMatter.Tags;
 
     /// <inheritdoc/>
     public List<FrontMatterResources>? ResourceDefinitions
     {
-        get => frontMatter.ResourceDefinitions;
-        set => frontMatter.ResourceDefinitions = value;
+        get => _frontMatter.ResourceDefinitions;
+        set => _frontMatter.ResourceDefinitions = value;
     }
 
     /// <inheritdoc/>
-    public string RawContent => frontMatter.RawContent;
+    public string RawContent => _frontMatter.RawContent;
 
     /// <inheritdoc/>
     public Kind Kind
     {
-        get => frontMatter.Kind;
-        set => (frontMatter as FrontMatter)!.Kind = value;
+        get => _frontMatter.Kind;
+        set => (_frontMatter as FrontMatter)!.Kind = value;
     }
 
     /// <inheritdoc/>
-    public string? SourceRelativePath => frontMatter.SourceRelativePath;
+    public string? SourceRelativePath => _frontMatter.SourceRelativePath;
 
     /// <inheritdoc/>
-    public string? SourceRelativePathDirectory => frontMatter.SourceRelativePathDirectory;
+    public string? SourceRelativePathDirectory => _frontMatter.SourceRelativePathDirectory;
 
     /// <inheritdoc/>
-    public string SourceFullPath => frontMatter.SourceFullPath;
+    public string SourceFullPath => _frontMatter.SourceFullPath;
 
     /// <inheritdoc/>
-    public string? SourceFullPathDirectory => frontMatter.SourceFullPathDirectory;
+    public string? SourceFullPathDirectory => _frontMatter.SourceFullPathDirectory;
 
     /// <inheritdoc/>
-    public string? SourceFileNameWithoutExtension => frontMatter.SourceFileNameWithoutExtension;
+    public string? SourceFileNameWithoutExtension => _frontMatter.SourceFileNameWithoutExtension;
 
     /// <inheritdoc/>
     public Dictionary<string, object> Params
     {
-        get => frontMatter.Params;
-        set => frontMatter.Params = value;
+        get => _frontMatter.Params;
+        set => _frontMatter.Params = value;
     }
 
     #endregion IFrontMatter
@@ -122,7 +122,7 @@ public class Page : IPage
     public IPage? Parent { get; set; }
 
     /// <inheritdoc/>
-    public BundleType BundleType { get; set; } = BundleType.none;
+    public BundleType BundleType { get; set; } = BundleType.None;
 
     /// <inheritdoc/>
     public Collection<Resource>? Resources { get; set; }
@@ -150,19 +150,19 @@ public class Page : IPage
     /// <summary>
     /// Just a simple check if the current page is a "page"
     /// </summary>
-    public bool IsPage => Kind == Kind.single;
+    public bool IsPage => Kind == Kind.Single;
 
     /// <summary>
     /// The number of words in the main content
     /// </summary>
-    public int WordCount => Plain.Split(nonWords, StringSplitOptions.RemoveEmptyEntries).Length;
+    public int WordCount => Plain.Split(NonWords, StringSplitOptions.RemoveEmptyEntries).Length;
 
-    private static readonly char[] nonWords = [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
+    private static readonly char[] NonWords = [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
 
     /// <summary>
     /// The markdown content converted to HTML
     /// </summary>
-    public string ContentPreRendered => contentPreRenderedCached.Value;
+    public string ContentPreRendered => ContentPreRenderedCached.Value;
 
     /// <summary>
     /// The processed content.
@@ -171,8 +171,8 @@ public class Page : IPage
     {
         get
         {
-            contentCache = ParseAndRenderTemplate(false, "Error rendering theme template: {Error}");
-            return contentCache!;
+            ContentCache = ParseAndRenderTemplate(false, "Error rendering theme template: {Error}");
+            return ContentCache!;
         }
     }
 
@@ -190,21 +190,20 @@ public class Page : IPage
     {
         get
         {
-            if (pagesCached is not null)
+            if (PagesCached is not null)
             {
-                return pagesCached;
+                return PagesCached;
             }
 
-            pagesCached = [];
+            PagesCached = [];
             foreach (var permalink in PagesReferences)
             {
-                var page = Site.OutputReferences[permalink] as IPage;
-                if (page is not null)
+                if (Site.OutputReferences[permalink] is IPage page)
                 {
-                    pagesCached.Add(page);
+                    PagesCached.Add(page);
                 }
             }
-            return pagesCached;
+            return PagesCached;
         }
     }
 
@@ -215,17 +214,17 @@ public class Page : IPage
     {
         get
         {
-            regularPagesCache ??= Pages
-                    .Where(page => page.Kind == Kind.single)
+            _regularPagesCache ??= Pages
+                    .Where(page => page.Kind == Kind.Single)
                     .ToList();
-            return regularPagesCache;
+            return _regularPagesCache;
         }
     }
 
     /// <summary>
     /// Get all URLs related to this content.
     /// </summary>
-    public Dictionary<string, IOutput> AllOutputURLs
+    public Dictionary<string, IOutput> AllOutputUrLs
     {
         get
         {
@@ -247,14 +246,15 @@ public class Page : IPage
                 }
             }
 
-            if (Resources is not null)
+            if (Resources is null)
             {
-                foreach (var resource in Resources)
+                return urls;
+            }
+            foreach (var resource in Resources)
+            {
+                if (resource.Permalink is not null)
                 {
-                    if (resource.Permalink is not null && !urls.ContainsKey(resource.Permalink))
-                    {
-                        urls.Add(resource.Permalink, resource);
-                    }
+                    urls.TryAdd(resource.Permalink, resource);
                 }
             }
 
@@ -266,14 +266,14 @@ public class Page : IPage
     /// <summary>
     /// The markdown content.
     /// </summary>
-    private Lazy<string> contentPreRenderedCached => new(() => Markdown.ToHtml(RawContent, SiteHelper.MarkdownPipeline));
+    private Lazy<string> ContentPreRenderedCached => new(() => Markdown.ToHtml(RawContent, SiteHelper.MarkdownPipeline));
 
     /// <summary>
     /// The cached content.
     /// </summary>
-    private string? contentCache { get; set; }
+    private string? ContentCache { get; set; }
 
-    private const string urlForIndex = @"{%- liquid 
+    private const string UrlForIndex = @"{%- liquid
 if page.Parent
 echo page.Parent.Permalink
 echo '/'
@@ -284,7 +284,7 @@ else
 echo page.SourcePathLastDirectory
 endif
 -%}";
-    private const string urlForNonIndex = @"{%- liquid 
+    private const string UrlForNonIndex = @"{%- liquid
 if page.Parent
 echo page.Parent.Permalink
 echo '/'
@@ -296,49 +296,49 @@ echo page.SourceFileNameWithoutExtension
 endif
 -%}";
 
-    private List<IPage>? regularPagesCache;
+    private List<IPage>? _regularPagesCache;
 
-    private List<IPage>? pagesCached { get; set; }
+    private List<IPage>? PagesCached { get; set; }
 
     /// <summary>
     /// Constructor
     /// </summary>
     public Page(in IFrontMatter frontMatter, in ISite site)
     {
-        this.frontMatter = frontMatter;
+        _frontMatter = frontMatter;
         Site = site;
     }
 
     /// <summary>
     /// Gets the Permalink path for the file.
     /// </summary>
-    /// <param name="URLforce">The URL to consider. If null use the predefined URL</param>
+    /// <param name="urlForce">The URL to consider. If null use the predefined URL</param>
     /// <returns>The output path.</returns>
-    /// <see cref="urlForIndex"/>
-    /// <see cref="urlForNonIndex"/>
-    public string CreatePermalink(string? URLforce = null)
+    /// <see cref="UrlForIndex"/>
+    /// <see cref="UrlForNonIndex"/>
+    public string CreatePermalink(string? urlForce = null)
     {
         var isIndex = SourceFileNameWithoutExtension == "index";
 
-        var permaLink = string.Empty;
+        var permalink = string.Empty;
 
-        URLforce ??= URL ?? (isIndex ? urlForIndex : urlForNonIndex);
+        urlForce ??= URL ?? (isIndex ? UrlForIndex : UrlForNonIndex);
 
         try
         {
-            permaLink = Site.TemplateEngine.Parse(URLforce, Site, this);
+            permalink = Site.TemplateEngine.Parse(urlForce, Site, this);
         }
         catch (Exception ex)
         {
-            Site.Logger.Error(ex, "Error converting URL: {URLforce}", URLforce);
+            Site.Logger.Error(ex, "Error converting URL: {UrlForce}", urlForce);
         }
 
-        if (!Path.IsPathRooted(permaLink) && !permaLink.StartsWith('/'))
+        if (!Path.IsPathRooted(permalink) && !permalink.StartsWith('/'))
         {
-            permaLink = $"/{permaLink}";
+            permalink = $"/{permalink}";
         }
 
-        return Urlizer.UrlizePath(permaLink);
+        return Urlizer.UrlizePath(permalink);
     }
 
     /// <inheritdoc/>
@@ -366,17 +366,17 @@ endif
         ScanForResources();
     }
 
-    private int counterInternal;
-    private bool counterInternalLock;
-    private int counter
+    private int _counterInternal;
+    private bool _counterInternalLock;
+    private int Counter
     {
         get
         {
-            if (!counterInternalLock)
+            if (!_counterInternalLock)
             {
-                counterInternalLock = true;
+                _counterInternalLock = true;
             }
-            return counterInternal;
+            return _counterInternal;
         }
     }
 
@@ -386,7 +386,12 @@ endif
         {
             return;
         }
-        if (BundleType == BundleType.none)
+        if (BundleType == BundleType.None)
+        {
+            return;
+        }
+
+        if (!Directory.Exists(SourceFullPathDirectory))
         {
             return;
         }
@@ -396,7 +401,7 @@ endif
             var resourceFiles = Directory.GetFiles(SourceFullPathDirectory)
                 .Where(file =>
                     file != SourceFullPath &&
-                    (BundleType == BundleType.leaf || !file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+                    (BundleType == BundleType.Leaf || !file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
                     );
 
             foreach (var resourceFilename in resourceFiles)
@@ -404,16 +409,16 @@ endif
                 Resources ??= [];
                 var filenameOriginal = Path.GetFileName(resourceFilename);
                 var filename = filenameOriginal;
-                var extention = Path.GetExtension(resourceFilename);
+                var extension = Path.GetExtension(resourceFilename);
                 var title = filename;
                 Dictionary<string, object> resourceParams = [];
 
                 if (ResourceDefinitions is not null)
                 {
-                    if (counterInternalLock)
+                    if (_counterInternalLock)
                     {
-                        counterInternalLock = false;
-                        ++counterInternal;
+                        _counterInternalLock = false;
+                        ++_counterInternal;
                     }
                     foreach (var resourceDefinition in ResourceDefinitions)
                     {
@@ -422,14 +427,14 @@ endif
                         var file = new InMemoryDirectoryInfo("./", new[] { filenameOriginal });
                         if (resourceDefinition.GlobMatcher.Execute(file).HasMatches)
                         {
-                            filename = Site.TemplateEngine.ParseResource(resourceDefinition.Name, Site, this, counter) ?? filename;
-                            title = Site.TemplateEngine.ParseResource(resourceDefinition.Title, Site, this, counter) ?? filename;
-                            resourceParams = resourceDefinition.Params ?? [];
+                            filename = Site.TemplateEngine.ParseResource(resourceDefinition.Name, Site, this, Counter) ?? filename;
+                            title = Site.TemplateEngine.ParseResource(resourceDefinition.Title, Site, this, Counter) ?? filename;
+                            resourceParams = resourceDefinition.Params;
                         }
                     }
                 }
 
-                filename = Path.GetFileNameWithoutExtension(filename) + extention;
+                filename = Path.GetFileNameWithoutExtension(filename) + extension;
                 var resource = new Resource()
                 {
                     Title = title,
@@ -443,7 +448,7 @@ endif
         }
         catch
         {
-            return;
+            // ignored
         }
     }
 

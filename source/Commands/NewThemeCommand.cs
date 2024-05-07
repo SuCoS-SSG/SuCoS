@@ -1,14 +1,14 @@
 using Serilog;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
-using SuCoS.Parser;
+using SuCoS.Parsers;
 
-namespace SuCoS;
+namespace SuCoS.Commands;
 
 /// <summary>
 /// Check links of a given site.
 /// </summary>
-public sealed partial class NewThemeCommand(NewThemeOptions options, ILogger logger)
+public sealed class NewThemeCommand(NewThemeOptions options, ILogger logger)
 {
     /// <summary>
     /// Run the app
@@ -36,7 +36,7 @@ public sealed partial class NewThemeCommand(NewThemeOptions options, ILogger log
 
         try
         {
-            new YAMLParser().Export(theme, themePath);
+            new YamlParser().Export(theme, themePath);
         }
         catch (Exception ex)
         {

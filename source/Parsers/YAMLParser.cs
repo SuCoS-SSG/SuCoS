@@ -2,24 +2,24 @@ using System.Text;
 using FolkerKinzel.Strings;
 using YamlDotNet.Serialization;
 
-namespace SuCoS.Parser;
+namespace SuCoS.Parsers;
 
 /// <summary>
 /// Responsible for parsing the content front matter using YAML
 /// </summary>
-public class YAMLParser : IMetadataParser
+public class YamlParser : IMetadataParser
 {
     /// <summary>
     /// YamlDotNet parser, strictly set to allow automatically parse only known fields
     /// </summary>
-    private readonly IDeserializer deserializer;
+    private readonly IDeserializer _deserializer;
 
     /// <summary>
     /// ctor
     /// </summary>
-    public YAMLParser()
+    public YamlParser()
     {
-        deserializer = new StaticDeserializerBuilder(new StaticAOTContext())
+        _deserializer = new StaticDeserializerBuilder(new StaticAotContext())
             .WithTypeConverter(new ParamsConverter())
             .IgnoreUnmatchedProperties()
             .Build();
@@ -30,7 +30,7 @@ public class YAMLParser : IMetadataParser
     {
         try
         {
-            return deserializer.Deserialize<T>(content);
+            return _deserializer.Deserialize<T>(content);
         }
         catch
         {

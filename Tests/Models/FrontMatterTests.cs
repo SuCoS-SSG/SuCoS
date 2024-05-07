@@ -7,9 +7,9 @@ namespace Tests.Models;
 public class FrontMatterTests : TestSetup
 {
     [Theory]
-    [InlineData("Title1", "Section1", "Type1", "URL1", Kind.single)]
-    [InlineData("Title2", "Section2", "Type2", "URL2", Kind.list)]
-    [InlineData("Title3", "Section3", "Type3", "URL3", Kind.index)]
+    [InlineData("Title1", "Section1", "Type1", "URL1", Kind.Single)]
+    [InlineData("Title2", "Section2", "Type2", "URL2", Kind.List)]
+    [InlineData("Title3", "Section3", "Type3", "URL3", Kind.Index)]
     public void Constructor_Sets_Properties_Correctly(string title, string section, string type, string url, Kind kind)
     {
         // Act

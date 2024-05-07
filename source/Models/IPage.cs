@@ -75,14 +75,14 @@ public interface IPage : IFrontMatter, IOutput
     /// <summary>
     /// Just a simple check if the current page is a "page"
     /// </summary>
-    public bool IsPage => Kind == Kind.single;
+    public bool IsPage => Kind == Kind.Single;
 
     /// <summary>
     /// The number of words in the main content
     /// </summary>
-    public int WordCount => Plain.Split(nonWords, StringSplitOptions.RemoveEmptyEntries).Length;
+    public int WordCount => Plain.Split(NonWords, StringSplitOptions.RemoveEmptyEntries).Length;
 
-    private static readonly char[] nonWords = [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
+    private static readonly char[] NonWords = [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
 
     /// <summary>
     /// The markdown content converted to HTML
@@ -114,14 +114,14 @@ public interface IPage : IFrontMatter, IOutput
     /// <summary>
     /// Get all URLs related to this content.
     /// </summary>
-    public Dictionary<string, IOutput> AllOutputURLs { get; }
+    public Dictionary<string, IOutput> AllOutputUrLs { get; }
 
     /// <summary>
     /// Gets the Permalink path for the file.
     /// </summary>
-    /// <param name="URLforce">The URL to consider. If null use the predefined URL</param>
+    /// <param name="urlForce">The URL to consider. If null use the predefined URL</param>
     /// <returns>The output path.</returns>
-    public string CreatePermalink(string? URLforce = null);
+    public string CreatePermalink(string? urlForce = null);
 
     /// <summary>
     /// Final steps of parsing the content.

@@ -1,7 +1,7 @@
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
-using SuCoS.Parser;
+using SuCoS.Parsers;
 using SuCoS.TemplateEngine;
 using System.Collections.Concurrent;
 
@@ -10,7 +10,7 @@ namespace SuCoS.Models;
 /// <summary>
 /// The main configuration of the program, primarily extracted from the app.yaml file.
 /// </summary>
-public interface ISite : ISiteSettings, IParams
+public interface ISite : ISiteSettings
 {
     /// <summary>
     /// Command line options
@@ -84,7 +84,7 @@ public interface ISite : ISiteSettings, IParams
 
     /// <summary>
     /// Search recursively for all markdown files in the content folder, then
-    /// parse their content for front matter meta data and markdown.
+    /// parse their content for front matter metadata and markdown.
     /// </summary>
     /// <param name="fs"></param>
     /// <param name="directory">Folder to scan</param>

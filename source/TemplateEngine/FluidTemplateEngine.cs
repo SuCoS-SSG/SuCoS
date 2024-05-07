@@ -64,7 +64,7 @@ public class FluidTemplateEngine : ITemplateEngine
     /// <inheritdoc/>
     public string? ParseResource(string? data, ISite site, IPage page, int counter)
     {
-        if (string.IsNullOrEmpty(data) || !FluidParser.TryParse(data, out var templateFileName, out var errorFileName))
+        if (string.IsNullOrEmpty(data) || !FluidParser.TryParse(data, out var templateFileName, out _))
         {
             return null;
         }
@@ -83,7 +83,7 @@ public class FluidTemplateEngine : ITemplateEngine
     /// <param name="context"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
-    protected static ValueTask<FluidValue> WhereParamsFilter(FluidValue input, FilterArguments arguments, TemplateContext context)
+    private static ValueTask<FluidValue> WhereParamsFilter(FluidValue input, FilterArguments arguments, TemplateContext context)
     {
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(arguments);

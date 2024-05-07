@@ -12,7 +12,7 @@ public class Resource : IResource
     public string? FileName { get; set; }
 
     /// <inheritdoc/>
-    public required string SourceFullPath { get; set; }
+    public required string SourceFullPath { get; init; }
 
     /// <inheritdoc/>
     public string? SourceRelativePath => null;

@@ -2,7 +2,7 @@ using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 
-namespace SuCoS.Parser;
+namespace SuCoS.Parsers;
 
 /// <summary>
 /// A custom YAML type converter for dictionaries with string keys and object values.

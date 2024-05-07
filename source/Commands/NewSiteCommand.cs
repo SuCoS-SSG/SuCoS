@@ -1,16 +1,17 @@
 using Serilog;
+using SuCoS.Helpers;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
-using SuCoS.Parser;
+using SuCoS.Parsers;
 
-namespace SuCoS;
+namespace SuCoS.Commands;
 
 /// <summary>
 /// Check links of a given site.
 /// </summary>
-public sealed partial class NewSiteCommand(NewSiteOptions options, ILogger logger, IFileSystem fileSystem, ISite site)
+public sealed class NewSiteCommand(NewSiteOptions options, ILogger logger, IFileSystem fileSystem, ISite site)
 {
-    private static SiteSettings siteSettings = null!;
+    private static SiteSettings _siteSettings = null!;
 
     /// <summary>
     /// Generate the needed data for the class
@@ -23,14 +24,14 @@ public sealed partial class NewSiteCommand(NewSiteOptions options, ILogger logge
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        siteSettings = new SiteSettings()
+        _siteSettings = new SiteSettings()
         {
             Title = options.Title,
             Description = options.Description,
-            BaseURL = options.BaseURL
+            BaseURL = options.BaseUrl
         };
 
-        var site = new Site(new GenerateOptions() { SourceOption = options.Output }, siteSettings, new YAMLParser(), null!, null);
+        var site = new Site(new GenerateOptions() { SourceOption = options.Output }, _siteSettings, new YamlParser(), null!, null);
         return new NewSiteCommand(options, logger, fileSystem, site);
     }
 
@@ -54,7 +55,7 @@ public sealed partial class NewSiteCommand(NewSiteOptions options, ILogger logge
         try
         {
             CreateFolders(site.SourceFolders);
-            site.Parser.Export(siteSettings, siteSettingsPath);
+            site.Parser.Export(_siteSettings, siteSettingsPath);
         }
         catch (Exception ex)
         {

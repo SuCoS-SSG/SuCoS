@@ -1,34 +1,34 @@
+using System.Net;
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.ServerHandlers;
-using System.Net;
 
-namespace SuCoS;
+namespace SuCoS.Commands;
 
 /// <summary>
 /// Serve Command will live serve the site and watch any changes.
 /// </summary>
 public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
 {
-    private const string baseURLDefault = "http://localhost";
-    private const int portDefault = 1122;
+    private const string BaseUrlDefault = "http://localhost";
+    private const int PortDefault = 1122;
 
     /// <summary>
     /// The ServeOptions object containing the configuration parameters for the server.
-    /// This includes settings such as the source directory to watch for file changes, 
-    /// verbosity of the logs, etc. These options are passed into the ServeCommand at construction 
+    /// This includes settings such as the source directory to watch for file changes,
+    /// verbosity of the logs, etc. These options are passed into the ServeCommand at construction
     /// and are used throughout its operation.
     /// </summary>
-    private readonly ServeOptions options;
+    private readonly ServeOptions _options;
 
     /// <summary>
     /// The FileSystemWatcher object that monitors the source directory for file changes.
-    /// When a change is detected, this triggers a server restart to ensure the served content 
-    /// remains up-to-date. The FileSystemWatcher is configured with the source directory 
+    /// When a change is detected, this triggers a server restart to ensure the served content
+    /// remains up-to-date. The FileSystemWatcher is configured with the source directory
     /// at construction and starts watching immediately.
     /// </summary>
-    private readonly IFileWatcher fileWatcher;
+    private readonly IFileWatcher _fileWatcher;
 
     /// <summary>
     /// A Timer that helps to manage the frequency of server restarts.
@@ -36,23 +36,23 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// when the timer expires, helping to ensure that rapid consecutive file changes result
     /// in a single server restart, not multiple.
     /// </summary>
-    private Timer? debounceTimer;
+    private Timer? _debounceTimer;
 
     /// <summary>
-    /// A SemaphoreSlim used to ensure that server restarts due to file changes occur sequentially, 
+    /// A SemaphoreSlim used to ensure that server restarts due to file changes occur sequentially,
     /// not concurrently. This is necessary because a restart involves stopping the current server
     /// and starting a new one, which would not be thread-safe without some form of synchronization.
     /// </summary>
     // private readonly SemaphoreSlim restartServerLock = new(1, 1);
-    private Task lastRestartTask = Task.CompletedTask;
+    private Task _lastRestartTask = Task.CompletedTask;
 
-    private HttpListener? listener;
+    private HttpListener? _listener;
 
-    private IServerHandlers[]? handlers;
+    private IServerHandlers[]? _handlers;
 
-    private DateTime serverStartTime;
+    private DateTime _serverStartTime;
 
-    private Task? loop;
+    private Task? _loop;
 
     /// <summary>
     /// Constructor for the ServeCommand class.
@@ -64,13 +64,13 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     public ServeCommand(ServeOptions options, ILogger logger, IFileWatcher fileWatcher, IFileSystem fs)
         : base(options, logger, fs)
     {
-        this.options = options ?? throw new ArgumentNullException(nameof(options));
-        this.fileWatcher = fileWatcher ?? throw new ArgumentNullException(nameof(fileWatcher));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
+        _fileWatcher = fileWatcher ?? throw new ArgumentNullException(nameof(fileWatcher));
 
         // Watch for file changes in the specified path
-        var SourceAbsolutePath = Path.GetFullPath(options.Source);
-        logger.Information("Watching for file changes in {SourceAbsolutePath}", SourceAbsolutePath);
-        fileWatcher.Start(SourceAbsolutePath, OnSourceFileChanged);
+        var sourceAbsolutePath = Path.GetFullPath(options.Source);
+        logger.Information("Watching for file changes in {SourceAbsolutePath}", sourceAbsolutePath);
+        fileWatcher.Start(sourceAbsolutePath, OnSourceFileChanged);
     }
 
     /// <summary>
@@ -78,68 +78,68 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// </summary>
     public void StartServer()
     {
-        StartServer(baseURLDefault, portDefault);
+        StartServer(BaseUrlDefault, PortDefault);
     }
 
     /// <summary>
     /// Starts the server asynchronously.
     /// </summary>
-    /// <param name="baseURL"></param>
-    public void StartServer(string baseURL)
+    /// <param name="baseUrl"></param>
+    public void StartServer(string baseUrl)
     {
-        StartServer(baseURL, portDefault);
+        StartServer(baseUrl, PortDefault);
     }
 
     /// <summary>
     /// Starts the server asynchronously.
     /// </summary>
-    /// <param name="baseURL">The base URL for the server.</param>
+    /// <param name="baseUrl">The base URL for the server.</param>
     /// <param name="port">The port number for the server.</param>
     /// <returns>A Task representing the asynchronous operation.</returns>
-    public void StartServer(string baseURL, int port)
+    public void StartServer(string baseUrl, int port)
     {
-        logger.Information("Starting server...");
+        Logger.Information("Starting server...");
 
         // Generate the build report
-        stopwatch.LogReport(site.Title);
+        Stopwatch.LogReport(Site.Title);
 
-        serverStartTime = DateTime.UtcNow;
+        _serverStartTime = DateTime.UtcNow;
 
-        handlers = [
+        _handlers = [
             new PingRequests(),
-            new StaticFileRequest(site.SourceStaticPath, false),
-            new StaticFileRequest(site.Theme?.StaticFolder, true),
-            new RegisteredPageRequest(site),
-            new RegisteredPageResourceRequest(site)
+            new StaticFileRequest(Site.SourceStaticPath, false),
+            new StaticFileRequest(Site.Theme?.StaticFolder, true),
+            new RegisteredPageRequest(Site),
+            new RegisteredPageResourceRequest(Site)
         ];
-        listener = new HttpListener();
-        listener.Prefixes.Add($"{baseURL}:{port}/");
-        listener.Start();
+        _listener = new HttpListener();
+        _listener.Prefixes.Add($"{baseUrl}:{port}/");
+        _listener.Start();
 
-        logger.Information("You site is live: {baseURL}:{port}", baseURL, port);
+        Logger.Information("You site is live: {baseURL}:{port}", baseUrl, port);
 
-        loop = Task.Run(async () =>
+        _loop = Task.Run(async () =>
         {
-            while (listener is not null && listener.IsListening)
+            while (_listener is not null && _listener.IsListening)
             {
                 try
                 {
-                    var context = await listener.GetContextAsync().ConfigureAwait(false);
+                    var context = await _listener.GetContextAsync().ConfigureAwait(false);
                     await HandleRequest(context).ConfigureAwait(false);
                 }
                 catch (HttpListenerException ex)
                 {
-                    if (listener.IsListening)
+                    if (_listener.IsListening)
                     {
-                        logger.Error(ex, "Unexpected listener error.");
+                        Logger.Error(ex, "Unexpected listener error.");
                     }
                     break;
                 }
                 catch (Exception ex)
                 {
-                    if (listener.IsListening)
+                    if (_listener.IsListening)
                     {
-                        logger.Error(ex, "Error processing request.");
+                        Logger.Error(ex, "Error processing request.");
                     }
                     break;
                 }
@@ -150,10 +150,10 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <inheritdoc/>
     public void Dispose()
     {
-        listener?.Stop();
-        listener?.Close();
-        fileWatcher.Stop();
-        debounceTimer?.Dispose();
+        _listener?.Stop();
+        _listener?.Close();
+        _fileWatcher.Stop();
+        _debounceTimer?.Dispose();
         GC.SuppressFinalize(this);
     }
 
@@ -162,30 +162,30 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// </summary>
     private async Task RestartServer()
     {
-        _ = await lastRestartTask.ContinueWith(async _ =>
+        _ = await _lastRestartTask.ContinueWith(async _ =>
         {
-            logger.Information($"Restarting server...");
+            Logger.Information("Restarting server...");
 
-            if (listener != null && listener.IsListening)
+            if (_listener is { IsListening: true })
             {
-                listener.Stop();
-                listener.Close();
+                _listener.Stop();
+                _listener.Close();
 
-                if (loop is not null)
+                if (_loop is not null)
                 {
                     // Wait for the loop to finish processing any ongoing requests.
-                    await loop.ConfigureAwait(false);
-                    loop.Dispose();
+                    await _loop.ConfigureAwait(false);
+                    _loop.Dispose();
                 }
             }
 
             // Reinitialize the site
-            site = SiteHelper.Init(configFile, options, Parser, logger, stopwatch, fs);
+            Site = SiteHelper.Init(ConfigFile, _options, Parser, Logger, Stopwatch, Fs);
 
             StartServer();
         }).ConfigureAwait(false);
 
-        lastRestartTask = lastRestartTask.ContinueWith(t => t.Exception != null
+        _lastRestartTask = _lastRestartTask.ContinueWith(t => t.Exception != null
             ? throw t.Exception
             : Task.CompletedTask);
     }
@@ -199,10 +199,10 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
         var requestPath = context.Request.Url?.AbsolutePath ?? string.Empty;
 
         string? resultType = null;
-        if (handlers is not null)
+        if (_handlers is not null)
         {
             var response = new HttpListenerResponseWrapper(context.Response);
-            foreach (var item in handlers)
+            foreach (var item in _handlers)
             {
                 if (!item.Check(requestPath))
                 {
@@ -211,12 +211,12 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
 
                 try
                 {
-                    resultType = await item.Handle(response, requestPath, serverStartTime).ConfigureAwait(false);
+                    resultType = await item.Handle(response, requestPath, _serverStartTime).ConfigureAwait(false);
                     break;
                 }
                 catch (Exception ex)
                 {
-                    logger.Debug(ex, "Error handling the request.");
+                    Logger.Debug(ex, "Error handling the request.");
                 }
             }
         }
@@ -230,13 +230,13 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
         {
             context.Response.OutputStream.Close();
         }
-        logger.Debug("Request {type}\tfor {RequestPath}", resultType, requestPath);
+        Logger.Debug("Request {type}\tfor {RequestPath}", resultType, requestPath);
     }
 
     private static async Task HandleNotFoundRequest(HttpListenerContext context)
     {
         context.Response.StatusCode = 404;
-        using var writer = new StreamWriter(context.Response.OutputStream);
+        await using var writer = new StreamWriter(context.Response.OutputStream);
         await writer.WriteAsync("404 - File Not Found").ConfigureAwait(false);
     }
 
@@ -254,8 +254,8 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
 
         // File changes are firing multiple events in a short time.
         // Debounce the event handler to prevent multiple events from firing in a short time
-        debounceTimer?.Dispose();
-        debounceTimer = new Timer(DebounceCallback, e, TimeSpan.FromMilliseconds(1), Timeout.InfiniteTimeSpan);
+        _debounceTimer?.Dispose();
+        _debounceTimer = new Timer(DebounceCallback, e, TimeSpan.FromMilliseconds(1), Timeout.InfiniteTimeSpan);
     }
 
     private async void DebounceCallback(object? state)

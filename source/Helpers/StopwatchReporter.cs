@@ -12,18 +12,18 @@ namespace SuCoS.Helpers;
 /// </summary>
 public class StopwatchReporter
 {
-    private readonly ILogger logger;
-    private readonly Dictionary<string, Stopwatch> stopwatches;
-    private readonly Dictionary<string, int> itemCounts;
+    private readonly ILogger _logger;
+    private readonly Dictionary<string, Stopwatch> _stopwatches;
+    private readonly Dictionary<string, int> _itemCounts;
 
     /// <summary>
     /// Constructor
     /// </summary>
     public StopwatchReporter(ILogger logger)
     {
-        this.logger = logger;
-        stopwatches = [];
-        itemCounts = [];
+        _logger = logger;
+        _stopwatches = [];
+        _itemCounts = [];
     }
 
     /// <summary>
@@ -32,10 +32,10 @@ public class StopwatchReporter
     /// <param name="stepName"></param>
     public void Start(string stepName)
     {
-        if (!stopwatches.TryGetValue(stepName, out var stopwatch))
+        if (!_stopwatches.TryGetValue(stepName, out var stopwatch))
         {
             stopwatch = new Stopwatch();
-            stopwatches[stepName] = stopwatch;
+            _stopwatches[stepName] = stopwatch;
         }
 
         stopwatch.Restart();
@@ -49,13 +49,13 @@ public class StopwatchReporter
     /// <exception cref="ArgumentException"></exception>
     public void Stop(string stepName, int itemCount)
     {
-        if (!stopwatches.TryGetValue(stepName, out var stopwatch))
+        if (!_stopwatches.TryGetValue(stepName, out var stopwatch))
         {
             throw new ArgumentException($"Step '{stepName}' has not been started.");
         }
 
         stopwatch.Stop();
-        itemCounts[stepName] = itemCount;
+        _itemCounts[stepName] = itemCount;
     }
 
     /// <summary>
@@ -69,9 +69,9 @@ public class StopwatchReporter
             ("Step", "Status", "Duration", 0)
         };
 
-        foreach (var (stepName, stopwatch) in stopwatches)
+        foreach (var (stepName, stopwatch) in _stopwatches)
         {
-            _ = itemCounts.TryGetValue(stepName, out var itemCount);
+            _ = _itemCounts.TryGetValue(stepName, out var itemCount);
             var duration = stopwatch.ElapsedMilliseconds;
             var durationString = $"{duration} ms";
             var status = itemCount > 0 ? itemCount.ToString(CultureInfo.InvariantCulture) : string.Empty;
@@ -79,7 +79,7 @@ public class StopwatchReporter
             reportData.Add((Step: stepName, Status: status, DurationString: durationString, Duration: duration));
         }
 
-        var totalDurationAllSteps = stopwatches.Values.Sum(sw => sw.ElapsedMilliseconds);
+        var totalDurationAllSteps = _stopwatches.Values.Sum(sw => sw.ElapsedMilliseconds);
 
         var report = new StringBuilder($@"Site '{siteTitle}' created!
 ═════════════════════════════════════════════");
@@ -102,6 +102,6 @@ Total                     {totalDurationAllSteps} ms
 ═════════════════════════════════════════════");
 
         // Log the report
-        logger.Information(report.ToString(), siteTitle);
+        _logger.Information(report.ToString(), siteTitle);
     }
 }

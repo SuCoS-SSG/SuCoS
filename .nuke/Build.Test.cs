@@ -17,9 +17,9 @@ namespace SuCoS.Nuke;
 /// </summary>
 sealed partial class Build : NukeBuild
 {
-    static AbsolutePath testDirectory => RootDirectory / "test";
+    static AbsolutePath testDirectory => RootDirectory / "Tests";
     static AbsolutePath testDLLDirectory => testDirectory / "bin" / "Debug" / "net8.0";
-    static AbsolutePath testAssembly => testDLLDirectory / "test.dll";
+    static AbsolutePath testAssembly => testDLLDirectory / "Tests.dll";
     static AbsolutePath coverageDirectory => RootDirectory / "coverage-results";
     static AbsolutePath coverageResultDirectory => coverageDirectory / "coverage";
     static AbsolutePath coverageResultFile => coverageResultDirectory / "coverage.xml";

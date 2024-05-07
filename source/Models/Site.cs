@@ -1,7 +1,7 @@
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
-using SuCoS.Parser;
+using SuCoS.Parsers;
 using SuCoS.TemplateEngine;
 using System.Collections.Concurrent;
 
@@ -17,8 +17,8 @@ public class Site : ISite
     /// <inheritdoc/>
     public Dictionary<string, object> Params
     {
-        get => settings.Params;
-        set => settings.Params = value;
+        get => _settings.Params;
+        set => _settings.Params = value;
     }
 
     #endregion IParams
@@ -31,19 +31,19 @@ public class Site : ISite
     #region SiteSettings
 
     /// <inheritdoc/>
-    public string Title => settings.Title;
+    public string Title => _settings.Title;
 
     /// <inheritdoc/>
-    public string? Description => settings.Description;
+    public string? Description => _settings.Description;
 
     /// <inheritdoc/>
-    public string? Copyright => settings.Copyright;
+    public string? Copyright => _settings.Copyright;
 
     /// <inheritdoc/>
-    public string BaseURL => settings.BaseURL;
+    public string BaseURL => _settings.BaseURL;
 
     /// <inheritdoc/>
-    public bool UglyURLs => settings.UglyURLs;
+    public bool UglyURLs => _settings.UglyURLs;
 
     #endregion SiteSettings
 
@@ -60,7 +60,7 @@ public class Site : ISite
     /// <summary>
     /// The path theme.
     /// </summary>
-    public string SourceThemePath => Path.Combine(Options.Source, settings.ThemeDir, settings.Theme ?? string.Empty);
+    public string SourceThemePath => Path.Combine(Options.Source, _settings.ThemeDir, _settings.Theme ?? string.Empty);
 
     /// <inheritdoc/>
     public IEnumerable<string> SourceFolders => [
@@ -72,7 +72,7 @@ public class Site : ISite
     /// <summary>
     /// Theme used.
     /// </summary>
-    public Theme? Theme { get; set; }
+    public Theme? Theme { get; }
 
     /// <summary>
     /// List of all pages, including generated.
@@ -81,11 +81,11 @@ public class Site : ISite
     {
         get
         {
-            pagesCache ??= OutputReferences.Values
-                .Where(output => output is IPage page)
+            _pagesCache ??= OutputReferences.Values
+                .Where(output => output is IPage)
                 .Select(output => (output as IPage)!)
                 .OrderBy(page => -page.Weight);
-            return pagesCache!;
+            return _pagesCache!;
         }
     }
 
@@ -101,11 +101,11 @@ public class Site : ISite
     {
         get
         {
-            regularPagesCache ??= OutputReferences
-                    .Where(pair => pair.Value is IPage page && page.IsPage && pair.Key == page.Permalink)
+            _regularPagesCache ??= OutputReferences
+                    .Where(pair => pair.Value is IPage { IsPage: true } page && pair.Key == page.Permalink)
                     .Select(pair => (pair.Value as IPage)!)
                     .OrderBy(page => -page.Weight);
-            return regularPagesCache;
+            return _regularPagesCache;
         }
     }
 
@@ -127,35 +127,35 @@ public class Site : ISite
     /// <summary>
     /// Number of files parsed, used in the report.
     /// </summary>
-    public int FilesParsedToReport => filesParsedToReport;
+    public int FilesParsedToReport => _filesParsedToReport;
 
     /// <inheritdoc/>
-    public IMetadataParser Parser { get; init; } = new YAMLParser();
+    public IMetadataParser Parser { get; }
 
-    private int filesParsedToReport;
+    private int _filesParsedToReport;
 
-    private const string indexLeafFileConst = "index.md";
+    private const string IndexLeafFileConst = "index.md";
 
-    private const string indexBranchFileConst = "_index.md";
+    private const string IndexBranchFileConst = "_index.md";
 
     /// <summary>
-    /// The synchronization lock object during ProstProcess.
+    /// The synchronization lock object during PostProcess.
     /// </summary>
-    private readonly object syncLockPostProcess = new();
+    private readonly object _syncLockPostProcess = new();
 
-    private IEnumerable<IPage>? pagesCache;
+    private IEnumerable<IPage>? _pagesCache;
 
-    private IEnumerable<IPage>? regularPagesCache;
+    private IEnumerable<IPage>? _regularPagesCache;
 
-    private readonly SiteSettings settings;
+    private readonly SiteSettings _settings;
 
     /// <summary>
     /// Datetime wrapper
     /// </summary>
-    private readonly ISystemClock clock;
+    private readonly ISystemClock _clock;
 
     /// <inheritdoc/>
-    public ITemplateEngine TemplateEngine { get; set; }
+    public ITemplateEngine TemplateEngine { get; }
 
     /// <summary>
     /// Constructor
@@ -167,12 +167,12 @@ public class Site : ISite
         in ILogger logger, ISystemClock? clock)
     {
         Options = options;
-        this.settings = settings;
+        _settings = settings;
         Logger = logger;
         Parser = parser;
         TemplateEngine = new FluidTemplateEngine();
 
-        this.clock = clock ?? new SystemClock();
+        _clock = clock ?? new SystemClock();
 
         Theme = Theme.CreateFromSite(this);
     }
@@ -224,10 +224,10 @@ public class Site : ISite
         relativePath = Urlizer.Path(relativePath);
         FrontMatter frontMatter = new()
         {
-            Kind = isIndex ? Kind.index : Kind.list,
+            Kind = isIndex ? Kind.Index : Kind.List,
             Section = isIndex ? "index" : sectionName,
-            SourceRelativePath = Urlizer.Path(Path.Combine(relativePath, indexLeafFileConst)),
-            SourceFullPath = Urlizer.Path(Path.Combine(SourceContentPath, relativePath, indexLeafFileConst)),
+            SourceRelativePath = Urlizer.Path(Path.Combine(relativePath, IndexLeafFileConst)),
+            SourceFullPath = Urlizer.Path(Path.Combine(SourceContentPath, relativePath, IndexLeafFileConst)),
             Title = title,
             Type = isIndex ? "index" : sectionName,
             URL = relativePath
@@ -236,7 +236,7 @@ public class Site : ISite
         var id = frontMatter.URL;
 
         // Get or create the page
-        var lazyPage = CacheManager.automaticContentCache.GetOrAdd(id, new Lazy<IPage>(() =>
+        var lazyPage = CacheManager.AutomaticContentCache.GetOrAdd(id, new Lazy<IPage>(() =>
         {
             IPage? parent = null;
             // Check if we need to create a section, even
@@ -248,7 +248,7 @@ public class Site : ISite
 
             var newPage = new Page(frontMatter, this)
             {
-                BundleType = BundleType.branch
+                BundleType = BundleType.Branch
             };
             PostProcessPage(newPage, parent);
             return newPage;
@@ -262,7 +262,7 @@ public class Site : ISite
             return page;
         }
 
-        if (page.Kind != Kind.index)
+        if (page.Kind != Kind.Index)
         {
             page.PagesReferences.Add(originalPage.Permalink);
         }
@@ -278,23 +278,21 @@ public class Site : ISite
 
     private void ParseIndexPage(string? directory, int level, ref IPage? parent, ref string[] markdownFiles)
     {
-        var indexLeafBundlePage = markdownFiles.FirstOrDefault(file => Path.GetFileName(file) == indexLeafFileConst);
+        var indexLeafBundlePage = markdownFiles.FirstOrDefault(file => Path.GetFileName(file) == IndexLeafFileConst);
 
-        var indexBranchBundlePage = markdownFiles.FirstOrDefault(file => Path.GetFileName(file) == indexBranchFileConst);
+        var indexBranchBundlePage = markdownFiles.FirstOrDefault(file => Path.GetFileName(file) == IndexBranchFileConst);
 
-        IPage? page = null;
         if (indexLeafBundlePage is not null || indexBranchBundlePage is not null)
         {
             // Determine the file to use and the bundle type
             var selectedFile = indexLeafBundlePage ?? indexBranchBundlePage;
-            var bundleType = selectedFile == indexLeafBundlePage ? BundleType.leaf : BundleType.branch;
+            var bundleType = selectedFile == indexLeafBundlePage ? BundleType.Leaf : BundleType.Branch;
 
             // Remove the selected file from markdownFiles
-            markdownFiles = bundleType == BundleType.leaf
-                ? Array.Empty<string>()
-                : markdownFiles.Where(file => file != selectedFile).ToArray();
+            markdownFiles = bundleType == BundleType.Leaf
+                ? [] : markdownFiles.Where(file => file != selectedFile).ToArray();
 
-            page = ParseSourceFile(selectedFile!, parent, bundleType);
+            IPage? page = ParseSourceFile(selectedFile!, parent, bundleType);
             if (page is null)
             {
                 return;
@@ -302,9 +300,9 @@ public class Site : ISite
 
             if (level == 0)
             {
-                _ = OutputReferences.TryRemove(page!.Permalink!, out _);
+                _ = OutputReferences.TryRemove(page.Permalink!, out _);
                 page.Permalink = "/";
-                page.Kind = Kind.index;
+                page.Kind = Kind.Index;
 
                 _ = OutputReferences.GetOrAdd(page.Permalink, page);
                 Home = page;
@@ -325,18 +323,16 @@ public class Site : ISite
         }
     }
 
-    private Page? ParseSourceFile(in string fileFullPath, in IPage? parent, BundleType bundleType = BundleType.none)
+    private Page? ParseSourceFile(in string fileFullPath, in IPage? parent, BundleType bundleType = BundleType.None)
     {
         Page? page = null;
         try
         {
             var fileContent = File.ReadAllText(fileFullPath);
             var fileRelativePath = Path.GetRelativePath(
-                SourceContentPath ?? string.Empty,
+                SourceContentPath,
                 fileFullPath
             );
-            // var frontMatter = Parser.ParseFrontmatterAndMarkdown(fileFullPath, fileRelativePath, fileContent)
-            //  ?? throw new FormatException($"Error parsing front matter for {fileFullPath}");
             var frontMatter = FrontMatter.Parse(fileFullPath, fileRelativePath, Parser, fileContent)
                 ?? throw new FormatException($"Error parsing front matter for {fileFullPath}");
 
@@ -354,8 +350,8 @@ public class Site : ISite
             Logger.Error(ex, "Error parsing file {file}", fileFullPath);
         }
 
-        // Use interlocked to safely increment the counter in a multi-threaded environment
-        _ = Interlocked.Increment(ref filesParsedToReport);
+        // Use interlocked to safely increment the counter in a multithreaded environment
+        _ = Interlocked.Increment(ref _filesParsedToReport);
 
         return page;
     }
@@ -372,23 +368,23 @@ public class Site : ISite
 
         page.Parent = parent;
         page.Permalink = page.CreatePermalink();
-        lock (syncLockPostProcess)
+        lock (_syncLockPostProcess)
         {
             if (!OutputReferences.TryGetValue(page.Permalink, out var oldOutput) || overwrite)
             {
                 page.PostProcess();
 
                 // Replace the old page with the newly created one
-                if (oldOutput is IPage oldpage && oldpage.PagesReferences is not null)
+                if (oldOutput is IPage oldPage)
                 {
-                    foreach (var pageOld in oldpage.PagesReferences)
+                    foreach (var pageOld in oldPage.PagesReferences)
                     {
                         page.PagesReferences.Add(pageOld);
                     }
                 }
 
                 // Register the page for all urls
-                foreach (var pageOutput in page.AllOutputURLs)
+                foreach (var pageOutput in page.AllOutputUrLs)
                 {
                     _ = OutputReferences.TryAdd(pageOutput.Key, pageOutput.Value);
                 }
@@ -430,7 +426,7 @@ public class Site : ISite
     {
         ArgumentNullException.ThrowIfNull(frontMatter);
 
-        return frontMatter.ExpiryDate is not null && frontMatter.ExpiryDate <= clock.Now;
+        return frontMatter.ExpiryDate is not null && frontMatter.ExpiryDate <= _clock.Now;
     }
 
     /// <summary>
@@ -440,6 +436,6 @@ public class Site : ISite
     {
         ArgumentNullException.ThrowIfNull(frontMatter);
 
-        return frontMatter.GetPublishDate is null || frontMatter.GetPublishDate <= clock.Now;
+        return frontMatter.GetPublishDate is null || frontMatter.GetPublishDate <= _clock.Now;
     }
 }

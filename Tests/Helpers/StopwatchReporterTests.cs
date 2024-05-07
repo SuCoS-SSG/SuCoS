@@ -11,27 +11,27 @@ namespace Tests.Helpers;
 
 public class StopwatchReporterTests
 {
-    private readonly ILogger logger;
-    private readonly InMemorySink inMemorySink;
+    private readonly ILogger _logger;
+    private readonly InMemorySink _inMemorySink;
 
     public StopwatchReporterTests()
     {
-        inMemorySink = new InMemorySink();
-        logger = new LoggerConfiguration().WriteTo.Sink(inMemorySink).CreateLogger();
+        _inMemorySink = new InMemorySink();
+        _logger = new LoggerConfiguration().WriteTo.Sink(_inMemorySink).CreateLogger();
     }
 
     [Fact]
     public void Start_InitializesAndStartsStopwatchForStep()
     {
         // Arrange
-        var stepName = "TestStep";
+        const string stepName = "TestStep";
         var stopwatchReporter = new StopwatchReporter(new LoggerConfiguration().CreateLogger());
 
         // Act
         stopwatchReporter.Start(stepName);
 
         // Assert
-        var stopwatchField = stopwatchReporter.GetType().GetField("stopwatches", BindingFlags.NonPublic | BindingFlags.Instance);
+        var stopwatchField = stopwatchReporter.GetType().GetField("_stopwatches", BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.NotNull(stopwatchField);
 
         var stopwatchDictionary = stopwatchField.GetValue(stopwatchReporter) as Dictionary<string, Stopwatch>;
@@ -44,11 +44,11 @@ public class StopwatchReporterTests
     [Fact]
     public void LogReport_CorrectlyLogsElapsedTime()
     {
-        var stepName = "TestStep";
-        var siteTitle = "TestSite";
-        var duration = 123;
+        const string stepName = "TestStep";
+        const string siteTitle = "TestSite";
+        const int duration = 123;
 
-        var stopwatchReporter = new StopwatchReporter(logger);
+        var stopwatchReporter = new StopwatchReporter(_logger);
         stopwatchReporter.Start(stepName);
         Thread.Sleep(duration); // Let's wait a bit to simulate some processing.
         stopwatchReporter.Stop(stepName, 1);
@@ -56,9 +56,10 @@ public class StopwatchReporterTests
         stopwatchReporter.LogReport(siteTitle);
 
         // Assert
-        var logEvents = inMemorySink.LogEvents;
-        Assert.NotEmpty(logEvents);
-        var logMessage = logEvents.First().RenderMessage(CultureInfo.InvariantCulture);
+        var logEvents = _inMemorySink.LogEvents;
+        var logEventsList = logEvents.ToList();
+        Assert.NotEmpty(logEventsList);
+        var logMessage = logEventsList.First().RenderMessage(CultureInfo.InvariantCulture);
         Assert.Contains($"Site '{siteTitle}' created!", logMessage, StringComparison.InvariantCulture);
         Assert.Contains(stepName, logMessage, StringComparison.InvariantCulture);
         // Assert.Contains($"{duration} ms", logMessage, StringComparison.InvariantCulture); // Ensure that our processing time was logged.
@@ -67,8 +68,8 @@ public class StopwatchReporterTests
     [Fact]
     public void Stop_ThrowsExceptionWhenStopCalledWithoutStart()
     {
-        var stepName = "TestStep";
-        var stopwatchReporter = new StopwatchReporter(logger);
+        const string stepName = "TestStep";
+        var stopwatchReporter = new StopwatchReporter(_logger);
 
         // Don't call Start for stepName
 

@@ -3,9 +3,9 @@ using CommandLine;
 namespace SuCoS.Models.CommandLineOptions;
 
 /// <summary>
-/// Command line options for the checklinks command.
+/// Command line options for the check-links command.
 /// </summary>
-[Verb("checklinks", HelpText = "Checks links of a given site")]
+[Verb("check-links", HelpText = "Checks links of a given site")]
 public class CheckLinkOptions
 {
     /// <summary>
@@ -36,5 +36,5 @@ public class CheckLinkOptions
     /// Site URL, so it can be checked as local path files.
     /// </summary>
     [Option('u', "url", Required = false, HelpText = "Site URL, so it can be checked as local path files.")]
-    public string? InternalURL { get; init; }
+    public string? InternalUrl { get; init; }
 }

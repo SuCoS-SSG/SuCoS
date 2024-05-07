@@ -17,14 +17,14 @@ public class PingRequestHandlerTests : TestSetup
         var pingRequests = new PingRequests();
 
         // Act
-        var code = await pingRequests.Handle(response, "ping", todayDate).ConfigureAwait(true);
+        var code = await pingRequests.Handle(response, "ping", TodayDate).ConfigureAwait(true);
 
         // Assert
         _ = stream.Seek(0, SeekOrigin.Begin);
         using var reader = new StreamReader(stream);
         var content = await reader.ReadToEndAsync().ConfigureAwait(true);
 
-        Assert.Equal(todayDate.ToString("o"), content);
+        Assert.Equal(TodayDate.ToString("o"), content);
 
         Assert.Equal("ping", code);
     }
