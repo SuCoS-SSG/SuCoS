@@ -61,7 +61,7 @@ sealed partial class Build : NukeBuild
     };
 
     /// <summary>
-    /// Return the proper image tag for a given OS. For the second tupple value, if the image mush be marked as "latest"
+    /// Return the proper image tag for a given OS. For the second tuple value, if the image mush be marked as "latest"
     /// </summary>
     (string, bool) ContainerRuntimeIdentifier => runtimeIdentifier switch
     {

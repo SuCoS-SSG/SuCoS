@@ -11,6 +11,7 @@ Official site: https://sucos.brunomassa.com
 [![Latest release](https://gitlab.com/sucos/sucos/-/badges/release.svg)](https://gitlab.com/sucos/sucos)
 ![Pipepline](https://gitlab.com/sucos/sucos/badges/main/pipeline.svg?ignore_skipped=true)
 [![Latest release](https://gitlab.com/sucos/sucos/badges/main/coverage.svg)](https://gitlab.com/sucos/sucos)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/1fe0cc1ca72649ee9b85e13e7294a03a)](https://app.codacy.com/gl/sucos/sucos/dashboard?utm_source=gl&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 ## Install
 

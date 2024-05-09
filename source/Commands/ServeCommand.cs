@@ -54,6 +54,8 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
 
     private Task? _loop;
 
+    private (WatcherChangeTypes changeType, string fullPath, DateTime dateTime) lastFileChanged;
+
     /// <summary>
     /// Constructor for the ServeCommand class.
     /// </summary>
@@ -247,10 +249,19 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <param name="e">The FileSystemEventArgs containing information about the file change.</param>
     private void OnSourceFileChanged(object sender, FileSystemEventArgs e)
     {
-        if (e.FullPath.Contains("\\.git\\", StringComparison.InvariantCulture))
+        if (e.FullPath.Contains(@".git", StringComparison.InvariantCulture))
         {
             return;
         }
+
+        if (lastFileChanged.fullPath == e.FullPath
+            && e.ChangeType == lastFileChanged.changeType
+            && (DateTime.Now - lastFileChanged.dateTime).TotalMilliseconds < 150)
+        {
+            return;
+        }
+
+        lastFileChanged = (e.ChangeType, e.FullPath, DateTime.Now);
 
         // File changes are firing multiple events in a short time.
         // Debounce the event handler to prevent multiple events from firing in a short time
