@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 [Unreleased]
 
+v[4.0.2] 2024-05-09
+
+- Fixed crashes on serve
+- Changed several code style parameters
+
+v[4.0.1] 2024-04-25
+
 - Added CHANGELOG.md
 
 v[4.0.0] 2024-04-11
@@ -94,7 +101,11 @@ v[1.1.0] 2023-06-22
 
 v[1.0.0] 2023-07-15 - Born to be Wild
 
-[Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v4.0.0...HEAD
+- Added First Commit!
+
+[Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v4.0.2...HEAD
+[4.0.0]: https://gitlab.com/sucos/sucos/-/compare/v4.0.1...v4.0.2
+[4.0.0]: https://gitlab.com/sucos/sucos/-/compare/v4.0.0...v4.0.1
 [4.0.0]: https://gitlab.com/sucos/sucos/-/compare/v3.0.0...v4.0.0
 [3.0.0]: https://gitlab.com/sucos/sucos/-/compare/v2.4.0...v3.0.0
 [2.4.0]: https://gitlab.com/sucos/sucos/-/compare/v2.3.0...v2.4.0

@@ -2,9 +2,7 @@
 
 <img src="SuCoS-logo.svg" width="512px" style="display: block;margin-left: auto;margin-right: auto;" />
 
-🎉 Welcome to **SuCoS** (**J**ui**C**e**S**, in Brazilian Portuguese), the one of the fastest Static Site Generator out there! 🚀
-
-> **DISCLAIMER**: **SuCoS** is in a **ALPHA state**! Please do not use for ANY real site for now. Prepare to be entertained by unexpected behaviors! 🎢
+🎉 Welcome to **SuCoS** (**J**ui**C**e**S**, in Brazilian Portuguese), is a fast and powerful Static Site Generator! 🚀
 
 Official site: https://sucos.brunomassa.com
 
@@ -42,7 +40,7 @@ If all goes well (fingers crossed 🤞), you'll have a shiny new static website 
 ```sh
 git clone https://gitlab.com/sucos/sucos.git # or git@gitlab.com:sucos/sucos.git
 cd SuCoS
-dotnet build # or `build.sh clean restore compile`
+build.sh clean restore compile # or dotnet build
 ```
 
 ## License
