@@ -1,5 +1,5 @@
-using SuCoS.Models;
 using System.Globalization;
+using SuCoS.Models;
 using Xunit;
 
 namespace Tests.Models;
@@ -7,10 +7,10 @@ namespace Tests.Models;
 public class FrontMatterTests : TestSetup
 {
     [Theory]
-    [InlineData("Title1", "Section1", "Type1", "URL1", Kind.Single)]
-    [InlineData("Title2", "Section2", "Type2", "URL2", Kind.List)]
-    [InlineData("Title3", "Section3", "Type3", "URL3", Kind.Index)]
-    public void Constructor_Sets_Properties_Correctly(string title, string section, string type, string url, Kind kind)
+    [InlineData("Title1", "Section1", "Type1", "URL1")]
+    [InlineData("Title2", "Section2", "Type2", "URL2")]
+    [InlineData("Title3", "Section3", "Type3", "URL3")]
+    public void Constructor_Sets_Properties_Correctly(string title, string section, string type, string url)
     {
         // Act
         var basicContent = new FrontMatter
@@ -18,8 +18,7 @@ public class FrontMatterTests : TestSetup
             Title = title,
             Section = section,
             Type = type,
-            URL = url,
-            Kind = kind
+            URL = url
         };
 
         // Assert
@@ -27,7 +26,6 @@ public class FrontMatterTests : TestSetup
         Assert.Equal(section, basicContent.Section);
         Assert.Equal(type, basicContent.Type);
         Assert.Equal(url, basicContent.URL);
-        Assert.Equal(kind, basicContent.Kind);
     }
 
     [Theory]

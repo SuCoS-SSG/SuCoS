@@ -74,15 +74,29 @@ public static class FileUtils
         // Generate the lookup order for template files based on the theme path, page section, type, and kind
         string[] sections = page.Section is not null ? [page.Section, string.Empty] : [string.Empty];
         var types = new[] { page.Type, "_default" };
-        string[] kinds = isBaseTemplate
-            ? [page.Kind.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture) + "-baseof", "baseof"]
-            : [page.Kind.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)];
+
+        // Get all the kinds including the "sub-values"
+        var kinds = GetAllKinds(page.Kind, isBaseTemplate);
+
+        if (isBaseTemplate)
+        {
+            kinds = kinds.Append("baseof");
+        }
 
         // for each section, each type and each kind
-        return (from section in sections
-                from type in types
-                from kind in kinds
-                let path = Path.Combine(themePath, section, type!, kind) + ".liquid"
-                select path).ToList();
+        return sections
+            .SelectMany(section => types.Select(type => new { section, type }))
+            .SelectMany(x => kinds.Select(kind => new { x.section, x.type, kind }))
+            .Select(x => Path.Combine(themePath, x.section, x.type!, x.kind) + ".liquid")
+            .ToList();
     }
+
+    private static IEnumerable<string> GetAllKinds(Kind kind, bool isBaseTemplate) =>
+        Enum.GetValues(typeof(Kind))
+            .Cast<Kind>()
+            .Where(k => kind.HasFlag(k))
+            .OrderByDescending(k => k)
+            .Select(k => isBaseTemplate
+                ? k.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture) + "-baseof"
+                : k.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture));
 }

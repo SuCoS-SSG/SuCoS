@@ -1,9 +1,9 @@
+using System.Collections.Concurrent;
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.Parsers;
 using SuCoS.TemplateEngine;
-using System.Collections.Concurrent;
 
 namespace SuCoS.Models;
 
@@ -91,7 +91,11 @@ public interface ISite : ISiteSettings
     /// <param name="level">Folder recursive level</param>
     /// <param name="parent">Page of the upper directory</param>
     /// <returns></returns>
-    public void ParseAndScanSourceFiles(IFileSystem fs, string? directory, int level = 0, IPage? parent = null);
+    public void ParseAndScanSourceFiles(
+        IFileSystem fs,
+        string? directory,
+        int level = 0,
+        IPage? parent = null);
 
     /// <summary>
     /// Extra calculation and automatic data for each page.
@@ -99,7 +103,10 @@ public interface ISite : ISiteSettings
     /// <param name="page">The given page to be processed</param>
     /// <param name="parent">The parent page, if any</param>
     /// <param name="overwrite"></param>
-    public void PostProcessPage(in IPage page, IPage? parent = null, bool overwrite = false);
+    public void PostProcessPage(
+        in IPage page,
+        IPage? parent = null,
+        bool overwrite = false);
 
     /// <summary>
     /// Check if the page have the conditions to be published: valid date and not draft,
@@ -108,7 +115,9 @@ public interface ISite : ISiteSettings
     /// <param name="frontMatter">Page or front matter</param>
     /// <param name="options">options</param>
     /// <returns></returns>
-    public bool IsValidPage(in IFrontMatter frontMatter, IGenerateOptions? options);
+    public bool IsValidPage(
+        in IFrontMatter frontMatter,
+        IGenerateOptions? options);
 
     /// <summary>
     /// Check if the page have a publishing date from the past.
@@ -116,7 +125,9 @@ public interface ISite : ISiteSettings
     /// <param name="frontMatter">Page or front matter</param>
     /// <param name="options">options</param>
     /// <returns></returns>
-    public bool IsValidDate(in IFrontMatter frontMatter, IGenerateOptions? options);
+    public bool IsValidDate(
+        in IFrontMatter frontMatter,
+        IGenerateOptions? options);
 
     /// <summary>
     /// Check if the page is expired
@@ -133,8 +144,12 @@ public interface ISite : ISiteSettings
     /// </summary>
     /// <param name="relativePath">The relative path of the page.</param>
     /// <param name="title"></param>
-    /// <param name="sectionName"></param>
+    /// <param name="isTaxonomy"></param>
     /// <param name="originalPage"></param>
     /// <returns>The created page for the index.</returns>
-    public IPage CreateSystemPage(string relativePath, string title, string? sectionName = null, IPage? originalPage = null);
+    public IPage CreateSystemPage(
+        string relativePath,
+        string title,
+        bool isTaxonomy = false,
+        IPage? originalPage = null);
 }

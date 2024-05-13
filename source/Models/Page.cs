@@ -1,8 +1,8 @@
+using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using Markdig;
 using Microsoft.Extensions.FileSystemGlobbing;
 using SuCoS.Helpers;
-using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
 
 namespace SuCoS.Models;
 
@@ -62,11 +62,7 @@ public class Page : IPage
     public string RawContent => _frontMatter.RawContent;
 
     /// <inheritdoc/>
-    public Kind Kind
-    {
-        get => _frontMatter.Kind;
-        set => (_frontMatter as FrontMatter)!.Kind = value;
-    }
+    public Kind Kind { get; set; } = Kind.Single;
 
     /// <inheritdoc/>
     public string? SourceRelativePath => _frontMatter.SourceRelativePath;
@@ -215,7 +211,7 @@ public class Page : IPage
         get
         {
             _regularPagesCache ??= Pages
-                    .Where(page => page.Kind == Kind.Single)
+                    .Where(page => page.IsPage)
                     .ToList();
             return _regularPagesCache;
         }
@@ -354,12 +350,14 @@ endif
             }
         }
 
+        // TODO: remove the hard coded
         // Create tag pages, if any
         if (Tags is not null)
         {
+            Site.CreateSystemPage("tags", "Tags", true);
             foreach (var tagName in Tags)
             {
-                _ = Site.CreateSystemPage(Path.Combine("tags", tagName), tagName, "tags", this);
+                Site.CreateSystemPage(Path.Combine("tags", tagName), tagName, true, this);
             }
         }
 

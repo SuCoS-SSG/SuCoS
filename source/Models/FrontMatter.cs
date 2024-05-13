@@ -58,10 +58,6 @@ public class FrontMatter : IFrontMatter
 
     /// <inheritdoc/>
     [YamlIgnore]
-    public Kind Kind { get; set; } = Kind.Single;
-
-    /// <inheritdoc/>
-    [YamlIgnore]
     public string? SourceRelativePath { get; set; }
 
     /// <inheritdoc/>

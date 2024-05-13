@@ -1,9 +1,9 @@
+using System.Collections.Concurrent;
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.Parsers;
 using SuCoS.TemplateEngine;
-using System.Collections.Concurrent;
 
 namespace SuCoS.Models;
 
@@ -102,9 +102,9 @@ public class Site : ISite
         get
         {
             _regularPagesCache ??= OutputReferences
-                    .Where(pair => pair.Value is IPage { IsPage: true } page && pair.Key == page.Permalink)
-                    .Select(pair => (pair.Value as IPage)!)
-                    .OrderBy(page => -page.Weight);
+                .Where(pair => pair.Value is IPage { IsPage: true } page && pair.Key == page.Permalink)
+                .Select(pair => (pair.Value as IPage)!)
+                .OrderBy(page => -page.Weight);
             return _regularPagesCache;
         }
     }
@@ -209,46 +209,42 @@ public class Site : ISite
         });
     }
 
-    /// <summary>
-    /// Creates the page for the site index.
-    /// </summary>
-    /// <param name="relativePath">The relative path of the page.</param>
-    /// <param name="title"></param>
-    /// <param name="sectionName"></param>
-    /// <param name="originalPage"></param>
-    /// <returns>The created page for the index.</returns>
-    public IPage CreateSystemPage(string relativePath, string title, string? sectionName = null, IPage? originalPage = null)
+    /// <inheritdoc/>
+    public IPage CreateSystemPage(string relativePath, string title, bool isTaxonomy = false, IPage? originalPage = null)
     {
-        sectionName ??= "section";
-        var isIndex = string.IsNullOrEmpty(relativePath);
         relativePath = Urlizer.Path(relativePath);
-        FrontMatter frontMatter = new()
-        {
-            Kind = isIndex ? Kind.Index : Kind.List,
-            Section = isIndex ? "index" : sectionName,
-            SourceRelativePath = Urlizer.Path(Path.Combine(relativePath, IndexLeafFileConst)),
-            SourceFullPath = Urlizer.Path(Path.Combine(SourceContentPath, relativePath, IndexLeafFileConst)),
-            Title = title,
-            Type = isIndex ? "index" : sectionName,
-            URL = relativePath
-        };
+        relativePath = relativePath == "homepage" ? "/" : relativePath;
 
-        var id = frontMatter.URL;
+        var id = relativePath;
 
         // Get or create the page
         var lazyPage = CacheManager.AutomaticContentCache.GetOrAdd(id, new Lazy<IPage>(() =>
         {
-            IPage? parent = null;
-            // Check if we need to create a section, even
-            var sections = (frontMatter.SourceRelativePathDirectory ?? string.Empty).Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (sections.Length > 1)
+            var directoryDepth = GetDirectoryDepth(relativePath);
+            var sectionName = GetFirstDirectory(relativePath);
+            var kind = directoryDepth switch
             {
-                parent = CreateSystemPage(sections[0], sections[0]);
-            }
+                0 => Kind.Home,
+                1 => isTaxonomy ? Kind.Taxonomy : Kind.Section,
+                _ => isTaxonomy ? Kind.Term : Kind.List
+            };
+
+            FrontMatter frontMatter = new()
+            {
+                Section = directoryDepth == 0 ? "index" : sectionName,
+                SourceRelativePath = Urlizer.Path(Path.Combine(relativePath, IndexLeafFileConst)),
+                SourceFullPath = Urlizer.Path(Path.Combine(SourceContentPath, relativePath, IndexLeafFileConst)),
+                Title = title,
+                Type = kind == Kind.Home ? "index" : sectionName,
+                URL = relativePath
+            };
+
+            IPage? parent = null;
 
             var newPage = new Page(frontMatter, this)
             {
-                BundleType = BundleType.Branch
+                BundleType = BundleType.Branch,
+                Kind = kind
             };
             PostProcessPage(newPage, parent);
             return newPage;
@@ -262,19 +258,31 @@ public class Site : ISite
             return page;
         }
 
-        if (page.Kind != Kind.Index)
+        if (page.Kind != Kind.Home)
         {
             page.PagesReferences.Add(originalPage.Permalink);
         }
 
         // TODO: still too hardcoded to add the tags reference
-        if (page.Type != "tags")
+        if ((page.Kind & Kind.IsTaxonomy) != Kind.IsTaxonomy)
         {
             return page;
         }
         originalPage.TagsReference.Add(page);
         return page;
     }
+
+    private static string GetFirstDirectory(string relativePath) =>
+        GetDirectories(relativePath).Length > 0
+            ? GetDirectories(relativePath)[0]
+            : string.Empty;
+
+    private static int GetDirectoryDepth(string relativePath) =>
+        GetDirectories(relativePath).Length;
+
+    private static string[] GetDirectories(string? relativePath) =>
+        (relativePath ?? string.Empty).Split('/',
+            StringSplitOptions.RemoveEmptyEntries);
 
     private void ParseIndexPage(string? directory, int level, ref IPage? parent, ref string[] markdownFiles)
     {
@@ -302,7 +310,7 @@ public class Site : ISite
             {
                 _ = OutputReferences.TryRemove(page.Permalink!, out _);
                 page.Permalink = "/";
-                page.Kind = Kind.Index;
+                page.Kind = Kind.Home;
 
                 _ = OutputReferences.GetOrAdd(page.Permalink, page);
                 Home = page;
@@ -392,12 +400,12 @@ public class Site : ISite
         }
 
         if (!string.IsNullOrEmpty(page.Section)
-            && OutputReferences.TryGetValue('/' + page.Section!, out var output))
+            && OutputReferences.TryGetValue('/' + page.Section!, out var output)
+            && (output is IPage section)
+            && page.Kind != Kind.Section
+            && page.Kind != Kind.Taxonomy)
         {
-            if (output is IPage section)
-            {
-                section.PagesReferences.Add(page.Permalink!);
-            }
+            section.PagesReferences.Add(page.Permalink!);
         }
     }
 

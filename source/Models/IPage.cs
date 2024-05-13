@@ -1,7 +1,7 @@
-using Markdig;
-using SuCoS.Helpers;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using Markdig;
+using SuCoS.Helpers;
 
 namespace SuCoS.Models;
 
@@ -10,8 +10,11 @@ namespace SuCoS.Models;
 /// </summary>
 public interface IPage : IFrontMatter, IOutput
 {
-    /// <inheritdoc/>
-    new Kind Kind { get; set; }
+    /// <summary>
+    /// The kind of the page, if it's a single page, a list of pages or the home page.
+    /// It's used to determine the proper theme file.
+    /// </summary>
+    Kind Kind { get; set; }
 
     /// <summary>
     /// The source directory of the file.
@@ -68,14 +71,9 @@ public interface IPage : IFrontMatter, IOutput
     public bool IsHome => Site.Home == this;
 
     /// <summary>
-    /// Just a simple check if the current page is a section page
-    /// </summary>
-    public bool IsSection => Type == "section";
-
-    /// <summary>
     /// Just a simple check if the current page is a "page"
     /// </summary>
-    public bool IsPage => Kind == Kind.Single;
+    public bool IsPage => (Kind & Kind.Single) == Kind.Single && (Kind & Kind.System) != Kind.System;
 
     /// <summary>
     /// The number of words in the main content
