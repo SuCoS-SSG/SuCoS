@@ -23,7 +23,7 @@ public class SiteSettings : ISiteSettings
 
 
     /// <inheritdoc/>
-    public string BaseURL { get; set; } = string.Empty;
+    public string BaseUrl { get; set; } = string.Empty;
 
     /// <inheritdoc/>
     public Dictionary<string, List<string>> Outputs { get; set; } = [];
@@ -43,7 +43,7 @@ public class SiteSettings : ISiteSettings
     /// <summary>
     /// The appearance of a URL is either ugly or pretty.
     /// </summary>
-    public bool UglyURLs { get; set; }
+    public bool UglyUrLs { get; set; }
 
     #region IParams
 

@@ -22,7 +22,7 @@ public class Page : IPage
     public string? Type => _frontMatter.Type;
 
     /// <inheritdoc/>
-    public string? URL => _frontMatter.URL;
+    public string? Url => _frontMatter.Url;
 
     /// <inheritdoc/>
     public bool? Draft => _frontMatter.Draft;
@@ -318,7 +318,7 @@ endif
 
         var permalink = string.Empty;
 
-        urlForce ??= URL ?? (isIndex ? UrlForIndex : UrlForNonIndex);
+        urlForce ??= Url ?? (isIndex ? UrlForIndex : UrlForNonIndex);
 
         try
         {

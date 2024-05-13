@@ -44,7 +44,7 @@ public interface IFrontMatter : IParams, IFile
     /// </code>
     /// will try to convert <code>page.Parent.Title</code> and <code>page.Title</code>.
     /// </example>
-    string? URL { get; }
+    string? Url { get; }
 
     /// <summary>
     /// True for draft content. It will not be rendered unless
@@ -81,7 +81,7 @@ public interface IFrontMatter : IParams, IFile
     /// A List of secondary URL patterns to be used to create the url.
     /// List URL, it will be parsed as liquid templates, so you can use page variables.
     /// </summary>
-    /// <see cref="URL"/>
+    /// <see cref="Url"/>
     List<string>? Aliases { get; }
 
     /// <summary>

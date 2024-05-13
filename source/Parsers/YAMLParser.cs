@@ -1,3 +1,4 @@
+using System.Runtime.Serialization;
 using System.Text;
 using FolkerKinzel.Strings;
 using YamlDotNet.Serialization;
@@ -21,9 +22,49 @@ public class YamlParser : IMetadataParser
     {
         _deserializer = new StaticDeserializerBuilder(new StaticAotContext())
             .WithTypeConverter(new ParamsConverter())
+            .WithNamingConvention(YamlDotNet.Serialization.NamingConventions.CamelCaseNamingConvention.Instance)
+            .WithTypeInspector(n => new IgnoreCaseTypeInspector(n))
             .IgnoreUnmatchedProperties()
             .Build();
     }
+    private class IgnoreCaseTypeInspector(ITypeInspector innerTypeInspector)
+        : ITypeInspector
+    {
+        private readonly ITypeInspector _innerTypeInspector = innerTypeInspector ?? throw new ArgumentNullException(nameof(innerTypeInspector));
+
+        public IEnumerable<IPropertyDescriptor> GetProperties(Type type, object? container)
+        {
+            return _innerTypeInspector.GetProperties(type, container ?? null);
+        }
+
+        public IPropertyDescriptor GetProperty(Type type, object? container, string name, bool ignoreUnmatched)
+        {
+            var candidates = GetProperties(type, container)
+                .Where(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            var property = candidates.FirstOrDefault();
+
+            if (property == null)
+            {
+                if (ignoreUnmatched)
+                {
+                    return null;
+                }
+
+                throw new SerializationException($"Property '{name}' not found on type '{type.FullName}'.");
+            }
+
+            if (candidates.Count > 1)
+            {
+                throw new SerializationException(
+                    $"Multiple properties with the name/alias '{name}' already exists on type '{type.FullName}', maybe you're misusing YamlAlias or maybe you are using the wrong naming convention? The matching properties are: {string.Join(", ", candidates.Select(p => p.Name))}"
+                );
+            }
+
+            return property;
+        }
+    }
+
 
     /// <inheritdoc/>
     public T Parse<T>(string content)

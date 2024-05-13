@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 [Unreleased]
 
+- `term.liquid` and `taxonomy.liquid` are now available for theming
+- Added: YAML front matter and site settings are now case-insensitive
+
 v[4.0.2] 2024-05-09
 
 - Fixed crashes on serve
@@ -104,8 +107,8 @@ v[1.0.0] 2023-07-15 - Born to be Wild
 - Added First Commit!
 
 [Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v4.0.2...HEAD
-[4.0.0]: https://gitlab.com/sucos/sucos/-/compare/v4.0.1...v4.0.2
-[4.0.0]: https://gitlab.com/sucos/sucos/-/compare/v4.0.0...v4.0.1
+[4.0.2]: https://gitlab.com/sucos/sucos/-/compare/v4.0.1...v4.0.2
+[4.0.1]: https://gitlab.com/sucos/sucos/-/compare/v4.0.0...v4.0.1
 [4.0.0]: https://gitlab.com/sucos/sucos/-/compare/v3.0.0...v4.0.0
 [3.0.0]: https://gitlab.com/sucos/sucos/-/compare/v2.4.0...v3.0.0
 [2.4.0]: https://gitlab.com/sucos/sucos/-/compare/v2.3.0...v2.4.0
