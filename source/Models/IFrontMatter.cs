@@ -105,12 +105,6 @@ public interface IFrontMatter : IParams, IFile
     string RawContent { get; }
 
     /// <summary>
-    /// The kind of the page, if it's a single page, a list of pages or the home page.
-    /// It's used to determine the proper theme file.
-    /// </summary>
-    Kind Kind { get; }
-
-    /// <summary>
     /// The date to be considered as the publishing date.
     /// </summary>
     DateTime? GetPublishDate => PublishDate ?? Date;
