@@ -20,7 +20,7 @@ public class FrontMatter : IFrontMatter
     public string? Type { get; set; } = "page";
 
     /// <inheritdoc/>
-    public string? URL { get; set; }
+    public string? Url { get; set; }
 
     /// <inheritdoc/>
     public bool? Draft { get; set; }
@@ -66,7 +66,7 @@ public class FrontMatter : IFrontMatter
 
     /// <inheritdoc/>
     [YamlIgnore]
-    public string? SourceRelativePathDirectory => (Path.GetDirectoryName(SourceRelativePath) ?? string.Empty)
+    public string SourceRelativePathDirectory => (Path.GetDirectoryName(SourceRelativePath) ?? string.Empty)
         .Replace('\\', '/');
 
     /// <inheritdoc/>

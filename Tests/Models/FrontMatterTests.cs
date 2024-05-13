@@ -18,14 +18,14 @@ public class FrontMatterTests : TestSetup
             Title = title,
             Section = section,
             Type = type,
-            URL = url
+            Url = url
         };
 
         // Assert
         Assert.Equal(title, basicContent.Title);
         Assert.Equal(section, basicContent.Section);
         Assert.Equal(type, basicContent.Type);
-        Assert.Equal(url, basicContent.URL);
+        Assert.Equal(url, basicContent.Url);
     }
 
     [Theory]

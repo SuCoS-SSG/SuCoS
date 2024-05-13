@@ -23,10 +23,10 @@ public interface ISiteSettings : IParams
     /// <summary>
     /// The base URL that will be used to build public links.
     /// </summary>
-    public string BaseURL { get; }
+    public string BaseUrl { get; }
 
     /// <summary>
     /// The appearance of a URL is either ugly or pretty.
     /// </summary>
-    public bool UglyURLs { get; }
+    public bool UglyUrLs { get; }
 }

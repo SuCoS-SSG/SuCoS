@@ -1,7 +1,7 @@
+using System.Globalization;
 using NSubstitute;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
-using System.Globalization;
 using Xunit;
 
 namespace Tests.Models;
@@ -61,7 +61,7 @@ word03 word04 word05 6 7 [eight](https://example.com)
         Assert.Equal(string.Empty, page.Section);
         Assert.Equal(Kind.Single, page.Kind);
         Assert.Equal("page", page.Type);
-        Assert.Null(page.URL);
+        Assert.Null(page.Url);
         Assert.Empty(page.Params);
         Assert.Null(page.Date);
         Assert.Null(page.LastMod);
@@ -235,7 +235,7 @@ word03 word04 word05 6 7 [eight](https://example.com)
         {
             Title = TitleConst,
             SourceRelativePath = SourcePathConst,
-            URL = urlTemplate
+            Url = urlTemplate
         }, Site);
         var actualPermalink = page.CreatePermalink();
 

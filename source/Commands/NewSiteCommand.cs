@@ -28,7 +28,7 @@ public sealed class NewSiteCommand(NewSiteOptions options, ILogger logger, IFile
         {
             Title = options.Title,
             Description = options.Description,
-            BaseURL = options.BaseUrl
+            BaseUrl = options.BaseUrl
         };
 
         var site = new Site(new GenerateOptions() { SourceOption = options.Output }, _siteSettings, new YamlParser(), null!, null);

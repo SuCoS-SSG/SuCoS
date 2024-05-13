@@ -1,6 +1,6 @@
+using System.Globalization;
 using SuCoS.Helpers;
 using SuCoS.Models;
-using System.Globalization;
 using SuCoS.Parsers;
 using Xunit;
 
@@ -37,14 +37,12 @@ public class YamlParserTests : TestSetup
 
                                                 """;
     private const string PageMarkdownConst = """
-
                                              # Real Data Test
 
                                              This is a test using real data. Real Data Test
 
                                              """;
     private const string SiteContentConst = """
-
                                             Title: My Site
                                             BaseURL: https://www.example.com/
                                             Description: Tastiest C# Static Site Generator of the World
@@ -179,7 +177,7 @@ public class YamlParserTests : TestSetup
 
         // Assert
         Assert.Equal("My Site", siteSettings.Title);
-        Assert.Equal("https://www.example.com/", siteSettings.BaseURL);
+        Assert.Equal("https://www.example.com/", siteSettings.BaseUrl);
         Assert.Equal("Tastiest C# Static Site Generator of the World", siteSettings.Description);
         Assert.Equal("Copyright message", siteSettings.Copyright);
     }
@@ -257,7 +255,7 @@ public class YamlParserTests : TestSetup
         // Assert
         Assert.NotNull(siteSettings);
         Assert.Equal("My Site", siteSettings.Title);
-        Assert.Equal("https://www.example.com/", siteSettings.BaseURL);
+        Assert.Equal("https://www.example.com/", siteSettings.BaseUrl);
     }
 
 
@@ -281,5 +279,72 @@ public class YamlParserTests : TestSetup
         Assert.Equal("Custom Value", Site.Params["ParamsCustomParam"]);
         Assert.Equal(Expected, ((Dictionary<string, object>)siteSettings.Params["ParamsNestedData"])["Level2"]);
         Assert.Equal("Test", ((siteSettings.Params["ParamsNestedData"] as Dictionary<string, object>)?["Level2"] as List<object>)?[0]);
+    }
+
+    [Theory]
+    [InlineData("""
+                ---
+                Title: title-test
+                Url: my-page
+                ---
+                """)]
+    [InlineData("""
+                ---
+                title: title-test
+                url: my-page
+                ---
+                """)]
+    [InlineData("""
+                ---
+                tiTle: title-test
+                URL: my-page
+                ---
+                """)]
+    [InlineData("""
+                ---
+                tiTle: title-test-old
+                title: title-test       # the last on is used
+                Url: my-page
+                url: my-page
+                ---
+                """)]
+    public void FrontMatter_ShouldIgnoreCase(string fileContent)
+    {
+        // Arrange
+        var frontMatter = FrontMatter.Parse(FileRelativePathConst, FileFullPathConst, _parser, fileContent);
+
+        // Assert
+        Assert.Equal("title-test", frontMatter.Title);
+        Assert.Equal("my-page", frontMatter.Url);
+    }
+
+    [Theory]
+    [InlineData("""
+                Title: title-test
+                BaseURL: https://www.example.com/
+                """)]
+    [InlineData("""
+                title: title-test
+                baseurl: https://www.example.com/
+                """)]
+    [InlineData("""
+                tiTle: title-test
+                baseUrl: https://www.example.com/
+                """)]
+    [InlineData("""
+                tiTle: title-test-old
+                Title: title-test                   # the last on is used
+                baseurl: https://www.example2.com/
+                BaseURL: https://www.example.com/   # the last on is used
+                """)]
+    public void SiteSettings_ShouldIgnoreCase(string fileContent)
+    {
+        // Arrange
+        var siteSettings = _parser.Parse<SiteSettings>(fileContent);
+        Site = new Site(GenerateOptionsMock, siteSettings, FrontMatterParser, LoggerMock, SystemClockMock);
+
+        // Assert
+        Assert.Equal("title-test", Site.Title);
+        Assert.Equal("https://www.example.com/", Site.BaseUrl);
     }
 }

@@ -40,10 +40,10 @@ public class Site : ISite
     public string? Copyright => _settings.Copyright;
 
     /// <inheritdoc/>
-    public string BaseURL => _settings.BaseURL;
+    public string BaseUrl => _settings.BaseUrl;
 
     /// <inheritdoc/>
-    public bool UglyURLs => _settings.UglyURLs;
+    public bool UglyUrLs => _settings.UglyUrLs;
 
     #endregion SiteSettings
 
@@ -236,7 +236,7 @@ public class Site : ISite
                 SourceFullPath = Urlizer.Path(Path.Combine(SourceContentPath, relativePath, IndexLeafFileConst)),
                 Title = title,
                 Type = kind == Kind.Home ? "index" : sectionName,
-                URL = relativePath
+                Url = relativePath
             };
 
             IPage? parent = null;
