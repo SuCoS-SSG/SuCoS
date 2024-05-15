@@ -1,11 +1,11 @@
+using System.Globalization;
 using NSubstitute;
 using Serilog;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.Parsers;
-using System.Globalization;
 
-namespace Tests;
+namespace test;
 
 public class TestSetup
 {
@@ -36,8 +36,8 @@ public class TestSetup
 
     protected ISite Site;
 
-    // based on the compiled Tests.dll path
-    // that is typically "bin/Debug/netX.0/Tests.dll"
+    // based on the compiled test.dll path
+    // that is typically "bin/Debug/netX.0/test.dll"
     protected const string TestSitesPath = "../../..";
 
     protected TestSetup()

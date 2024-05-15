@@ -1,12 +1,12 @@
-using SuCoS.Models;
-using SuCoS.Models.CommandLineOptions;
-using Xunit;
 using NSubstitute;
 using Serilog;
 using SuCoS.Commands;
 using SuCoS.Helpers;
+using SuCoS.Models;
+using SuCoS.Models.CommandLineOptions;
+using Xunit;
 
-namespace Tests.Commands;
+namespace test.Commands;
 
 public class NewSiteCommandTests
 {

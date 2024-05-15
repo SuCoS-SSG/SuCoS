@@ -1,7 +1,5 @@
-using Nuke.Common.Tooling;
 using System.ComponentModel;
-
-namespace SuCoS.Nuke;
+using Nuke.Common.Tooling;
 
 [TypeConverter(typeof(TypeConverter<Configuration>))]
 public class Configuration : Enumeration

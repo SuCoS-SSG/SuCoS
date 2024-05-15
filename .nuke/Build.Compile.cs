@@ -3,9 +3,6 @@ using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Utilities.Collections;
 using Serilog;
-using static Nuke.Common.Tools.DotNet.DotNetTasks;
-
-namespace SuCoS.Nuke;
 
 /// <summary>
 /// This is the main build file for the project.
@@ -30,8 +27,8 @@ sealed partial class Build : NukeBuild
         .After(Clean)
         .Executes(() =>
         {
-            _ = DotNetRestore(s => s
-                .SetProjectFile(solution));
+            _ = DotNetTasks.DotNetRestore(s => DotNetRestoreSettingsExtensions
+                .SetProjectFile<DotNetRestoreSettings>(s, solution));
         });
 
     Target Compile => td => td
@@ -40,11 +37,11 @@ sealed partial class Build : NukeBuild
         {
             Log.Debug("Configuration {Configuration}", configurationSet);
             Log.Debug("configuration {configuration}", configuration);
-            _ = DotNetBuild(s => s
-                .SetNoLogo(true)
+            _ = DotNetTasks.DotNetBuild(s => DotNetBuildSettingsExtensions
+                .SetNoLogo<DotNetBuildSettings>(s, true)
                 .SetProjectFile(solution)
                 .SetConfiguration(configurationSet)
                 .EnableNoRestore()
-                );
+            );
         });
 }

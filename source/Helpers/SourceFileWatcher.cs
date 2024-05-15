@@ -27,9 +27,9 @@ public sealed class SourceFileWatcher : IFileWatcher, IDisposable
         };
 
         // Subscribe to the desired events
-        _fileWatcher.Changed += new FileSystemEventHandler(onSourceFileChanged.Invoke);
-        _fileWatcher.Created += new FileSystemEventHandler(onSourceFileChanged.Invoke);
-        _fileWatcher.Deleted += new FileSystemEventHandler(onSourceFileChanged.Invoke);
+        _fileWatcher.Changed += onSourceFileChanged.Invoke;
+        _fileWatcher.Created += onSourceFileChanged.Invoke;
+        _fileWatcher.Deleted += onSourceFileChanged.Invoke;
         _fileWatcher.Renamed += new RenamedEventHandler(onSourceFileChanged);
     }
 
@@ -43,7 +43,6 @@ public sealed class SourceFileWatcher : IFileWatcher, IDisposable
     public void Dispose()
     {
         Dispose(true);
-        GC.SuppressFinalize(this);
     }
 
     private void Dispose(bool disposing)

@@ -1,13 +1,13 @@
+using System.Reflection;
 using NSubstitute;
 using Serilog;
-using SuCoS.Models.CommandLineOptions;
-using SuCoS.TemplateEngine;
-using System.Reflection;
 using SuCoS.Commands;
 using SuCoS.Helpers;
+using SuCoS.Models.CommandLineOptions;
+using SuCoS.TemplateEngine;
 using Xunit;
 
-namespace Tests.Commands;
+namespace test.Commands;
 
 public class BaseGeneratorCommandTests
 {

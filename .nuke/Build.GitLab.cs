@@ -1,9 +1,3 @@
-using Nuke.Common;
-using Nuke.Common.CI.GitLab;
-using Nuke.Common.IO;
-using Nuke.Common.Tools.Docker;
-using Nuke.Common.Tools.Git;
-using Serilog;
 using System;
 using System.Globalization;
 using System.IO;
@@ -11,8 +5,12 @@ using System.IO.Compression;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-
-namespace SuCoS.Nuke;
+using Nuke.Common;
+using Nuke.Common.CI.GitLab;
+using Nuke.Common.IO;
+using Nuke.Common.Tools.Docker;
+using Nuke.Common.Tools.Git;
+using Serilog;
 
 /// <summary>
 /// This is the main build file for the project.
@@ -69,7 +67,7 @@ sealed partial class Build : NukeBuild
                     filter: x => !x.HasExtension("pdb", "xml"),
                     compressionLevel: CompressionLevel.Optimal,
                     fileMode: FileMode.Create // overwrite if exists
-                    );
+                );
             }
             catch (Exception ex)
             {
@@ -174,14 +172,14 @@ sealed partial class Build : NukeBuild
                 .SetServer("registry.gitlab.com")
                 .SetUsername("gitlab-ci-token")
                 .SetPassword(GitLab.JobToken)
-                );
+            );
 
             // Push the container images
             foreach (var tag in tags)
             {
                 _ = DockerTasks.DockerPush(_ => _
                     .SetName($"{ContainerRegistryImage}:{tag}")
-                    );
+                );
 
                 // Create a link to the GitLab release
                 var tagLink = GitLabAPIUrl($"?orderBy=NAME&sort=asc&search[]={tag}");

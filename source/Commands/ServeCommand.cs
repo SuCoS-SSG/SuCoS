@@ -54,7 +54,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
 
     private Task? _loop;
 
-    private (WatcherChangeTypes changeType, string fullPath, DateTime dateTime) lastFileChanged;
+    private (WatcherChangeTypes changeType, string fullPath, DateTime dateTime) _lastFileChanged;
 
     /// <summary>
     /// Constructor for the ServeCommand class.
@@ -78,27 +78,10 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <summary>
     /// Starts the server asynchronously.
     /// </summary>
-    public void StartServer()
-    {
-        StartServer(BaseUrlDefault, PortDefault);
-    }
-
-    /// <summary>
-    /// Starts the server asynchronously.
-    /// </summary>
-    /// <param name="baseUrl"></param>
-    public void StartServer(string baseUrl)
-    {
-        StartServer(baseUrl, PortDefault);
-    }
-
-    /// <summary>
-    /// Starts the server asynchronously.
-    /// </summary>
     /// <param name="baseUrl">The base URL for the server.</param>
     /// <param name="port">The port number for the server.</param>
     /// <returns>A Task representing the asynchronous operation.</returns>
-    public void StartServer(string baseUrl, int port)
+    public void StartServer(string baseUrl = BaseUrlDefault, int port = PortDefault)
     {
         Logger.Information("Starting server...");
 
@@ -156,7 +139,6 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
         _listener?.Close();
         _fileWatcher.Stop();
         _debounceTimer?.Dispose();
-        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -254,14 +236,14 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
             return;
         }
 
-        if (lastFileChanged.fullPath == e.FullPath
-            && e.ChangeType == lastFileChanged.changeType
-            && (DateTime.Now - lastFileChanged.dateTime).TotalMilliseconds < 150)
+        if (_lastFileChanged.fullPath == e.FullPath
+            && e.ChangeType == _lastFileChanged.changeType
+            && (DateTime.Now - _lastFileChanged.dateTime).TotalMilliseconds < 150)
         {
             return;
         }
 
-        lastFileChanged = (e.ChangeType, e.FullPath, DateTime.Now);
+        _lastFileChanged = (e.ChangeType, e.FullPath, DateTime.Now);
 
         // File changes are firing multiple events in a short time.
         // Debounce the event handler to prevent multiple events from firing in a short time

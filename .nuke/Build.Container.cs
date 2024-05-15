@@ -1,12 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Nuke.Common;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Docker;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace SuCoS.Nuke;
 
 /// <summary>
 /// This is the main build file for the project.
@@ -50,7 +48,7 @@ sealed partial class Build : NukeBuild
                         Log.Debug(output);
                     }
                 })
-                );
+            );
         });
 
     string BaseImage => runtimeIdentifier switch
@@ -83,8 +81,8 @@ sealed partial class Build : NukeBuild
         }
         var tags = tagsOriginal.Select(tag =>
             string.IsNullOrEmpty(tag)
-            ? $"{ContainerRuntimeIdentifier.Item1}"
-            : $"{ContainerRuntimeIdentifier.Item1}-{tag}").ToList();
+                ? $"{ContainerRuntimeIdentifier.Item1}"
+                : $"{ContainerRuntimeIdentifier.Item1}-{tag}").ToList();
         if (containerDefaultRID == runtimeIdentifier)
         {
             tags.AddRange(tagsOriginal);
