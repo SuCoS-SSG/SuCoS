@@ -2,7 +2,7 @@ using NSubstitute;
 using SuCoS.ServerHandlers;
 using Xunit;
 
-namespace Tests.ServerHandlers;
+namespace test.ServerHandlers;
 
 public class StaticFileRequestHandlerTests : TestSetup, IDisposable
 {

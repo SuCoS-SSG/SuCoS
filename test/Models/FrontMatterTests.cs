@@ -2,7 +2,7 @@ using System.Globalization;
 using SuCoS.Models;
 using Xunit;
 
-namespace Tests.Models;
+namespace test.Models;
 
 public class FrontMatterTests : TestSetup
 {

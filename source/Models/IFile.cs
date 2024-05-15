@@ -1,7 +1,6 @@
 using FolkerKinzel.MimeTypes;
-
-// using Microsoft.AspNetCore.StaticFiles;
 using SuCoS.Helpers;
+// using Microsoft.AspNetCore.StaticFiles;
 
 namespace SuCoS.Models;
 
@@ -43,7 +42,7 @@ public interface IFile
     /// <summary>
     /// File MIME type.
     /// </summary>
-    string MimeType => MimeString.FromFileName(SourceFullPath) ?? "application/octet-stream";
+    string MimeType => MimeString.FromFileName(SourceFullPath);
 
     /// <summary>
     /// File size in bytes.

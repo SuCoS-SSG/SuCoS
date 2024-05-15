@@ -1,9 +1,6 @@
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
-using static Nuke.Common.Tools.DotNet.DotNetTasks;
-
-namespace SuCoS.Nuke;
 
 /// <summary>
 /// This is the main build file for the project.
@@ -34,19 +31,19 @@ sealed partial class Build : NukeBuild
         .After(Restore)
         .Executes(() =>
         {
-            _ = DotNetPublish(s => s
-              .SetNoLogo(true)
-              .SetProject("source/SuCoS.csproj")
-              .SetConfiguration(configurationSet)
-              .SetOutput(PublishDirectory)
-              .SetRuntime(runtimeIdentifier)
-              .SetSelfContained(publishSelfContained)
-              .SetPublishSingleFile(publishSingleFile)
-              .SetPublishTrimmed(publishTrimmed)
-              .SetPublishReadyToRun(publishReadyToRun)
-              .SetVersion(CurrentVersion)
-              .SetAssemblyVersion(CurrentVersion)
-              .SetInformationalVersion(CurrentVersion)
-              );
+            _ = DotNetTasks.DotNetPublish(s => DotNetPublishSettingsExtensions
+                .SetNoLogo<DotNetPublishSettings>(s, true)
+                .SetProject("source/SuCoS.csproj")
+                .SetConfiguration(configurationSet)
+                .SetOutput(PublishDirectory)
+                .SetRuntime(runtimeIdentifier)
+                .SetSelfContained(publishSelfContained)
+                .SetPublishSingleFile(publishSingleFile)
+                .SetPublishTrimmed(publishTrimmed)
+                .SetPublishReadyToRun(publishReadyToRun)
+                .SetVersion(CurrentVersion)
+                .SetAssemblyVersion(CurrentVersion)
+                .SetInformationalVersion(CurrentVersion)
+            );
         });
 }
