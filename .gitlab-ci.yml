@@ -55,7 +55,7 @@ check-and-create-release:
         - web
     script:
         - |
-            ./build.sh Restore Compile GitLabCreateRelease \
+            ./build.sh GitLabCreateRelease \
               --is-scheduled $CI_PIPELINE_SCHEDULED \
               --gitlab-private-token $GITLAB_PRIVATE_TOKEN
 

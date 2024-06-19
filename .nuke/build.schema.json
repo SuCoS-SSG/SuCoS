@@ -6,6 +6,10 @@
     "build": {
       "type": "object",
       "properties": {
+        "ChangelogFile": {
+          "type": "string",
+          "description": "Changelog file"
+        },
         "Configuration": {
           "type": "string",
           "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)"
@@ -22,9 +26,17 @@
           "type": "boolean",
           "description": "Indicates to continue a previously failed build attempt"
         },
-        "gitlabPrivateToken": {
+        "GitLabApiBaseUrl": {
+          "type": "string",
+          "description": "GitLab API URL"
+        },
+        "GitlabPrivateToken": {
           "type": "string",
           "description": "GitLab private token"
+        },
+        "GitLabProjectId": {
+          "type": "string",
+          "description": "GitLab ProjectId"
         },
         "Help": {
           "type": "boolean",
@@ -51,17 +63,9 @@
             "VSCode"
           ]
         },
-        "isScheduled": {
-          "type": "boolean",
-          "description": "If the pipeline was triggered by a schedule (or manually)"
-        },
         "NoLogo": {
           "type": "boolean",
           "description": "Disables displaying the NUKE logo"
-        },
-        "packageName": {
-          "type": "string",
-          "description": "package-name (default: SuCoS)"
         },
         "Partition": {
           "type": "string",
@@ -78,7 +82,7 @@
             "type": "string"
           }
         },
-        "publishDirectory": {
+        "PublishDirectory": {
           "type": "string",
           "description": "publish-directory (default: ./publish/{runtimeIdentifier})"
         },
@@ -98,6 +102,10 @@
           "type": "boolean",
           "description": "publish-trimmed (default: false)"
         },
+        "RepositoryCompareLink": {
+          "type": "string",
+          "description": "Container image full name"
+        },
         "Root": {
           "type": "string",
           "description": "Root directory during build execution"
@@ -115,7 +123,9 @@
               "CheckNewCommits",
               "Clean",
               "Compile",
+              "CreateCommit",
               "CreateContainer",
+              "GitLabCreateCommit",
               "GitLabCreateRelease",
               "GitLabCreateTag",
               "GitLabPushContainer",
@@ -124,7 +134,9 @@
               "Restore",
               "ShowCurrentVersion",
               "Test",
-              "TestReport"
+              "TestReport",
+              "UpdateChangelog",
+              "UpdateProjectVersions"
             ]
           }
         },
@@ -141,7 +153,9 @@
               "CheckNewCommits",
               "Clean",
               "Compile",
+              "CreateCommit",
               "CreateContainer",
+              "GitLabCreateCommit",
               "GitLabCreateRelease",
               "GitLabCreateTag",
               "GitLabPushContainer",
@@ -150,7 +164,9 @@
               "Restore",
               "ShowCurrentVersion",
               "Test",
-              "TestReport"
+              "TestReport",
+              "UpdateChangelog",
+              "UpdateProjectVersions"
             ]
           }
         },

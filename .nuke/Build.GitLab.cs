@@ -2,8 +2,10 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Nuke.Common;
 using Nuke.Common.CI.GitLab;
@@ -16,23 +18,27 @@ using Serilog;
 /// This is the main build file for the project.
 /// This partial is responsible integrating the GitLab CI/CD.
 /// </summary>
-internal sealed partial class Build : NukeBuild
+internal sealed partial class Build
 {
     /// <summary>
     /// The GitLab CI/CD variables are injected by Nuke.
     /// </summary>
     private static GitLab GitLab => GitLab.Instance;
 
-    [Parameter("GitLab private token")] private readonly string gitlabPrivateToken;
+    [Parameter("GitLab private token")]
+    public readonly string GitlabPrivateToken;
 
-    [Parameter("If the pipeline was triggered by a schedule (or manually)")] private readonly bool isScheduled;
+    [Parameter("GitLab ProjectId")]
+    public readonly long GitLabProjectId = GitLab?.ProjectId ?? 0;
 
-    [Parameter("package-name (default: SuCoS)")] private readonly string packageName = GitLab?.ProjectName ?? "SuCoS";
+    [Parameter("GitLab API URL")]
+    private static readonly string GitLabApiBaseUrl =
+        Environment.GetEnvironmentVariable("CI_API_V4_URL");
 
-    // The base URL for the GitLab API
-    private static string CI_API_V4_URL => Environment.GetEnvironmentVariable("CI_API_V4_URL");
+    private static string Date =>
+        DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-    private static string Date => DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    private string PackageName => GitLab?.ProjectName ?? RegistryImage;
 
     /// <summary>
     /// Uploads the package to the GitLab generic package registry.
@@ -41,26 +47,27 @@ internal sealed partial class Build : NukeBuild
     /// <see href="https://docs.gitlab.com/ee/user/packages/generic_packages/"/>
     public Target GitLabUploadPackage => td => td
         .DependsOn(Publish)
-        .DependsOn(CheckNewCommits)
-        .Requires(() => gitlabPrivateToken)
+        .Requires(() => GitlabPrivateToken)
         .Executes(async () =>
         {
             // The package name constructed using packageName, runtimeIdentifier, and Version
-            var rid = RuntimeIdentifier != "linux-musl-x64" ? RuntimeIdentifier : "alpine";
-            var package = $"{packageName}-{rid}-{CurrentTag}";
+            var package =
+                $"{PackageName}-{ContainerRuntimeIdentifier!.Value.identifier}-{CurrentTag}";
 
             // The filename of the package, constructed using the package variable
             var filename = $"{package}.zip";
 
             // The URL for the package in the GitLab generic package registry
-            var packageLink = GitLabAPIUrl($"packages/generic/{packageName}/{CurrentTag}/{filename}");
+            var packageLink =
+                GitLabApiUrl(
+                    $"packages/generic/{PackageName}/{CurrentTag}/{filename}");
 
             // Create the zip package
-            var fullpath = Path.GetFullPath(filename);
+            var fullPath = Path.GetFullPath(filename);
             try
             {
-                PublishDir.ZipTo(
-                    fullpath,
+                PublishDirectory.ZipTo(
+                    fullPath,
                     filter: x => !x.HasExtension("pdb", "xml"),
                     compressionLevel: CompressionLevel.Optimal,
                     fileMode: FileMode.Create // overwrite if exists
@@ -74,7 +81,7 @@ internal sealed partial class Build : NukeBuild
 
             try
             {
-                using var fileStream = File.OpenRead(fullpath);
+                await using var fileStream = File.OpenRead(fullPath);
                 using var httpClient = HttpClientGitLabToken();
                 var response = await httpClient.PutAsync(
                     packageLink,
@@ -82,9 +89,10 @@ internal sealed partial class Build : NukeBuild
 
                 _ = response.EnsureSuccessStatusCode();
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                Log.Error(ex, "Error creating package");
+                Log.Error(ex, "{StatusCode}: {Message}", ex.StatusCode,
+                    ex.Message);
                 throw;
             }
 
@@ -98,26 +106,32 @@ internal sealed partial class Build : NukeBuild
     public Target GitLabCreateRelease => td => td
         .DependsOn(GitLabCreateTag)
         .OnlyWhenStatic(() => HasNewCommits)
-        .Requires(() => gitlabPrivateToken)
+        .Requires(() => GitlabPrivateToken)
         .Executes(async () =>
         {
             try
             {
                 using var httpClient = HttpClientGitLabToken();
+                var message = $"Created in {Date}";
+                var release = $"{TagName} / {Date}";
                 var response = await httpClient.PostAsJsonAsync(
-                    GitLabAPIUrl("releases"),
+                    GitLabApiUrl("releases"),
                     new
                     {
                         tag_name = TagName,
-                        name = $"{TagName} {Date}",
-                        description = $"Created {Date}"
+                        name = release,
+                        description = message
                     }).ConfigureAwait(false);
 
                 _ = response.EnsureSuccessStatusCode();
+                Log.Information(
+                    "Release {release} created with the description '{message}'",
+                    release, message);
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                Log.Error(ex, "Error creating release");
+                Log.Error(ex, "{StatusCode}: {Message}", ex.StatusCode,
+                    ex.Message);
                 throw;
             }
         });
@@ -127,29 +141,34 @@ internal sealed partial class Build : NukeBuild
     /// </summary>
     /// <see href="https://docs.gitlab.com/ee/api/tags.html#create-a-new-tag"/>
     private Target GitLabCreateTag => td => td
-        .DependsOn(CheckNewCommits)
-        .After(Compile)
+        .DependsOn(CheckNewCommits, GitLabCreateCommit)
         .OnlyWhenStatic(() => HasNewCommits)
-        .Requires(() => gitlabPrivateToken)
+        .Requires(() => GitlabPrivateToken)
         .Executes(async () =>
         {
             try
             {
                 using var httpClient = HttpClientGitLabToken();
+                var message = $"Automatic tag creation: '{TagName}' in {Date}";
                 var response = await httpClient.PostAsJsonAsync(
-                    GitLabAPIUrl("repository/tags"),
+                    GitLabApiUrl("repository/tags"),
                     new
                     {
                         tag_name = TagName,
-                        @ref = GitLab?.CommitRefName ?? GitTasks.GitCurrentCommit(),
-                        message = $"Automatic tag creation: {isScheduled} at {Date}"
+                        @ref = GitLab?.CommitRefName ??
+                               GitTasks.GitCurrentCommit(),
+                        message
                     }).ConfigureAwait(false);
 
                 _ = response.EnsureSuccessStatusCode();
+                Log.Information(
+                    "Tag {tag} created with the message '{message}'",
+                    TagName, message);
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                Log.Error(ex, "Error creating tag");
+                Log.Error(ex, "{StatusCode}: {Message}", ex.StatusCode,
+                    ex.Message);
                 throw;
             }
         });
@@ -162,42 +181,100 @@ internal sealed partial class Build : NukeBuild
         .OnlyWhenStatic(() => RuntimeIdentifier != "win-x64")
         .Executes(async () =>
         {
-            var tags = ContainerTags();
-
             // Log in to the Docker registry
-            _ = DockerTasks.DockerLogin(_ => _
+            DockerTasks.DockerLogin(c => c
                 .SetServer("registry.gitlab.com")
                 .SetUsername("gitlab-ci-token")
                 .SetPassword(GitLab.JobToken)
             );
 
             // Push the container images
+            var tags = ContainerTags();
             foreach (var tag in tags)
             {
-                _ = DockerTasks.DockerPush(_ => _
+                DockerTasks.DockerPush(s => s
                     .SetName($"{RegistryImage}:{tag}")
                 );
 
                 // Create a link to the GitLab release
-                var tagLink = GitLabAPIUrl($"?orderBy=NAME&sort=asc&search[]={tag}");
+                var tagLink =
+                    GitLabApiUrl($"?orderBy=NAME&sort=asc&search[]={tag}");
                 await GitLabCreateReleaseLink($"docker-{tag}", tagLink);
             }
         });
+
+
+    private Target GitLabCreateCommit => td => td
+        .DependsOn(CheckNewCommits, UpdateProjectVersions, UpdateChangelog)
+        .OnlyWhenStatic(() => HasNewCommits)
+        .Executes(async () =>
+        {
+            const string ciSkip = "#ci-skip";
+            var options = new JsonSerializerOptions
+            {
+                IncludeFields = true
+            };
+
+            // Get the list of CHANGED files, ignoring the created, moved or deleted ones
+            var actions = GitTasks.Git("diff --name-only --diff-filter=M")
+                .Select(x => x.Text)
+                .Where(x => !string.IsNullOrEmpty(x))
+                .Select(filePath =>
+                {
+                    var action = new CommitAction
+                    {
+                        action = CommitAction.ActionType.update.ToString(),
+                        file_path = filePath,
+                        content = File.ReadAllText(Path.Combine(
+                            Path.GetDirectoryName(Solution.Path)!, filePath))
+                    };
+
+                    return action;
+                })
+                .ToList();
+
+            try
+            {
+                using var httpClient = HttpClientGitLabToken();
+                var message =
+                    $"chore: Automatic commit creation in {Date} {ciSkip}";
+                var response = await httpClient.PostAsJsonAsync(
+                    GitLabApiUrl("repository/commits"),
+                    new
+                    {
+                        branch = Repository.Branch,
+                        commit_message = message,
+                        actions
+                    }, options).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
+                Log.Information(
+                    "Commit in branch {branch} created with the message '{message}'",
+                    Repository.Branch, message);
+            }
+            catch (HttpRequestException ex)
+            {
+                Log.Error(ex, "{StatusCode}: {Message}", ex.StatusCode,
+                    ex.Message);
+                throw;
+            }
+        });
+
     /// <summary>
-    /// Creates a HTTP client and set the authentication header.
+    /// Creates an HTTP client and set the authentication header.
     /// </summary>
-    /// <param name="useJobToken">If the job token should be used instead of the private token.</param>
-    private HttpClient HttpClientGitLabToken(bool useJobToken = false)
+    private HttpClient HttpClientGitLabToken()
     {
         var httpClient = new HttpClient();
-        if (useJobToken)
+        if (string.IsNullOrEmpty(GitlabPrivateToken))
         {
             httpClient.DefaultRequestHeaders.Add("JOB_TOKEN", GitLab.JobToken);
         }
         else
         {
-            httpClient.DefaultRequestHeaders.Add("Private-Token", gitlabPrivateToken);
+            httpClient.DefaultRequestHeaders.Add("Private-Token",
+                GitlabPrivateToken);
         }
+
         return httpClient;
     }
 
@@ -206,9 +283,9 @@ internal sealed partial class Build : NukeBuild
     /// </summary>
     /// <param name="url">The URL to append to the base URL.</param>
     /// <returns></returns>
-    private static string GitLabAPIUrl(string url)
+    private string GitLabApiUrl(string url)
     {
-        var apiUrl = $"{CI_API_V4_URL}/projects/{GitLab.ProjectId}/{url}";
+        var apiUrl = $"{GitLabApiBaseUrl}/projects/{GitLabProjectId}/{url}";
         Log.Information("GitLab API call: {url}", apiUrl);
         return apiUrl;
     }
@@ -219,7 +296,7 @@ internal sealed partial class Build : NukeBuild
         {
             using var httpClient = HttpClientGitLabToken();
             var response = await httpClient.PostAsJsonAsync(
-                GitLabAPIUrl($"releases/{TagName}/assets/links"),
+                GitLabApiUrl($"releases/{TagName}/assets/links"),
                 new
                 {
                     name = itemName,
@@ -227,11 +304,37 @@ internal sealed partial class Build : NukeBuild
                 }).ConfigureAwait(false);
 
             _ = response.EnsureSuccessStatusCode();
+            Log.Information("Link added in release {tag}: '{package}'",
+                TagName, itemLink);
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
-            Log.Error(ex, "Error creating release");
+            Log.Error(ex, "{StatusCode}: {Message}", ex.StatusCode, ex.Message);
             throw;
         }
     }
+
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+    // ReSharper disable InconsistentNaming
+    internal class CommitAction
+    {
+        public enum ActionType
+        {
+            create,
+            delete,
+            move,
+            update,
+            chmod
+        }
+
+        public required string action;
+        public required string file_path;
+        public string previous_path;
+        public string content;
+        public string encoding;
+        public string last_commit_id;
+        public bool execute_filemode;
+    }
+    // ReSharper restore InconsistentNaming
+#pragma warning restore CS0649 // Field is never assigned to, and will always have its default value
 }
