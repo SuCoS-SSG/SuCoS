@@ -6,15 +6,15 @@
     "build": {
       "type": "object",
       "properties": {
-        "configuration": {
+        "Configuration": {
           "type": "string",
           "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)"
         },
-        "containerDefaultRID": {
+        "ContainerDefaultRid": {
           "type": "string",
           "description": "GitLab Project Full Address"
         },
-        "containerRegistryImage": {
+        "ContainerRegistryImage": {
           "type": "string",
           "description": "GitLab Project CI_REGISTRY_IMAGE"
         },
@@ -82,19 +82,19 @@
           "type": "string",
           "description": "publish-directory (default: ./publish/{runtimeIdentifier})"
         },
-        "publishReadyToRun": {
+        "PublishReadyToRun": {
           "type": "boolean",
           "description": "publish-ready-to-run (default: true)"
         },
-        "publishSelfContained": {
+        "PublishSelfContained": {
           "type": "boolean",
           "description": "publish-self-contained (default: true)"
         },
-        "publishSingleFile": {
+        "PublishSingleFile": {
           "type": "boolean",
           "description": "publish-single-file (default: true)"
         },
-        "publishTrimmed": {
+        "PublishTrimmed": {
           "type": "boolean",
           "description": "publish-trimmed (default: false)"
         },
@@ -102,7 +102,7 @@
           "type": "string",
           "description": "Root directory during build execution"
         },
-        "runtimeIdentifier": {
+        "RuntimeIdentifier": {
           "type": "string",
           "description": "Runtime identifier for the build (e.g., win-x64, linux-x64, osx-x64) (default: linux-x64)"
         },
@@ -128,7 +128,7 @@
             ]
           }
         },
-        "solution": {
+        "Solution": {
           "type": "string",
           "description": "Path to a solution file that is automatically loaded"
         },

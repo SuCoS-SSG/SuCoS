@@ -5,7 +5,7 @@ using Nuke.Common.CI;
 /// This is the main build file for the project.
 /// </summary>
 [ShutdownDotNetAfterServerBuild]
-sealed partial class Build : NukeBuild
+internal sealed partial class Build : NukeBuild
 {
-    static int Main() => Execute<Build>(x => x.Compile);
+    private static int Main() => Execute<Build>(x => x.Compile);
 }

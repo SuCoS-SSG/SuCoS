@@ -6,14 +6,18 @@ using Nuke.Common.ProjectModel;
 /// This is the main build file for the project.
 /// This partial is responsible for the solution-wide variables.
 /// </summary>
-sealed partial class Build : NukeBuild
+internal sealed partial class Build : NukeBuild
 {
-    [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
-    readonly string configuration;
-    string configurationSet => configuration ?? (IsLocalBuild ? Configuration.Debug : Configuration.Release);
+    [Parameter(
+        "Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
+    private readonly string Configuration;
 
-    [Solution]
-    readonly Solution solution;
+    private string ConfigurationSet => Configuration ??
+                                       (IsLocalBuild
+                                           ? global::Configuration.Debug
+                                           : global::Configuration.Release);
 
-    static AbsolutePath sourceDirectory => RootDirectory / "source";
+    [Solution(GenerateProjects = true)] private readonly Solution Solution;
+
+    private static AbsolutePath SourceDirectory => RootDirectory / "source";
 }

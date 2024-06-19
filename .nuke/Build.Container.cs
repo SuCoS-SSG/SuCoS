@@ -1,93 +1,97 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Nuke.Common;
 using Nuke.Common.Tooling;
-using Nuke.Common.Tools.Docker;
-using Serilog;
+using Nuke.Common.Tools.DotNet;
+using Cri = (string identifier, string family);
 
 /// <summary>
 /// This is the main build file for the project.
 /// This partial is responsible for create the Container (Docker) image.
 /// </summary>
-sealed partial class Build : NukeBuild
+internal sealed partial class Build : NukeBuild
 {
     [Parameter("GitLab Project CI_REGISTRY_IMAGE")]
-    readonly string containerRegistryImage;
+    public readonly string ContainerRegistryImage;
 
-    string ContainerRegistryImage => containerRegistryImage ?? "sucos";
+    private string RegistryImage => ContainerRegistryImage ?? "sucos";
 
     [Parameter("GitLab Project Full Address")]
-    readonly string containerDefaultRID = "linux-x64";
+    public readonly string ContainerDefaultRid = "linux-x64";
 
     /// <summary>
-    /// Generate the Container image
+    /// Create the container.
+    /// Note that, despite using Publish, it will not rebuild the app, so
+    /// "Publish" target should be called before
     /// </summary>
-    public Target CreateContainer => td => td
-        .After(Publish)
-        .DependsOn(CheckNewCommits)
-        .OnlyWhenStatic(() => runtimeIdentifier != "win-x64")
+    private Target CreateContainer => td => td
+        .OnlyWhenStatic(() => ContainerRuntimeIdentifier is not null)
+        .After(Publish, Restore)
         .Executes(() =>
         {
-            var tags = ContainerTags();
+            var tags = " \"" + string.Join(";", ContainerTags()) + "\" ";
 
             // Build the Container image
-            _ = DockerTasks.DockerImageBuild(dbs => dbs
-                .SetPath(PublishDirectory)
-                .SetFile($"./Dockerfile")
-                .SetTag(tags.Select(tag => $"{ContainerRegistryImage}:{tag}").ToArray())
-                .SetBuildArg([$"BASE_IMAGE={BaseImage}", $"COPY_PATH={PublishDirectory}"])
-                .SetProcessLogger((outputType, output) =>
-                {
-                    if (outputType == OutputType.Std)
-                    {
-                        Log.Information(output);
-                    }
-                    else
-                    {
-                        Log.Debug(output);
-                    }
-                })
+            DotNetTasks.DotNetPublish(s => s
+                .SetProject(Solution.source.SuCoS)
+                .SetConfiguration(ConfigurationSet)
+                .SetOutput(PublishDir)
+                .SetRuntime(RuntimeIdentifier)
+                .SetSelfContained(PublishSelfContained)
+                .SetPublishSingleFile(PublishSingleFile)
+                .SetPublishTrimmed(PublishTrimmed)
+                .SetPublishReadyToRun(PublishReadyToRun)
+                .SetVersion(CurrentVersion)
+                .SetAssemblyVersion(CurrentVersion)
+                .SetInformationalVersion(CurrentVersion)
+
+                .SetNoBuild(true)
+                .AddProperty("EnableSdkContainerSupport", true)
+                .AddProperty("ContainerRuntimeIdentifier", RuntimeIdentifier)
+                .AddProperty("ContainerRepository", RegistryImage)
+                .AddProperty("ContainerImageTags", tags)
+                .AddProperty("ContainerFamily",
+                    ContainerRuntimeIdentifier!.Value.family)
+                .SetProcessArgumentConfigurator(s2 => s2
+                    .Add("-target:PublishContainer"))
             );
         });
 
-    string BaseImage => runtimeIdentifier switch
-    {
-        "linux-x64" => "mcr.microsoft.com/dotnet/runtime-deps:8.0-jammy-chiseled",
-        "linux-musl-x64" => "mcr.microsoft.com/dotnet/runtime-deps:8.0-alpine",
-        _ => throw new ArgumentException($"There is no container image for: {runtimeIdentifier}"),
-    };
-
     /// <summary>
-    /// Return the proper image tag for a given OS. For the second tuple value, if the image mush be marked as "latest"
+    /// Return the tuple that contains:
+    /// * the proper image tag for a given OS
+    /// * the family of the build (used by dotnet publish to determine the base image)
+    /// * if the image mush be marked as "latest"
     /// </summary>
-    (string, bool) ContainerRuntimeIdentifier => runtimeIdentifier switch
+    private Cri? ContainerRuntimeIdentifier => RuntimeIdentifier switch
     {
-        "linux-x64" => ("linux-x64", true),
-        "linux-musl-x64" => ("alpine", false),
-        _ => throw new ArgumentException($"There is no container image for: {runtimeIdentifier}"),
+        "linux-x64" => ("linux-x64", "jammy-chiseled"),
+        "linux-musl-x64" => ("alpine", "alpine"),
+        _ => null,
     };
 
-    List<string> ContainerTags()
+    private List<string> ContainerTags()
     {
-        if (IsLocalBuild)
+        var cri = ContainerRuntimeIdentifier!.Value;
+        var localTag = IsLocalBuild ? "local_" : string.Empty;
+
+        var tagsDefault = new List<string>()
+                { Version, VersionMajorMinor, VersionMajor, string.Empty }
+            .Select(tag => $"{localTag}{tag}").ToList();
+
+        var tags = tagsDefault
+            .Select(tag => string.IsNullOrEmpty(tag)
+                ? $"{cri.identifier}"
+                : $"{tag}-{cri.identifier}").ToList();
+
+        if (ContainerDefaultRid != RuntimeIdentifier)
         {
-            return ["local", $"local-{ContainerRuntimeIdentifier.Item1}"];
-        }
-        List<string> tagsOriginal = [Version, VersionMajorMinor, VersionMajor, string.Empty];
-        if (ContainerRuntimeIdentifier.Item2)
-        {
-            tagsOriginal.Add("latest");
-        }
-        var tags = tagsOriginal.Select(tag =>
-            string.IsNullOrEmpty(tag)
-                ? $"{ContainerRuntimeIdentifier.Item1}"
-                : $"{ContainerRuntimeIdentifier.Item1}-{tag}").ToList();
-        if (containerDefaultRID == runtimeIdentifier)
-        {
-            tags.AddRange(tagsOriginal);
+            return tags.Where(t => !string.IsNullOrEmpty(t)).ToList();
         }
 
-        return tags;
+        tagsDefault.Add($"{localTag}latest");
+        tags.AddRange(tagsDefault);
+
+        return tags.Where(t => !string.IsNullOrEmpty(t)).ToList();
     }
 }

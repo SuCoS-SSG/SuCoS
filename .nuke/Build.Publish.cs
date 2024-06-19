@@ -6,41 +6,40 @@ using Nuke.Common.Tools.DotNet;
 /// This is the main build file for the project.
 /// This partial is responsible for the publish process.
 /// </summary>
-sealed partial class Build : NukeBuild
+internal sealed partial class Build : NukeBuild
 {
     [Parameter("Runtime identifier for the build (e.g., win-x64, linux-x64, osx-x64) (default: linux-x64)")]
-    readonly string runtimeIdentifier = "linux-x64";
+    public readonly string RuntimeIdentifier = "linux-x64";
 
     [Parameter("publish-directory (default: ./publish/{runtimeIdentifier})")]
-    readonly AbsolutePath publishDirectory;
-    AbsolutePath PublishDirectory => publishDirectory ?? RootDirectory / "publish" / runtimeIdentifier;
+    public readonly AbsolutePath PublishDirectory;
+    private AbsolutePath PublishDir => PublishDirectory ?? RootDirectory / "publish" / RuntimeIdentifier;
 
     [Parameter("publish-self-contained (default: true)")]
-    readonly bool publishSelfContained = true;
+    public readonly bool PublishSelfContained = true;
 
     [Parameter("publish-single-file (default: true)")]
-    readonly bool publishSingleFile = true;
+    public readonly bool PublishSingleFile = true;
 
     [Parameter("publish-trimmed (default: false)")]
-    readonly bool publishTrimmed = false;
+    public readonly bool PublishTrimmed = false;
 
     [Parameter("publish-ready-to-run (default: true)")]
-    readonly bool publishReadyToRun = true;
+    public readonly bool PublishReadyToRun = true;
 
-    Target Publish => td => td
+    private Target Publish => td => td
         .After(Restore)
         .Executes(() =>
         {
-            _ = DotNetTasks.DotNetPublish(s => DotNetPublishSettingsExtensions
-                .SetNoLogo<DotNetPublishSettings>(s, true)
-                .SetProject("source/SuCoS.csproj")
-                .SetConfiguration(configurationSet)
-                .SetOutput(PublishDirectory)
-                .SetRuntime(runtimeIdentifier)
-                .SetSelfContained(publishSelfContained)
-                .SetPublishSingleFile(publishSingleFile)
-                .SetPublishTrimmed(publishTrimmed)
-                .SetPublishReadyToRun(publishReadyToRun)
+            _ = DotNetTasks.DotNetPublish(s => s
+                .SetProject(Solution.source.SuCoS)
+                .SetConfiguration(ConfigurationSet)
+                .SetOutput(PublishDir)
+                .SetRuntime(RuntimeIdentifier)
+                .SetSelfContained(PublishSelfContained)
+                .SetPublishSingleFile(PublishSingleFile)
+                .SetPublishTrimmed(PublishTrimmed)
+                .SetPublishReadyToRun(PublishReadyToRun)
                 .SetVersion(CurrentVersion)
                 .SetAssemblyVersion(CurrentVersion)
                 .SetInformationalVersion(CurrentVersion)

@@ -8,32 +8,32 @@ using Serilog;
 /// This is the main build file for the project.
 /// This partial is responsible for the versioning using GitVersion.
 /// </summary>
-sealed partial class Build : NukeBuild
+internal sealed partial class Build : NukeBuild
 {
-    [GitVersion]
-    readonly GitVersion gitVersion;
+    [GitVersion] private readonly GitVersion gitVersion;
 
     /// <summary>
     /// The current version, using GitVersion.
     /// </summary>
-    string Version => gitVersion.MajorMinorPatch;
+    private string Version => gitVersion.MajorMinorPatch;
 
-    string VersionMajor => $"{gitVersion.Major}";
+    private string VersionMajor => $"{gitVersion.Major}";
 
-    string VersionMajorMinor => $"{gitVersion.Major}.{gitVersion.Minor}";
+    private string VersionMajorMinor => $"{gitVersion.Major}.{gitVersion.Minor}";
 
     /// <summary>
     /// The version in a format that can be used as a tag.
     /// </summary>
-    string TagName => $"v{Version}";
+    private string TagName => $"v{Version}";
 
     /// <summary>
     /// Checks if there are new commits since the last tag.
     /// </summary>
-    bool HasNewCommits => gitVersion.CommitsSinceVersionSource != "0";
+    private bool HasNewCommits => gitVersion.CommitsSinceVersionSource != "0";
 
-    string currentVersion;
-    string CurrentTag
+    private string currentVersion;
+
+    private string CurrentTag
     {
         get
         {
@@ -41,12 +41,13 @@ sealed partial class Build : NukeBuild
             return currentVersion;
         }
     }
-    string CurrentVersion => CurrentTag.TrimStart('v');
+
+    private string CurrentVersion => CurrentTag.TrimStart('v');
 
     /// <summary>
     /// Prints the current version.
     /// </summary>
-    Target ShowCurrentVersion => _ => _
+    private Target ShowCurrentVersion => _ => _
         .Executes(() =>
         {
             var lastCommmit = GitTasks.Git("log -1").FirstOrDefault().Text;
@@ -60,7 +61,7 @@ sealed partial class Build : NukeBuild
     /// Checks if there are new commits since the last tag.
     /// If there are no new commits, the whole publish process is skipped.
     /// </summary>
-    Target CheckNewCommits => _ => _
+    private Target CheckNewCommits => _ => _
         .DependsOn(ShowCurrentVersion)
         .Executes(() =>
         {

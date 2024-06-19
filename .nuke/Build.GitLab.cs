@@ -16,26 +16,23 @@ using Serilog;
 /// This is the main build file for the project.
 /// This partial is responsible integrating the GitLab CI/CD.
 /// </summary>
-sealed partial class Build : NukeBuild
+internal sealed partial class Build : NukeBuild
 {
     /// <summary>
     /// The GitLab CI/CD variables are injected by Nuke.
     /// </summary>
-    static GitLab GitLab => GitLab.Instance;
+    private static GitLab GitLab => GitLab.Instance;
 
-    [Parameter("GitLab private token")]
-    readonly string gitlabPrivateToken;
+    [Parameter("GitLab private token")] private readonly string gitlabPrivateToken;
 
-    [Parameter("If the pipeline was triggered by a schedule (or manually)")]
-    readonly bool isScheduled;
+    [Parameter("If the pipeline was triggered by a schedule (or manually)")] private readonly bool isScheduled;
 
-    [Parameter("package-name (default: SuCoS)")]
-    readonly string packageName = GitLab?.ProjectName ?? "SuCoS";
+    [Parameter("package-name (default: SuCoS)")] private readonly string packageName = GitLab?.ProjectName ?? "SuCoS";
 
     // The base URL for the GitLab API
-    static string CI_API_V4_URL => Environment.GetEnvironmentVariable("CI_API_V4_URL");
+    private static string CI_API_V4_URL => Environment.GetEnvironmentVariable("CI_API_V4_URL");
 
-    static string Date => DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    private static string Date => DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Uploads the package to the GitLab generic package registry.
@@ -49,7 +46,7 @@ sealed partial class Build : NukeBuild
         .Executes(async () =>
         {
             // The package name constructed using packageName, runtimeIdentifier, and Version
-            var rid = runtimeIdentifier != "linux-musl-x64" ? runtimeIdentifier : "alpine";
+            var rid = RuntimeIdentifier != "linux-musl-x64" ? RuntimeIdentifier : "alpine";
             var package = $"{packageName}-{rid}-{CurrentTag}";
 
             // The filename of the package, constructed using the package variable
@@ -62,7 +59,7 @@ sealed partial class Build : NukeBuild
             var fullpath = Path.GetFullPath(filename);
             try
             {
-                PublishDirectory.ZipTo(
+                PublishDir.ZipTo(
                     fullpath,
                     filter: x => !x.HasExtension("pdb", "xml"),
                     compressionLevel: CompressionLevel.Optimal,
@@ -129,7 +126,7 @@ sealed partial class Build : NukeBuild
     /// Creates a tag in the GitLab repository.
     /// </summary>
     /// <see href="https://docs.gitlab.com/ee/api/tags.html#create-a-new-tag"/>
-    Target GitLabCreateTag => td => td
+    private Target GitLabCreateTag => td => td
         .DependsOn(CheckNewCommits)
         .After(Compile)
         .OnlyWhenStatic(() => HasNewCommits)
@@ -162,7 +159,7 @@ sealed partial class Build : NukeBuild
     /// </summary>
     public Target GitLabPushContainer => td => td
         .DependsOn(CreateContainer)
-        .OnlyWhenStatic(() => runtimeIdentifier != "win-x64")
+        .OnlyWhenStatic(() => RuntimeIdentifier != "win-x64")
         .Executes(async () =>
         {
             var tags = ContainerTags();
@@ -178,7 +175,7 @@ sealed partial class Build : NukeBuild
             foreach (var tag in tags)
             {
                 _ = DockerTasks.DockerPush(_ => _
-                    .SetName($"{ContainerRegistryImage}:{tag}")
+                    .SetName($"{RegistryImage}:{tag}")
                 );
 
                 // Create a link to the GitLab release
@@ -190,7 +187,7 @@ sealed partial class Build : NukeBuild
     /// Creates a HTTP client and set the authentication header.
     /// </summary>
     /// <param name="useJobToken">If the job token should be used instead of the private token.</param>
-    HttpClient HttpClientGitLabToken(bool useJobToken = false)
+    private HttpClient HttpClientGitLabToken(bool useJobToken = false)
     {
         var httpClient = new HttpClient();
         if (useJobToken)
@@ -209,14 +206,14 @@ sealed partial class Build : NukeBuild
     /// </summary>
     /// <param name="url">The URL to append to the base URL.</param>
     /// <returns></returns>
-    static string GitLabAPIUrl(string url)
+    private static string GitLabAPIUrl(string url)
     {
         var apiUrl = $"{CI_API_V4_URL}/projects/{GitLab.ProjectId}/{url}";
         Log.Information("GitLab API call: {url}", apiUrl);
         return apiUrl;
     }
 
-    async Task GitLabCreateReleaseLink(string itemName, string itemLink)
+    private async Task GitLabCreateReleaseLink(string itemName, string itemLink)
     {
         try
         {

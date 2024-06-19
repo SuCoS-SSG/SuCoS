@@ -9,18 +9,18 @@ using Serilog;
 /// This is the main build file for the project.
 /// This partial is responsible for the build process.
 /// </summary>
-sealed partial class Build : NukeBuild
+internal sealed partial class Build : NukeBuild
 {
-    static AbsolutePath testDirectory => RootDirectory / "test";
-    static AbsolutePath testDLLDirectory => testDirectory / "bin" / "Debug" / "net8.0";
-    static AbsolutePath testAssembly => testDLLDirectory / "test.dll";
-    static AbsolutePath coverageDirectory => RootDirectory / "coverage-results";
-    static AbsolutePath coverageResultDirectory => coverageDirectory / "coverage";
-    static AbsolutePath coverageResultFile => coverageResultDirectory / "coverage.xml";
-    static AbsolutePath coverageReportDirectory => coverageDirectory / "report";
-    static AbsolutePath coverageReportSummaryDirectory => coverageReportDirectory / "Summary.txt";
+    private static AbsolutePath testDirectory => RootDirectory / "test";
+    private static AbsolutePath testDLLDirectory => testDirectory / "bin" / "Debug" / "net8.0";
+    private static AbsolutePath testAssembly => testDLLDirectory / "test.dll";
+    private static AbsolutePath coverageDirectory => RootDirectory / "coverage-results";
+    private static AbsolutePath coverageResultDirectory => coverageDirectory / "coverage";
+    private static AbsolutePath coverageResultFile => coverageResultDirectory / "coverage.xml";
+    private static AbsolutePath coverageReportDirectory => coverageDirectory / "report";
+    private static AbsolutePath coverageReportSummaryDirectory => coverageReportDirectory / "Summary.txt";
 
-    Target Test => td => td
+    private Target Test => td => td
         .After(Compile)
         .Executes(() =>
         {

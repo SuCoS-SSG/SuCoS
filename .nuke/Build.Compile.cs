@@ -8,39 +8,38 @@ using Serilog;
 /// This is the main build file for the project.
 /// This partial is responsible for the build process.
 /// </summary>
-sealed partial class Build : NukeBuild
+internal sealed partial class Build : NukeBuild
 {
-    Target Clean => _ => _
+    private Target Clean => s => s
         .Executes(() =>
         {
-            sourceDirectory.GlobDirectories("**/bin", "**/obj", "**/output").ForEach(
+            SourceDirectory.GlobDirectories("**/bin", "**/obj", "**/output").ForEach(
                 (path) => path.DeleteDirectory()
             );
             testDirectory.GlobDirectories("**/bin", "**/obj", "**/output").ForEach(
                 (path) => path.DeleteDirectory()
             );
-            PublishDirectory.DeleteDirectory();
+            PublishDir.DeleteDirectory();
             coverageDirectory.DeleteDirectory();
         });
 
-    Target Restore => td => td
+    private Target Restore => td => td
         .After(Clean)
         .Executes(() =>
         {
-            _ = DotNetTasks.DotNetRestore(s => DotNetRestoreSettingsExtensions
-                .SetProjectFile<DotNetRestoreSettings>(s, solution));
+            _ = DotNetTasks.DotNetRestore(s => s
+                .SetProjectFile(Solution));
         });
 
-    Target Compile => td => td
+    private Target Compile => td => td
         .After(Restore)
         .Executes(() =>
         {
-            Log.Debug("Configuration {Configuration}", configurationSet);
-            Log.Debug("configuration {configuration}", configuration);
-            _ = DotNetTasks.DotNetBuild(s => DotNetBuildSettingsExtensions
-                .SetNoLogo<DotNetBuildSettings>(s, true)
-                .SetProjectFile(solution)
-                .SetConfiguration(configurationSet)
+            Log.Debug("Configuration {Configuration}", ConfigurationSet);
+            Log.Debug("configuration {configuration}", Configuration);
+            _ = DotNetTasks.DotNetBuild(s => s
+                .SetProjectFile(Solution)
+                .SetConfiguration(ConfigurationSet)
                 .EnableNoRestore()
             );
         });
