@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Identity.Client;
 using Nuke.Common;
 using Nuke.Common.CI.GitLab;
 using Nuke.Common.IO;
@@ -51,16 +52,14 @@ internal sealed partial class Build
         .Executes(async () =>
         {
             // The package name constructed using packageName, runtimeIdentifier, and Version
-            var package =
-                $"{PackageName}-{ContainerRuntimeIdentifier!.Value.identifier}-{CurrentTag}";
+            var CriName = ContainerRuntimeIdentifier is not null ? ContainerRuntimeIdentifier.Value.identifier : RuntimeIdentifier;
+            var package = $"{PackageName}-{CriName}-{CurrentTag}";
 
             // The filename of the package, constructed using the package variable
             var filename = $"{package}.zip";
 
             // The URL for the package in the GitLab generic package registry
-            var packageLink =
-                GitLabApiUrl(
-                    $"packages/generic/{PackageName}/{CurrentTag}/{filename}");
+            var packageLink = GitLabApiUrl($"packages/generic/{PackageName}/{CurrentTag}/{filename}");
 
             // Create the zip package
             var fullPath = Path.GetFullPath(filename);

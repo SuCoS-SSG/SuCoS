@@ -47,6 +47,8 @@ internal sealed partial class Build : NukeBuild
 
                 .SetNoBuild(true)
                 .AddProperty("EnableSdkContainerSupport", true)
+                .AddProperty("ContainerAppCommandInstruction", "None")
+                .AddProperty("ContainerWorkingDirectory", "/bin")
                 .AddProperty("ContainerRuntimeIdentifier", RuntimeIdentifier)
                 .AddProperty("ContainerRepository", RegistryImage)
                 .AddProperty("ContainerImageTags", tags)
