@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## v[4.2.0] 2024-06-20
+
 - Added `cascade` feature into front matter
 - Added `sucos` variable for templates containing `IsServer`, `DotNetVersion`, `Version` and `BuildDate`
 - Added CHANGELOG.md automatically updated when creating a new release
@@ -113,7 +115,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added First Commit!
 
-[Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v4.1.0...HEAD
+[Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v4.2.0...HEAD
+[4.2.0]: https://gitlab.com/sucos/sucos/-/compare/v4.1.0...v4.2.0
 [4.1.0]: https://gitlab.com/sucos/sucos/-/compare/v4.0.1...v4.1.0
 [4.0.2]: https://gitlab.com/sucos/sucos/-/compare/v4.0.1...v4.0.2
 [4.0.1]: https://gitlab.com/sucos/sucos/-/compare/v4.0.0...v4.0.1

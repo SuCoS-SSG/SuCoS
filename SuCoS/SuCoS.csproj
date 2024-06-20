@@ -15,6 +15,7 @@
     <PackageProjectUrl>hhttps://sucos.brunomassa.com</PackageProjectUrl>
     <PackageTags>static site generator;ssg;yaml/blog</PackageTags>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <Version>4.2.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,9 +24,7 @@
 
   <!-- Add this as a new ItemGroup, replacing paths and names appropriately -->
   <ItemGroup>
-    <ProjectReference Include="..\SuCoS.Generator\SuCoS.Generator.csproj"
-      OutputItemType="Analyzer"
-      ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\SuCoS.Generator\SuCoS.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
