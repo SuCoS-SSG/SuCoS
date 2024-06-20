@@ -23,6 +23,9 @@ public class Site : ISite
 
     #endregion IParams
 
+    /// <inheritdoc/>
+    public Sucos SuCoS { get; } = new Sucos();
+
     /// <summary>
     /// Command line options
     /// </summary>

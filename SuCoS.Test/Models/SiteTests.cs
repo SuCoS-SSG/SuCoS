@@ -4,7 +4,7 @@ using SuCoS.Models.CommandLineOptions;
 using SuCoS.Parsers;
 using Xunit;
 
-namespace SuCoS.Test.Models;
+namespace test.Models;
 
 /// <summary>
 /// Unit tests for the Site class.

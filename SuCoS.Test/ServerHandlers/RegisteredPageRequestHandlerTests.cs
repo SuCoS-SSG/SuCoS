@@ -6,7 +6,7 @@ using SuCoS.Parsers;
 using SuCoS.ServerHandlers;
 using Xunit;
 
-namespace SuCoS.Test.ServerHandlers;
+namespace test.ServerHandlers;
 
 public class RegisteredPageRequestHandlerTests : TestSetup
 {

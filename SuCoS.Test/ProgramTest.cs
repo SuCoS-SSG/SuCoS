@@ -1,7 +1,8 @@
 using Serilog.Events;
+using SuCoS;
 using Xunit;
 
-namespace SuCoS.Test;
+namespace test;
 
 public class ProgramTests : TestSetup
 {

@@ -27,6 +27,7 @@ public class FluidTemplateEngine : ITemplateEngine
     {
         // Liquid template options, needed to theme the content
         // but also parse URLs
+        TemplateOptions.MemberAccessStrategy.Register<Models.Sucos>();
         TemplateOptions.MemberAccessStrategy.Register<Site>();
         TemplateOptions.MemberAccessStrategy.Register<Page>();
         TemplateOptions.MemberAccessStrategy.Register<Resource>();
@@ -51,6 +52,7 @@ public class FluidTemplateEngine : ITemplateEngine
         if (FluidParser.TryParse(data, out var template, out var error))
         {
             var context = new TemplateContext(TemplateOptions)
+                .SetValue("sucos", site?.SuCoS)
                 .SetValue("site", site)
                 .SetValue("page", page);
             return template.Render(context);
@@ -69,9 +71,10 @@ public class FluidTemplateEngine : ITemplateEngine
             return null;
         }
         var context = new TemplateContext(TemplateOptions)
-                .SetValue("site", site)
-                .SetValue("page", page)
-                .SetValue("counter", counter);
+            .SetValue("sucos", site?.SuCoS)
+            .SetValue("site", site)
+            .SetValue("page", page)
+            .SetValue("counter", counter);
         return templateFileName.Render(context);
     }
 

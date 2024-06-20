@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+- Added `cascade` feature into front matter
+- Added `sucos` variable for templates containing `IsServer`, `DotNetVersion`, `Version` and `BuildDate`
 - Added CHANGELOG.md automatically updated when creating a new release
+- Changed internal folder structure, by a lot
 
 ## v[4.1.0]
 

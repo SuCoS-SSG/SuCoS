@@ -133,8 +133,7 @@ public class Program(ILogger logger)
     /// </summary>
     public void OutputWelcome()
     {
-        var assembly = Assembly.GetEntryAssembly();
-        var assemblyName = assembly?.GetName();
+        var assemblyName = Assembly.GetExecutingAssembly().GetName();
         var appName = assemblyName?.Name;
         var appVersion = assemblyName?.Version;
         logger.Information("{name} v{version}", appName, appVersion);

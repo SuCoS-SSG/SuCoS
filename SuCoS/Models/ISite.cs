@@ -13,6 +13,11 @@ namespace SuCoS.Models;
 public interface ISite : ISiteSettings
 {
     /// <summary>
+    /// SuCos internal variables
+    /// </summary>
+    public Sucos SuCoS { get; }
+
+    /// <summary>
     /// Command line options
     /// </summary>
     public IGenerateOptions Options { get; set; }

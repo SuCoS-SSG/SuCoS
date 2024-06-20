@@ -7,7 +7,7 @@ using SuCoS.Models.CommandLineOptions;
 using SuCoS.TemplateEngine;
 using Xunit;
 
-namespace SuCoS.Test.Commands;
+namespace test.Commands;
 
 public class BaseGeneratorCommandTests
 {

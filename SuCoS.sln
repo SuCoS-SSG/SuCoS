@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_nuke", ".nuke\_nuke.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuCoS.Test", "SuCoS.Test\SuCoS.Test.csproj", "{F3D789FD-6AC5-4A45-B9AC-079035F5909C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuCoS.Generator", "SuCoS.Generator\SuCoS.Generator.csproj", "{BFD6C544-02F5-4452-B742-AB33B258CDAA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +27,10 @@ Global
 		{F3D789FD-6AC5-4A45-B9AC-079035F5909C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F3D789FD-6AC5-4A45-B9AC-079035F5909C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F3D789FD-6AC5-4A45-B9AC-079035F5909C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFD6C544-02F5-4452-B742-AB33B258CDAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFD6C544-02F5-4452-B742-AB33B258CDAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFD6C544-02F5-4452-B742-AB33B258CDAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFD6C544-02F5-4452-B742-AB33B258CDAA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

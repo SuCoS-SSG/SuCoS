@@ -5,7 +5,7 @@ using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
 using Xunit;
 
-namespace SuCoS.Test.Commands;
+namespace test.Commands;
 
 public class BuildCommandTests
 {

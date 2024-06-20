@@ -73,6 +73,8 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
         var sourceAbsolutePath = Path.GetFullPath(options.Source);
         logger.Information("Watching for file changes in {SourceAbsolutePath}", sourceAbsolutePath);
         fileWatcher.Start(sourceAbsolutePath, OnSourceFileChanged);
+
+        Site.SuCoS.IsServer = true;
     }
 
     /// <summary>
@@ -221,7 +223,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     {
         context.Response.StatusCode = 404;
         await using var writer = new StreamWriter(context.Response.OutputStream);
-        await writer.WriteAsync("404 - File Not Found").ConfigureAwait(false);
+        await writer.WriteAsync("404 - File Not Found 22").ConfigureAwait(false);
     }
 
     /// <summary>
