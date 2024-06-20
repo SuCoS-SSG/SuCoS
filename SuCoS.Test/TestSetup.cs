@@ -5,7 +5,7 @@ using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
 using SuCoS.Parsers;
 
-namespace test;
+namespace SuCoS.Test;
 
 public class TestSetup
 {

@@ -6,7 +6,7 @@ using Serilog.Sinks.InMemory;
 using SuCoS.Helpers;
 using Xunit;
 
-namespace test.Helpers;
+namespace SuCoS.Test.Helpers;
 
 public class StopwatchReporterTests
 {

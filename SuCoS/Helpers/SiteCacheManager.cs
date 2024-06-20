@@ -1,5 +1,5 @@
-using SuCoS.Models;
 using System.Collections.Concurrent;
+using SuCoS.Models;
 
 namespace SuCoS.Helpers;
 

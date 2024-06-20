@@ -11,9 +11,8 @@ using Serilog;
 /// </summary>
 internal sealed partial class Build : NukeBuild
 {
-    private static AbsolutePath testDirectory => RootDirectory / "test";
-    private static AbsolutePath testDLLDirectory => testDirectory / "bin" / "Debug" / "net8.0";
-    private static AbsolutePath testAssembly => testDLLDirectory / "test.dll";
+    private  AbsolutePath testDLLDirectory => Solution.SuCoS_Test.Directory / "bin" / "Debug" / "net8.0";
+    private  AbsolutePath testAssembly => testDLLDirectory / Solution.SuCoS_Test.Name + ".dll";
     private static AbsolutePath coverageDirectory => RootDirectory / "coverage-results";
     private static AbsolutePath coverageResultDirectory => coverageDirectory / "coverage";
     private static AbsolutePath coverageResultFile => coverageResultDirectory / "coverage.xml";
@@ -25,8 +24,8 @@ internal sealed partial class Build : NukeBuild
         .Executes(() =>
         {
             _ = coverageResultDirectory.CreateDirectory();
-            _ = CoverletTasks.Coverlet(s => CoverletSettingsExtensions
-                    .SetTarget<CoverletSettings>(s, "dotnet")
+            _ = CoverletTasks.Coverlet(s => s
+                    .SetTarget("dotnet")
                     .SetTargetArgs("test --no-build --no-restore")
                     .SetAssembly(testAssembly)
                     // .SetThreshold(75)

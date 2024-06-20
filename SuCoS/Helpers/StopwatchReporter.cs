@@ -1,7 +1,7 @@
-using Serilog;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using Serilog;
 
 namespace SuCoS.Helpers;
 

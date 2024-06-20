@@ -4,7 +4,7 @@ using SuCoS.Models;
 using SuCoS.Parsers;
 using Xunit;
 
-namespace test.Parser;
+namespace SuCoS.Test.Parser;
 
 public class YamlParserTests : TestSetup
 {

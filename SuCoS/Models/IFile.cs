@@ -1,5 +1,6 @@
 using FolkerKinzel.MimeTypes;
 using SuCoS.Helpers;
+
 // using Microsoft.AspNetCore.StaticFiles;
 
 namespace SuCoS.Models;

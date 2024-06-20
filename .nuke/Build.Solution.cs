@@ -1,5 +1,4 @@
 using Nuke.Common;
-using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 
 /// <summary>
@@ -18,6 +17,4 @@ internal sealed partial class Build : NukeBuild
                                            : global::Configuration.Release);
 
     [Solution(GenerateProjects = true)] private readonly Solution Solution;
-
-    private static AbsolutePath SourceDirectory => RootDirectory / "source";
 }

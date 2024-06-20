@@ -1,7 +1,7 @@
 using SuCoS.Helpers;
 using Xunit;
 
-namespace test.Helpers;
+namespace SuCoS.Test.Helpers;
 
 public class UrlizerTests
 {

@@ -6,7 +6,7 @@ using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
 using Xunit;
 
-namespace test.Commands;
+namespace SuCoS.Test.Commands;
 
 public class NewSiteCommandTests
 {

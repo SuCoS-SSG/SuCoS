@@ -4,7 +4,7 @@ using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
 using Xunit;
 
-namespace test.Models;
+namespace SuCoS.Test.Models;
 
 public class PageTests : TestSetup
 {

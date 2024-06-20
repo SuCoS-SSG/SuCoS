@@ -32,7 +32,7 @@ internal sealed partial class Build : NukeBuild
         .Executes(() =>
         {
             _ = DotNetTasks.DotNetPublish(s => s
-                .SetProject(Solution.source.SuCoS)
+                .SetProject(Solution.SuCoS)
                 .SetConfiguration(ConfigurationSet)
                 .SetOutput(PublishDir)
                 .SetRuntime(RuntimeIdentifier)

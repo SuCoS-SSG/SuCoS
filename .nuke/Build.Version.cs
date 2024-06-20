@@ -97,7 +97,7 @@ internal sealed partial class Build
         {
             Log.Information("Projects: {ProjectsCount}",
                 Solution.Projects.Count);
-            List<string> projectsVersioned = [Solution.source.SuCoS];
+            List<string> projectsVersioned = [Solution.SuCoS];
             Solution.Projects
                 // Filter logic
                 .Where(p => projectsVersioned.Contains(p.Path))

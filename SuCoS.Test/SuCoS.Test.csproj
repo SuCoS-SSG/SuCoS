@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\source\SuCoS.csproj" />
+    <ProjectReference Include="..\SuCoS\SuCoS.csproj" />
   </ItemGroup>
 
 </Project>

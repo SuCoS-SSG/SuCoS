@@ -1,11 +1,11 @@
-﻿using Serilog;
-using Serilog.Events;
-using SuCoS.Helpers;
-using SuCoS.Models.CommandLineOptions;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using CommandLine;
-using System.Diagnostics.CodeAnalysis;
+using Serilog;
+using Serilog.Events;
 using SuCoS.Commands;
+using SuCoS.Helpers;
+using SuCoS.Models.CommandLineOptions;
 
 namespace SuCoS;
 

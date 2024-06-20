@@ -25,4 +25,8 @@
     <PackageDownload Include="ReportGenerator" Version="[5.2.5]" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="..\global.json" />
+  </ItemGroup>
+
 </Project>

@@ -1,5 +1,5 @@
-using SuCoS.Models;
 using System.Reflection;
+using SuCoS.Models;
 
 namespace SuCoS.ServerHandlers;
 

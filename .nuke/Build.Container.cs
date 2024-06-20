@@ -33,7 +33,7 @@ internal sealed partial class Build : NukeBuild
 
             // Build the Container image
             DotNetTasks.DotNetPublish(s => s
-                .SetProject(Solution.source.SuCoS)
+                .SetProject(Solution.SuCoS)
                 .SetConfiguration(ConfigurationSet)
                 .SetOutput(PublishDir)
                 .SetRuntime(RuntimeIdentifier)

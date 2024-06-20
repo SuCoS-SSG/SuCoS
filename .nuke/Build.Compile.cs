@@ -13,10 +13,10 @@ internal sealed partial class Build : NukeBuild
     private Target Clean => s => s
         .Executes(() =>
         {
-            SourceDirectory.GlobDirectories("**/bin", "**/obj", "**/output").ForEach(
+            Solution.SuCoS.Directory.GlobDirectories("**/bin", "**/obj", "**/output").ForEach(
                 (path) => path.DeleteDirectory()
             );
-            testDirectory.GlobDirectories("**/bin", "**/obj", "**/output").ForEach(
+            Solution.SuCoS_Test.Directory.GlobDirectories("**/bin", "**/obj", "**/output").ForEach(
                 (path) => path.DeleteDirectory()
             );
             PublishDir.DeleteDirectory();
@@ -32,7 +32,7 @@ internal sealed partial class Build : NukeBuild
         });
 
     private Target Compile => td => td
-        .After(Restore)
+        .DependsOn(Restore)
         .Executes(() =>
         {
             Log.Debug("Configuration {Configuration}", ConfigurationSet);

@@ -71,7 +71,7 @@ public class FrontMatter : IFrontMatter
 
     /// <inheritdoc/>
     [YamlIgnore]
-    public string? SourceFileNameWithoutExtension => (Path.GetFileNameWithoutExtension(SourceRelativePath) ?? string.Empty)
+    public string SourceFileNameWithoutExtension => (Path.GetFileNameWithoutExtension(SourceRelativePath) ?? string.Empty)
         .Replace('\\', '/');
 
     /// <inheritdoc/>
