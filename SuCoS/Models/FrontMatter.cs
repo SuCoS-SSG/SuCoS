@@ -66,12 +66,14 @@ public class FrontMatter : IFrontMatter
 
     /// <inheritdoc/>
     [YamlIgnore]
-    public string SourceRelativePathDirectory => (Path.GetDirectoryName(SourceRelativePath) ?? string.Empty)
+    public string SourceRelativePathDirectory =>
+        (Path.GetDirectoryName(SourceRelativePath) ?? string.Empty)
         .Replace('\\', '/');
 
     /// <inheritdoc/>
     [YamlIgnore]
-    public string SourceFileNameWithoutExtension => (Path.GetFileNameWithoutExtension(SourceRelativePath) ?? string.Empty)
+    public string SourceFileNameWithoutExtension =>
+        (Path.GetFileNameWithoutExtension(SourceRelativePath) ?? string.Empty)
         .Replace('\\', '/');
 
     /// <inheritdoc/>
@@ -82,6 +84,11 @@ public class FrontMatter : IFrontMatter
     public Dictionary<string, object> Params { get; set; } = [];
 
     #endregion IFrontMatter
+
+    /// <summary>
+    /// Cascade front matter data to its children.
+    /// </summary>
+    public FrontMatter? Cascade { get; set; }
 
     /// <summary>
     /// Constructor
@@ -154,6 +161,39 @@ public class FrontMatter : IFrontMatter
         ArgumentNullException.ThrowIfNull(parser);
 
         var (metadata, rawContent) = parser.SplitFrontMatter(content);
-        return Parse(metadata, rawContent, fileFullPath, fileRelativePath, parser);
+        return Parse(metadata, rawContent, fileFullPath, fileRelativePath,
+            parser);
     }
+
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name="other"></param>
+    public FrontMatter Merge(FrontMatter other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+
+        return new FrontMatter
+        {
+            Title = string.IsNullOrEmpty(other.Title) ? Title : other.Title,
+            Type = string.IsNullOrEmpty(other.Type) || other.Type == "page" ? Type : other.Type,
+            Url = string.IsNullOrEmpty(other.Url) ? Url : other.Url,
+            Draft = other.Draft ?? Draft,
+            Aliases = other.Aliases ?? Aliases,
+            Section = string.IsNullOrEmpty(other.Section) ? Section : other.Section,
+            Date = other.Date ?? Date,
+            LastMod = other.LastMod ?? LastMod,
+            PublishDate = other.PublishDate ?? PublishDate,
+            ExpiryDate = other.ExpiryDate ?? ExpiryDate,
+            Weight = other.Weight != 0 ? other.Weight : Weight,
+            Tags = other.Tags ?? Tags,
+            ResourceDefinitions = other.ResourceDefinitions ?? ResourceDefinitions,
+            RawContent = string.IsNullOrEmpty(other.RawContent) ? RawContent : other.RawContent,
+            SourceRelativePath = string.IsNullOrEmpty(other.SourceRelativePath) ? SourceRelativePath : other.SourceRelativePath,
+            SourceFullPath = string.IsNullOrEmpty(other.SourceFullPath) ? SourceFullPath : other.SourceFullPath,
+            Params = other.Params.Any() ? other.Params : Params,
+            Cascade = other.Cascade ?? Cascade
+        };
+    }
+
 }

@@ -90,12 +90,14 @@ public interface ISite : ISiteSettings
     /// <param name="directory">Folder to scan</param>
     /// <param name="level">Folder recursive level</param>
     /// <param name="parent">Page of the upper directory</param>
+    /// <param name="cascade"></param>
     /// <returns></returns>
     public void ParseAndScanSourceFiles(
         IFileSystem fs,
         string? directory,
         int level = 0,
-        IPage? parent = null);
+        IPage? parent = null,
+        FrontMatter? cascade = null);
 
     /// <summary>
     /// Extra calculation and automatic data for each page.

@@ -1,5 +1,6 @@
 using System.Globalization;
 using NSubstitute;
+using SuCoS.Helpers;
 using SuCoS.Models;
 using SuCoS.Models.CommandLineOptions;
 using Xunit;
@@ -286,5 +287,50 @@ word03 word04 word05 6 7 [eight](https://example.com)
 
         // Assert
         Assert.Equal(plain, page.Plain);
+    }
+
+    [Theory]
+    // [InlineData("/pages/page-01", 3)]
+    // [InlineData("/pages/page-01/page-01", 3)]
+    // [InlineData("/blog/blog-01", 1)]
+    // [InlineData("/blog/blog-01/blog-01", 1)]
+    // [InlineData("/index/post-01", 1)]
+    [InlineData("/index/post-01/post-01", 2)]
+    // [InlineData("/articles/article-01", 0)]
+    public void Cascade_ShouldCascasdeValues(string url, int weight)
+    {
+        GenerateOptions options = new()
+        {
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, TestSitePathConst09))
+        };
+        Site.Options = options;
+
+        // Act
+        Site.ParseAndScanSourceFiles(new FileSystem(), null);
+        Site.OutputReferences.TryGetValue(url, out var itemPage );
+        var page = itemPage as Page;
+
+        // Assert
+        Assert.Equal(weight, page!.Weight);
+    }
+
+    [Theory]
+    [InlineData("/index/post-01", "cascade")]
+    [InlineData("/index/post-01/post-01", "own")]
+    public void Cascade_ShouldCascasdeParams(string url, string? valueString)
+    {
+        GenerateOptions options = new()
+        {
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, TestSitePathConst09))
+        };
+        Site.Options = options;
+
+        // Act
+        Site.ParseAndScanSourceFiles(new FileSystem(), null);
+        Site.OutputReferences.TryGetValue(url, out var itemPage );
+        var page = itemPage as Page;
+
+        // Assert
+        Assert.Equal(valueString, page!.Params["valueString"]);
     }
 }

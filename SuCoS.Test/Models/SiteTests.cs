@@ -330,4 +330,27 @@ public class SiteTests : TestSetup
         Assert.Equal(expectedContent, page.Content);
         Assert.Equal(expectedOutputFile, page.CompleteContent);
     }
+
+    [Fact]
+    public void Site_ShouldConsiderSectionPages()
+    {
+        GenerateOptions options = new()
+        {
+            SourceArgument = Path.GetFullPath(Path.Combine(TestSitesPath, TestSitePathConst09))
+        };
+        Site.Options = options;
+
+        // Act
+        Site.ParseAndScanSourceFiles(new FileSystem(), null);
+
+        // Assert
+        Assert.Equal(12, Site.OutputReferences.Count());
+        Assert.True(Site.OutputReferences.ContainsKey("/pages/page-01"));
+        Assert.True(Site.OutputReferences.ContainsKey("/blog/blog-01"));
+        Assert.True(Site.OutputReferences.ContainsKey("/pages/page-01/page-01"));
+        Assert.True(Site.OutputReferences.ContainsKey("/blog/blog-01/blog-01"));
+        Assert.True(Site.OutputReferences.ContainsKey("/articles/article-01"));
+        Assert.True(Site.OutputReferences.ContainsKey("/index/post-01"));
+        Assert.True(Site.OutputReferences.ContainsKey("/index/post-01/post-01"));
+    }
 }

@@ -22,6 +22,7 @@ public class TestSetup
     protected const string TestSitePathConst06 = ".TestSites/06-theme";
     protected const string TestSitePathConst07 = ".TestSites/07-theme-no-baseof-error";
     protected const string TestSitePathConst08 = ".TestSites/08-theme-html";
+    protected const string TestSitePathConst09 = ".TestSites/09-cascade";
 
     protected readonly IMetadataParser FrontMatterParser = new YamlParser();
     protected readonly IGenerateOptions GenerateOptionsMock = Substitute.For<IGenerateOptions>();

@@ -68,16 +68,19 @@ public class Page : IPage
     public string? SourceRelativePath => _frontMatter.SourceRelativePath;
 
     /// <inheritdoc/>
-    public string? SourceRelativePathDirectory => _frontMatter.SourceRelativePathDirectory;
+    public string? SourceRelativePathDirectory =>
+        _frontMatter.SourceRelativePathDirectory;
 
     /// <inheritdoc/>
     public string SourceFullPath => _frontMatter.SourceFullPath;
 
     /// <inheritdoc/>
-    public string? SourceFullPathDirectory => _frontMatter.SourceFullPathDirectory;
+    public string? SourceFullPathDirectory =>
+        _frontMatter.SourceFullPathDirectory;
 
     /// <inheritdoc/>
-    public string? SourceFileNameWithoutExtension => _frontMatter.SourceFileNameWithoutExtension;
+    public string? SourceFileNameWithoutExtension =>
+        _frontMatter.SourceFileNameWithoutExtension;
 
     /// <inheritdoc/>
     public Dictionary<string, object> Params
@@ -91,9 +94,12 @@ public class Page : IPage
     /// <summary>
     /// The source directory of the file.
     /// </summary>
-    public string? SourcePathLastDirectory => string.IsNullOrEmpty(SourceRelativePathDirectory)
-    ? null
-    : Path.GetFileName(Path.GetFullPath(SourceRelativePathDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));
+    public string? SourcePathLastDirectory =>
+        string.IsNullOrEmpty(SourceRelativePathDirectory)
+            ? null
+            : Path.GetFileName(Path.GetFullPath(
+                SourceRelativePathDirectory.TrimEnd(Path.DirectorySeparatorChar,
+                    Path.AltDirectorySeparatorChar)));
 
     /// <summary>
     /// Point to the site configuration.
@@ -126,7 +132,8 @@ public class Page : IPage
     /// <summary>
     /// Plain markdown content, without HTML.
     /// </summary>
-    public string Plain => Markdown.ToPlainText(RawContent, SiteHelper.MarkdownPipeline);
+    public string Plain =>
+        Markdown.ToPlainText(RawContent, SiteHelper.MarkdownPipeline);
 
     /// <summary>
     /// A list of tags, if any.
@@ -151,9 +158,11 @@ public class Page : IPage
     /// <summary>
     /// The number of words in the main content
     /// </summary>
-    public int WordCount => Plain.Split(NonWords, StringSplitOptions.RemoveEmptyEntries).Length;
+    public int WordCount => Plain
+        .Split(NonWords, StringSplitOptions.RemoveEmptyEntries).Length;
 
-    private static readonly char[] NonWords = [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
+    private static readonly char[] NonWords =
+        [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
 
     /// <summary>
     /// The markdown content converted to HTML
@@ -167,7 +176,8 @@ public class Page : IPage
     {
         get
         {
-            ContentCache = ParseAndRenderTemplate(false, "Error rendering theme template: {Error}");
+            ContentCache = ParseAndRenderTemplate(false,
+                "Error rendering theme template: {Error}");
             return ContentCache!;
         }
     }
@@ -176,7 +186,8 @@ public class Page : IPage
     /// Creates the output file by applying the theme templates to the page content.
     /// </summary>
     /// <returns>The processed output file content.</returns>
-    public string CompleteContent => ParseAndRenderTemplate(true, "Error parsing theme template: {Error}");
+    public string CompleteContent =>
+        ParseAndRenderTemplate(true, "Error parsing theme template: {Error}");
 
     /// <summary>
     /// Other content that mention this content.
@@ -199,6 +210,7 @@ public class Page : IPage
                     PagesCached.Add(page);
                 }
             }
+
             return PagesCached;
         }
     }
@@ -211,8 +223,8 @@ public class Page : IPage
         get
         {
             _regularPagesCache ??= Pages
-                    .Where(page => page.IsPage)
-                    .ToList();
+                .Where(page => page.IsPage)
+                .ToList();
             return _regularPagesCache;
         }
     }
@@ -246,6 +258,7 @@ public class Page : IPage
             {
                 return urls;
             }
+
             foreach (var resource in Resources)
             {
                 if (resource.Permalink is not null)
@@ -262,7 +275,8 @@ public class Page : IPage
     /// <summary>
     /// The markdown content.
     /// </summary>
-    private Lazy<string> ContentPreRenderedCached => new(() => Markdown.ToHtml(RawContent, SiteHelper.MarkdownPipeline));
+    private Lazy<string> ContentPreRenderedCached => new(() =>
+        Markdown.ToHtml(RawContent, SiteHelper.MarkdownPipeline));
 
     /// <summary>
     /// The cached content.
@@ -280,6 +294,7 @@ else
 echo page.SourcePathLastDirectory
 endif
 -%}";
+
     private const string UrlForNonIndex = @"{%- liquid
 if page.Parent
 echo page.Parent.Permalink
@@ -357,7 +372,8 @@ endif
             Site.CreateSystemPage("tags", "Tags", true);
             foreach (var tagName in Tags)
             {
-                Site.CreateSystemPage(Path.Combine("tags", tagName), tagName, true, this);
+                Site.CreateSystemPage(Path.Combine("tags", tagName), tagName,
+                    true, this);
             }
         }
 
@@ -366,6 +382,7 @@ endif
 
     private int _counterInternal;
     private bool _counterInternalLock;
+
     private int Counter
     {
         get
@@ -374,6 +391,7 @@ endif
             {
                 _counterInternalLock = true;
             }
+
             return _counterInternal;
         }
     }
@@ -384,6 +402,7 @@ endif
         {
             return;
         }
+
         if (BundleType == BundleType.None)
         {
             return;
@@ -399,8 +418,9 @@ endif
             var resourceFiles = Directory.GetFiles(SourceFullPathDirectory)
                 .Where(file =>
                     file != SourceFullPath &&
-                    (BundleType == BundleType.Leaf || !file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
-                    );
+                    (BundleType == BundleType.Leaf || !file.EndsWith(".md",
+                        StringComparison.OrdinalIgnoreCase))
+                );
 
             foreach (var resourceFilename in resourceFiles)
             {
@@ -418,21 +438,31 @@ endif
                         _counterInternalLock = false;
                         ++_counterInternal;
                     }
+
                     foreach (var resourceDefinition in ResourceDefinitions)
                     {
                         resourceDefinition.GlobMatcher ??= new();
-                        _ = resourceDefinition.GlobMatcher.AddInclude(resourceDefinition.Src);
-                        var file = new InMemoryDirectoryInfo("./", new[] { filenameOriginal });
-                        if (resourceDefinition.GlobMatcher.Execute(file).HasMatches)
+                        _ = resourceDefinition.GlobMatcher.AddInclude(
+                            resourceDefinition.Src);
+                        var file = new InMemoryDirectoryInfo("./",
+                            new[] { filenameOriginal });
+                        if (resourceDefinition.GlobMatcher.Execute(file)
+                            .HasMatches)
                         {
-                            filename = Site.TemplateEngine.ParseResource(resourceDefinition.Name, Site, this, Counter) ?? filename;
-                            title = Site.TemplateEngine.ParseResource(resourceDefinition.Title, Site, this, Counter) ?? filename;
+                            filename =
+                                Site.TemplateEngine.ParseResource(
+                                    resourceDefinition.Name, Site, this,
+                                    Counter) ?? filename;
+                            title = Site.TemplateEngine.ParseResource(
+                                resourceDefinition.Title, Site, this,
+                                Counter) ?? filename;
                             resourceParams = resourceDefinition.Params;
                         }
                     }
                 }
 
-                filename = Path.GetFileNameWithoutExtension(filename) + extension;
+                filename = Path.GetFileNameWithoutExtension(filename) +
+                           extension;
                 var resource = new Resource()
                 {
                     Title = title,
@@ -450,9 +480,11 @@ endif
         }
     }
 
-    private string ParseAndRenderTemplate(bool isBaseTemplate, string errorMessage)
+    private string ParseAndRenderTemplate(bool isBaseTemplate,
+        string errorMessage)
     {
-        var fileContents = FileUtils.GetTemplate(Site.SourceThemePath, this, Site.CacheManager, isBaseTemplate);
+        var fileContents = FileUtils.GetTemplate(Site.SourceThemePath, this,
+            Site.CacheManager, isBaseTemplate);
         if (string.IsNullOrEmpty(fileContents))
         {
             return isBaseTemplate ? Content : ContentPreRendered;
