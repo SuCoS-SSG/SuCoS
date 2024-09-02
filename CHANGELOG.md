@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+- Bump dependency versions to the latest
+- Added Debian package build during publishing
+
 ## v[4.2.1] 2024-06-20
+
+- Fixed container entrypoint
 
 ## v[4.2.0] 2024-06-20
 

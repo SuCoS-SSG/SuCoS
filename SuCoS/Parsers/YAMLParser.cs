@@ -1,6 +1,7 @@
 using System.Runtime.Serialization;
 using System.Text;
 using FolkerKinzel.Strings;
+using Serilog;
 using YamlDotNet.Serialization;
 
 namespace SuCoS.Parsers;
@@ -27,17 +28,21 @@ public class YamlParser : IMetadataParser
             .IgnoreUnmatchedProperties()
             .Build();
     }
-    private class IgnoreCaseTypeInspector(ITypeInspector innerTypeInspector)
-        : ITypeInspector
+
+    private class IgnoreCaseTypeInspector(ITypeInspector innerTypeInspector) : ITypeInspector
     {
         private readonly ITypeInspector _innerTypeInspector = innerTypeInspector ?? throw new ArgumentNullException(nameof(innerTypeInspector));
 
-        public IEnumerable<IPropertyDescriptor> GetProperties(Type type, object? container)
-        {
-            return _innerTypeInspector.GetProperties(type, container ?? null);
-        }
+        public IEnumerable<IPropertyDescriptor> GetProperties(Type type, object? container) => _innerTypeInspector.GetProperties(type, container ?? null);
 
-        public IPropertyDescriptor GetProperty(Type type, object? container, string name, bool ignoreUnmatched)
+        /// <inheritdoc/>
+        public string GetEnumName(Type enumType, string name) => _innerTypeInspector.GetEnumName(enumType, name);
+
+        /// <inheritdoc/>
+        public string GetEnumValue(object enumValue) => _innerTypeInspector.GetEnumValue(enumValue);
+
+        /// <inheritdoc/>
+        public IPropertyDescriptor? GetProperty(Type type, object? container, string name, bool ignoreUnmatched, bool caseInsensitivePropertyMatching)
         {
             var candidates = GetProperties(type, container)
                 .Where(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -75,7 +80,8 @@ public class YamlParser : IMetadataParser
         }
         catch
         {
-            throw new FormatException("Error parsing front matter");
+            // TODO: Log original error
+            throw new FormatException($"Error parsing YAML for '{typeof(T).Name}'");
         }
     }
 

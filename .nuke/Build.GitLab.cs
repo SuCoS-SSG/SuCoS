@@ -7,7 +7,6 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Identity.Client;
 using Nuke.Common;
 using Nuke.Common.CI.GitLab;
 using Nuke.Common.IO;
@@ -202,6 +201,30 @@ internal sealed partial class Build
             }
         });
 
+    /// <summary>
+    /// Upload the Debian package
+    /// </summary>
+    public Target GitLabPushDebianPackage => td => td
+        .DependsOn(CreateDebianPackage)
+        .Executes(async () =>
+        {
+            try
+            {
+                await using var fileStream = File.OpenRead(DebianPackage);
+                using var httpClient = HttpClientGitLabToken();
+                var response = await httpClient.PutAsync(
+                    GitLabApiUrl($"packages/debian/SuCoS.deb?distribution={DebianDistribution}&component={DebianComponent}"),
+                    new StreamContent(fileStream)).ConfigureAwait(false);
+
+                _ = response.EnsureSuccessStatusCode();
+            }
+            catch (HttpRequestException ex)
+            {
+                Log.Error(ex, "{StatusCode}: {Message}", ex.StatusCode,
+                    ex.Message);
+                throw;
+            }
+        });
 
     private Target GitLabCreateCommit => td => td
         .DependsOn(CheckNewCommits, UpdateProjectVersions, UpdateChangelog)

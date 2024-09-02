@@ -24,8 +24,9 @@ public class ParamsConverter : IYamlTypeConverter
     /// </summary>
     /// <param name="parser">The YAML parser.</param>
     /// <param name="type">The type of the object to deserialize.</param>
+    /// <param name="rootDeserializer"></param>
     /// <returns>A dictionary deserialized from the YAML stream.</returns>
-    public object ReadYaml(IParser parser, Type type)
+    public object ReadYaml(IParser parser, Type type, ObjectDeserializer rootDeserializer)
     {
         var dictionary = new Dictionary<string, object>();
 
@@ -48,7 +49,7 @@ public class ParamsConverter : IYamlTypeConverter
                 {
                     if (parser?.Current is MappingStart)
                     {
-                        list.Add(ReadYaml(parser, type));
+                        list.Add(ReadYaml(parser, type, rootDeserializer));
                     }
                     else if (parser?.Current is Scalar)
                     {
@@ -70,7 +71,7 @@ public class ParamsConverter : IYamlTypeConverter
             else if (parser.TryConsume<MappingStart>(out _))
             {
                 var nestedDictionary =
-                    (Dictionary<string, object>)ReadYaml(parser, type);
+                    (Dictionary<string, object>)ReadYaml(parser, type, rootDeserializer);
                 dictionary[key.Value] = nestedDictionary;
             }
             else
@@ -91,7 +92,8 @@ public class ParamsConverter : IYamlTypeConverter
     /// <param name="emitter">The YAML emitter.</param>
     /// <param name="value">The object to serialize.</param>
     /// <param name="type">The type of the object to serialize.</param>
-    public void WriteYaml(IEmitter emitter, object? value, Type type)
+    /// <param name="serializer"></param>
+    public void WriteYaml(IEmitter emitter, object? value, Type type, ObjectSerializer serializer)
     {
         throw new NotImplementedException();
     }

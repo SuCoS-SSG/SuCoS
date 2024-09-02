@@ -1,0 +1,9 @@
+Package: com.brunomassa.SuCoS
+Version: SUCOS_VERSION
+Architecture: amd64
+Description: "SuCoS (JuiCeS, in Portuguese) is a Static Site Generator written in C#."
+Maintainer: "Bruno Massa <massa+sucos@brunomassa.com>"
+Author: "Bruno Massa <massa+sucos@brunomassa.com>"
+Section: base
+Priority: optional
+Homepage: https://sucos.brunomassa.com

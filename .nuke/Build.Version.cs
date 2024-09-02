@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Nuke.Common;
 using Nuke.Common.Git;
@@ -23,7 +24,7 @@ internal sealed partial class Build
     /// </summary>
     private string VersionFull => _gitVersion.MajorMinorPatch;
 
-    private string VersionMajor => _gitVersion.Major.ToString();
+    private string VersionMajor => _gitVersion.Major.ToString(CultureInfo.InvariantCulture);
 
     private string VersionMajorMinor =>
         $"{_gitVersion.Major}.{_gitVersion.Minor}";

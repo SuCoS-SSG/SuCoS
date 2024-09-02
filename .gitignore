@@ -51,3 +51,4 @@ project.lock.json
 .idea/
 qodana.yaml
 qodana.sarif.json
+.nuke/Debian/DEBIAN/control
