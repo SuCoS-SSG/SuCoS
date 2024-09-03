@@ -15,8 +15,10 @@ namespace SuCoS;
 /// <remarks>
 /// Constructor
 /// </remarks>
-public class Program(ILogger logger)
+public class Program(ILogger loggerInitial)
 {
+    private ILogger logger = null!;
+
     /// <summary>
     /// Basic logo of the program, for fun
     /// </summary>
@@ -47,10 +49,11 @@ public class Program(ILogger logger)
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CheckLinkOptions))]
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(NewSiteOptions))]
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(NewThemeOptions))]
-    public async Task<int> RunCommandLine(string[] args)
+    private async Task<int> RunCommandLine(string[] args)
     {
         OutputLogo();
         OutputWelcome();
+        logger = loggerInitial;
         return await Parser.Default.ParseArguments<BuildOptions, ServeOptions, CheckLinkOptions, NewSiteOptions, NewThemeOptions>(args)
             .WithParsed<GenerateOptions>(options =>
             {
@@ -61,60 +64,72 @@ public class Program(ILogger logger)
                 options.Output = string.IsNullOrEmpty(options.Output) ? Path.Combine(options.Source, "public") : options.Output;
             })
             .MapResult(
-                (BuildOptions options) =>
-                {
-                    try
-                    {
-                        var command = new BuildCommand(options, logger, new FileSystem());
-                        return Task.FromResult(command.Run());
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.Error($"Build failed: {ex.Message}");
-                        return Task.FromResult(1);
-                    }
-                },
-                async (ServeOptions options) =>
-                {
-                    try
-                    {
-                        var serveCommand = new ServeCommand(options, logger, new SourceFileWatcher(), new FileSystem());
-                        serveCommand.StartServer();
-                        await Task.Delay(-1).ConfigureAwait(false);  // Wait forever.
-                    }
-                    catch (Exception ex)
-                    {
-                        if (options.Verbose)
-                        {
-                            logger.Error(ex, "Serving failed");
-                        }
-                        else
-                        {
-                            logger.Error($"Serving failed: {ex.Message}");
-                        }
-                        return 1;
-                    }
-                    return 0;
-                },
-                (CheckLinkOptions options) =>
-                {
-                    logger = CreateLogger(options.Verbose);
-                    var command = new CheckLinkCommand(options, logger);
-                    return command.Run();
-                },
-                (NewSiteOptions options) =>
-                {
-                    var fileSystem = new FileSystem();
-                    var command = NewSiteCommand.Create(options, logger, fileSystem);
-                    return Task.FromResult(command.Run());
-                },
-                (NewThemeOptions options) =>
-                {
-                    var command = new NewThemeCommand(options, logger);
-                    return Task.FromResult(command.Run());
-                },
+                (BuildOptions options) => BuildCommand(options),
+                async (ServeOptions options) => await ServeCommand(options),
+                (CheckLinkOptions options) => CheckLinkCommand(options),
+                (NewSiteOptions options) => NewSiteCommand(options),
+                (NewThemeOptions options) => NewThemeCommand(options),
                  _ => Task.FromResult(0)
                 ).ConfigureAwait(false);
+    }
+
+    private Task<int> BuildCommand(BuildOptions options)
+    {
+        try
+        {
+            var command = new BuildCommand(options, logger, new FileSystem());
+            return Task.FromResult(command.Run());
+        }
+        catch (Exception ex)
+        {
+            logger.Error($"Build failed: {ex.Message}");
+            return Task.FromResult(1);
+        }
+    }
+
+    private async Task<int> ServeCommand(ServeOptions options)
+    {
+        try
+        {
+            using var sourceFileWatcher = new SourceFileWatcher();
+            using var serveCommand = new ServeCommand(options, logger, sourceFileWatcher, new FileSystem());
+            serveCommand.StartServer();
+            await Task.Delay(-1).ConfigureAwait(false);  // Wait forever.
+        }
+        catch (Exception ex)
+        {
+            if (options.Verbose)
+            {
+                logger.Error(ex, "Serving failed");
+            }
+            else
+            {
+                logger.Error($"Serving failed: {ex.Message}");
+            }
+
+            return 1;
+        }
+
+        return 0;
+    }
+
+    private Task<int> CheckLinkCommand(CheckLinkOptions options)
+    {
+        var command = new CheckLinkCommand(options, logger);
+        return command.Run();
+    }
+
+    private Task<int> NewSiteCommand(NewSiteOptions options)
+    {
+        var fileSystem = new FileSystem();
+        var command = Commands.NewSiteCommand.Create(options, logger, fileSystem);
+        return Task.FromResult(command.Run());
+    }
+
+    private Task<int> NewThemeCommand(NewThemeOptions options)
+    {
+        var command = new NewThemeCommand(options, logger);
+        return Task.FromResult(command.Run());
     }
 
     /// <summary>
@@ -136,7 +151,7 @@ public class Program(ILogger logger)
         var assemblyName = Assembly.GetExecutingAssembly().GetName();
         var appName = assemblyName?.Name;
         var appVersion = assemblyName?.Version;
-        logger.Information("{name} v{version}", appName, appVersion);
+        loggerInitial.Information("{name} v{version}", appName, appVersion);
     }
 
     /// <summary>
@@ -144,6 +159,6 @@ public class Program(ILogger logger)
     /// </summary>
     public void OutputLogo()
     {
-        logger.Information(HelloWorld);
+        loggerInitial.Information(HelloWorld);
     }
 }
