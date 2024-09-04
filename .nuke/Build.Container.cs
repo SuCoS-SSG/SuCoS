@@ -77,8 +77,7 @@ internal sealed partial class Build : NukeBuild
         var cri = ContainerRuntimeIdentifier!.Value;
         var localTag = IsLocalBuild ? "local_" : string.Empty;
 
-        var tagsDefault = new List<string>()
-                { VersionFull, VersionMajorMinor, VersionMajor, string.Empty }
+        var tagsDefault = new List<string> { VersionFull, VersionMajorMinor, VersionMajor, string.Empty }
             .Select(tag => $"{localTag}{tag}").ToList();
 
         var tags = tagsDefault

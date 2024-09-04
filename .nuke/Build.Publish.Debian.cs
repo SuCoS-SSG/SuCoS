@@ -10,8 +10,8 @@ using Nuke.Common.Tooling;
 internal sealed partial class Build : NukeBuild
 {
     private AbsolutePath DebianPackage => PublishDir / "SuCoS.deb";
-    private string DebianDistribution = "bookworm";
-    private string DebianComponent = "main";
+    private readonly string DebianDistribution = "bookworm";
+    private readonly string DebianComponent = "main";
 
     public Target CreateDebianPackage => _ => _
         .After(Publish)

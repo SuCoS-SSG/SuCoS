@@ -32,7 +32,7 @@ public class ParamsConverter : IYamlTypeConverter
 
         if (!parser.TryConsume<MappingStart>(out _))
         {
-            // throw new YamlException("Expected a mapping start.");
+            // just to try to consume will move the pointer to the next event
         }
 
         while (!parser.TryConsume<MappingEnd>(out _))

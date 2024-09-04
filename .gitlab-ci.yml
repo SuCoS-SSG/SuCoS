@@ -36,6 +36,7 @@ test:
             ./build.sh Restore Compile TestReport Publish CreateContainer \
               --configuration "Debug" \
               --publish-directory "./publish"
+        - set +e; bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage-results/coverage/coverage.xml
     coverage: '/^  Line coverage: (\d*.\d*)%/'
     artifacts:
         paths:

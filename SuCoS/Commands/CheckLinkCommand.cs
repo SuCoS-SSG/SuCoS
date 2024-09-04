@@ -68,7 +68,6 @@ public sealed partial class CheckLinkCommand(CheckLinkOptions settings, ILogger 
 
     private async Task<bool> CheckLinks(string directoryPath, string[] files, HttpClient httpClient)
     {
-        // var filesCount = files.Length;
         var result = true;
 
         var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
@@ -200,7 +199,7 @@ public sealed partial class CheckLinkCommand(CheckLinkOptions settings, ILogger 
         return files;
     }
 
-	private void LogInformation(string message, string fileName, string? link = null, string? arg = null)
+    private void LogInformation(string message, string fileName, string? link = null, string? arg = null)
     {
         if (settings.Verbose)
         {
@@ -208,7 +207,7 @@ public sealed partial class CheckLinkCommand(CheckLinkOptions settings, ILogger 
         }
     }
 
-	private void LogError(string message, string fileName, string? link = null, string? arg = null)
+    private void LogError(string message, string fileName, string? link = null, string? arg = null)
     {
         if (settings.Verbose)
         {

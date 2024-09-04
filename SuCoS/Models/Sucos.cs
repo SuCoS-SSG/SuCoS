@@ -10,7 +10,7 @@ public class Sucos
     /// <summary>
     /// Return true if the `SuCoS serve` is running.
     /// </summary>
-    public bool IsServer { get; set; } = false;
+    public bool IsServer { get; set; }
 
     /// <summary>
     /// The .NET version.

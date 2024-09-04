@@ -86,7 +86,7 @@ public class FluidTemplateEngine : ITemplateEngine
     /// <param name="context"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
-    private static ValueTask<FluidValue> WhereParamsFilter(FluidValue input, FilterArguments arguments, TemplateContext context)
+    private static ValueTask<FluidValue> WhereParamsFilter(FluidValue input, FilterArguments arguments, TemplateContext _)
     {
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(arguments);

@@ -16,7 +16,7 @@ public sealed class NewThemeCommand(NewThemeOptions options, ILogger logger)
     /// <returns></returns>
     public int Run()
     {
-        var theme = new Theme()
+        var theme = new Theme
         {
             Title = options.Title,
             Path = options.Output

@@ -43,7 +43,6 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// not concurrently. This is necessary because a restart involves stopping the current server
     /// and starting a new one, which would not be thread-safe without some form of synchronization.
     /// </summary>
-    // private readonly SemaphoreSlim restartServerLock = new(1, 1);
     private Task _lastRestartTask = Task.CompletedTask;
 
     private HttpListener? _listener;
@@ -253,7 +252,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
         _debounceTimer = new Timer(DebounceCallback, e, TimeSpan.FromMilliseconds(1), Timeout.InfiniteTimeSpan);
     }
 
-    private async void DebounceCallback(object? state)
+    private async void DebounceCallback(object? _)
     {
         await RestartServer().ConfigureAwait(false);
     }

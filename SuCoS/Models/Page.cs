@@ -463,7 +463,7 @@ endif
 
                 filename = Path.GetFileNameWithoutExtension(filename) +
                            extension;
-                var resource = new Resource()
+                var resource = new Resource
                 {
                     Title = title,
                     FileName = filename,

@@ -24,7 +24,7 @@ public sealed class NewSiteCommand(NewSiteOptions options, ILogger logger, IFile
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        _siteSettings = new SiteSettings()
+        _siteSettings = new SiteSettings
         {
             Title = options.Title,
             Description = options.Description,
