@@ -9,27 +9,27 @@ using Serilog;
 /// This is the main build file for the project.
 /// This partial is responsible for the build process.
 /// </summary>
-internal sealed partial class Build : NukeBuild
+internal sealed partial class Build
 {
-    private  AbsolutePath testDLLDirectory => Solution.SuCoS_Test.Directory / "bin" / "Debug" / "net8.0";
-    private  AbsolutePath testAssembly => testDLLDirectory / Solution.SuCoS_Test.Name + ".dll";
-    private static AbsolutePath coverageDirectory => RootDirectory / "coverage-results";
-    private static AbsolutePath coverageResultDirectory => coverageDirectory / "coverage";
-    private static AbsolutePath coverageResultFile => coverageResultDirectory / "coverage.xml";
-    private static AbsolutePath coverageReportDirectory => coverageDirectory / "report";
-    private static AbsolutePath coverageReportSummaryDirectory => coverageReportDirectory / "Summary.txt";
+    private  AbsolutePath TestDllDirectory => Solution.SuCoS_Test.Directory / "bin" / "Debug" / "net8.0";
+    private  AbsolutePath TestAssembly => TestDllDirectory / Solution.SuCoS_Test.Name + ".dll";
+    private static AbsolutePath CoverageDirectory => RootDirectory / "coverage-results";
+    private static AbsolutePath CoverageResultDirectory => CoverageDirectory / "coverage";
+    private static AbsolutePath CoverageResultFile => CoverageResultDirectory / "coverage.xml";
+    private static AbsolutePath CoverageReportDirectory => CoverageDirectory / "report";
+    private static AbsolutePath CoverageReportSummaryDirectory => CoverageReportDirectory / "Summary.txt";
 
     private Target Test => td => td
         .After(Compile)
         .Executes(() =>
         {
-            _ = coverageResultDirectory.CreateDirectory();
+            _ = CoverageResultDirectory.CreateDirectory();
             _ = CoverletTasks.Coverlet(s => s
                     .SetTarget("dotnet")
                     .SetTargetArgs("test --no-build --no-restore")
-                    .SetAssembly(testAssembly)
+                    .SetAssembly(TestAssembly)
                     // .SetThreshold(75)
-                    .SetOutput(coverageResultFile)
+                    .SetOutput(CoverageResultFile)
                     .SetFormat(CoverletOutputFormat.cobertura)
                     .SetExcludeByFile(["**/*.g.cs"]) // Exclude source generated files
             );
@@ -39,13 +39,13 @@ internal sealed partial class Build : NukeBuild
         .DependsOn(Test)
         .Executes(() =>
         {
-            _ = coverageReportDirectory.CreateDirectory();
-            _ = ReportGeneratorTasks.ReportGenerator(s => ReportGeneratorSettingsExtensions
-                .SetTargetDirectory<ReportGeneratorSettings>(s, coverageReportDirectory)
-                .SetReportTypes([ReportTypes.Html, ReportTypes.TextSummary])
-                .SetReports(coverageResultFile)
+            _ = CoverageReportDirectory.CreateDirectory();
+            _ = ReportGeneratorTasks.ReportGenerator(s => s
+                .SetTargetDirectory(CoverageReportDirectory)
+                .SetReportTypes(ReportTypes.Html, ReportTypes.TextSummary)
+                .SetReports(CoverageResultFile)
             );
-            var summaryText = coverageReportSummaryDirectory.ReadAllLines();
+            var summaryText = CoverageReportSummaryDirectory.ReadAllLines();
             Log.Information(string.Join(Environment.NewLine, summaryText));
         });
 }

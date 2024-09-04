@@ -217,7 +217,7 @@ public class Site : ISite
                     return;
                 }
 
-                IPage? page = PageCreate(frontMatter, parent);
+                IPage? _ = PageCreate(frontMatter, parent);
             });
 
         var subdirectories = fs.DirectoryGetDirectories(directory);

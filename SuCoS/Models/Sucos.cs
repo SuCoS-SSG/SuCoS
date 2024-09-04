@@ -26,5 +26,5 @@ public class Sucos
     /// <summary>
     /// The date and time that the app was compiled.
     /// </summary>
-    public DateTime BuildDate => SuCoS.Models.SucosExt.BuildDate;
+    public DateTime BuildDate => SucosExt.BuildDate;
 }

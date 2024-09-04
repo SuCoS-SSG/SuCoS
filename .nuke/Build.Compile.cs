@@ -8,7 +8,7 @@ using Serilog;
 /// This is the main build file for the project.
 /// This partial is responsible for the build process.
 /// </summary>
-internal sealed partial class Build : NukeBuild
+internal sealed partial class Build
 {
     private Target Clean => s => s
         .Executes(() =>
@@ -20,7 +20,7 @@ internal sealed partial class Build : NukeBuild
                 (path) => path.DeleteDirectory()
             );
             PublishDir.DeleteDirectory();
-            coverageDirectory.DeleteDirectory();
+            CoverageDirectory.DeleteDirectory();
         });
 
     private Target Restore => td => td

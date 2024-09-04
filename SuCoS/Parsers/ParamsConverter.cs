@@ -28,6 +28,8 @@ public class ParamsConverter : IYamlTypeConverter
     /// <returns>A dictionary deserialized from the YAML stream.</returns>
     public object ReadYaml(IParser parser, Type type, ObjectDeserializer rootDeserializer)
     {
+        ArgumentNullException.ThrowIfNull(parser);
+
         var dictionary = new Dictionary<string, object>();
 
         if (!parser.TryConsume<MappingStart>(out _))
@@ -47,11 +49,11 @@ public class ParamsConverter : IYamlTypeConverter
                 var list = new List<object>();
                 while (!parser.TryConsume<SequenceEnd>(out _))
                 {
-                    if (parser?.Current is MappingStart)
+                    if (parser.Current is MappingStart)
                     {
                         list.Add(ReadYaml(parser, type, rootDeserializer));
                     }
-                    else if (parser?.Current is Scalar)
+                    else if (parser.Current is Scalar)
                     {
                         if (parser.TryConsume<Scalar>(out var scalar))
                         {

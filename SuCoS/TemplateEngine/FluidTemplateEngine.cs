@@ -27,7 +27,7 @@ public class FluidTemplateEngine : ITemplateEngine
     {
         // Liquid template options, needed to theme the content
         // but also parse URLs
-        TemplateOptions.MemberAccessStrategy.Register<Models.Sucos>();
+        TemplateOptions.MemberAccessStrategy.Register<Sucos>();
         TemplateOptions.MemberAccessStrategy.Register<Site>();
         TemplateOptions.MemberAccessStrategy.Register<Page>();
         TemplateOptions.MemberAccessStrategy.Register<Resource>();
@@ -83,7 +83,7 @@ public class FluidTemplateEngine : ITemplateEngine
     /// </summary>
     /// <param name="input"></param>
     /// <param name="arguments"></param>
-    /// <param name="context"></param>
+    /// <param name="_"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
     private static ValueTask<FluidValue> WhereParamsFilter(FluidValue input, FilterArguments arguments, TemplateContext _)

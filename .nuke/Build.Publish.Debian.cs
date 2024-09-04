@@ -7,30 +7,30 @@ using Nuke.Common.Tooling;
 /// This is the main build file for the project.
 /// This partial is responsible for the publish debian package.
 /// </summary>
-internal sealed partial class Build : NukeBuild
+internal sealed partial class Build
 {
     private AbsolutePath DebianPackage => PublishDir / "SuCoS.deb";
     private readonly string DebianDistribution = "bookworm";
     private readonly string DebianComponent = "main";
 
-    public Target CreateDebianPackage => _ => _
+    public Target CreateDebianPackage => td => td
         .After(Publish)
         .OnlyWhenStatic(() => RuntimeIdentifier == "linux-x64")
         .Executes(() =>
         {
-            var DebianPath = Solution._nuke.Directory / "Debian";
-            var sucosPath = DebianPath / "usr" / "local" / "bin" / "SuCoS";
-            var DebianControlFilePre = DebianPath / "DEBIAN" / "_control";
-            var DebianControlFile = DebianPath / "DEBIAN" / "control";
-            FileSystemTasks.CopyFile(DebianControlFilePre, DebianControlFile, FileExistsPolicy.Overwrite);
+            var debianPath = Solution._nuke.Directory / "Debian";
+            var sucosPath = debianPath / "usr" / "local" / "bin" / "SuCoS";
+            var debianControlFilePre = debianPath / "DEBIAN" / "_control";
+            var debianControlFile = debianPath / "DEBIAN" / "control";
+            FileSystemTasks.CopyFile(debianControlFilePre, debianControlFile, FileExistsPolicy.Overwrite);
             FileSystemTasks.CopyFile(PublishDir / "SuCoS", sucosPath, FileExistsPolicy.Overwrite);
 
-            var controlContent = DebianControlFile.ReadAllText()
-                .Replace("SUCOS_VERSION", VersionFull.ToString(), StringComparison.InvariantCulture);
+            var controlContent = debianControlFile.ReadAllText()
+                .Replace("SUCOS_VERSION", VersionFull, StringComparison.InvariantCulture);
 
-            DebianControlFile.WriteAllText(controlContent);
+            debianControlFile.WriteAllText(controlContent);
 
-            ProcessTasks.StartProcess("dpkg-deb", $"--build {DebianPath} {DebianPackage}")
+            ProcessTasks.StartProcess("dpkg-deb", $"--build {debianPath} {DebianPackage}")
                 .AssertZeroExitCode();
         });
 }

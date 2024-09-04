@@ -2,7 +2,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
-namespace SuCoS.Models;
+namespace SuCoS.Generator;
 
 /// <summary>
 /// Generate some data at the time of compilation

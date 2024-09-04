@@ -51,8 +51,8 @@ internal sealed partial class Build
         .Executes(async () =>
         {
             // The package name constructed using packageName, runtimeIdentifier, and Version
-            var CriName = ContainerRuntimeIdentifier is not null ? ContainerRuntimeIdentifier.Value.identifier : RuntimeIdentifier;
-            var package = $"{PackageName}-{CriName}-{CurrentTag}";
+            var criName = ContainerRuntimeIdentifier is not null ? ContainerRuntimeIdentifier.Value.identifier : RuntimeIdentifier;
+            var package = $"{PackageName}-{criName}-{CurrentTag}";
 
             // The filename of the package, constructed using the package variable
             var filename = $"{package}.zip";

@@ -13,19 +13,18 @@ public class SiteSettings : ISiteSettings
     /// <inheritdoc/>
     public string Title { get; set; } = string.Empty;
 
-
     /// <inheritdoc/>
     public string? Description { get; set; } = string.Empty;
-
 
     /// <inheritdoc/>
     public string? Copyright { get; set; }
 
-
     /// <inheritdoc/>
     public string BaseUrl { get; set; } = string.Empty;
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Types of outputs
+    /// </summary>
     public Dictionary<string, List<string>> Outputs { get; set; } = [];
 
     #endregion ISiteSettings

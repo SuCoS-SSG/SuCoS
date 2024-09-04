@@ -1,8 +1,7 @@
-using System.Runtime.Serialization;
 using System.Text;
 using FolkerKinzel.Strings;
-using Serilog;
 using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace SuCoS.Parsers;
 
@@ -23,7 +22,7 @@ public class YamlParser : IMetadataParser
     {
         _deserializer = new StaticDeserializerBuilder(new StaticAotContext())
             .WithTypeConverter(new ParamsConverter())
-            .WithNamingConvention(YamlDotNet.Serialization.NamingConventions.CamelCaseNamingConvention.Instance)
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .IgnoreUnmatchedProperties()
             .WithCaseInsensitivePropertyMatching()
             .Build();

@@ -6,4 +6,4 @@ namespace SuCoS.Parsers;
 /// The rest of this partial class gets generated at build time
 /// </summary>
 [YamlStaticContext]
-public partial class StaticAotContext : StaticContext;
+public partial class StaticAotContext;

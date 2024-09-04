@@ -17,17 +17,17 @@ internal sealed partial class Build
 {
     [GitRepository] private readonly GitRepository Repository;
 
-    [GitVersion] private readonly GitVersion _gitVersion;
+    [GitVersion] private readonly GitVersion GitVersion;
 
     /// <summary>
     /// The current version, using GitVersion.
     /// </summary>
-    private string VersionFull => _gitVersion.MajorMinorPatch;
+    private string VersionFull => GitVersion.MajorMinorPatch;
 
-    private string VersionMajor => _gitVersion.Major.ToString(CultureInfo.InvariantCulture);
+    private string VersionMajor => GitVersion.Major.ToString(CultureInfo.InvariantCulture);
 
     private string VersionMajorMinor =>
-        $"{_gitVersion.Major}.{_gitVersion.Minor}";
+        $"{GitVersion.Major}.{GitVersion.Minor}";
 
     /// <summary>
     /// The version in a format that can be used as a tag.
@@ -37,7 +37,7 @@ internal sealed partial class Build
     /// <summary>
     /// Checks if there are new commits since the last tag.
     /// </summary>
-    private bool HasNewCommits => _gitVersion.CommitsSinceVersionSource != "0";
+    private bool HasNewCommits => GitVersion.CommitsSinceVersionSource != "0";
 
     private string CurrentVersion;
 
@@ -85,7 +85,7 @@ internal sealed partial class Build
             // If there are no new commits since the last tag, skip tag creation
             // Nuke will stop here and not execute any of the following targets
             Log.Information(HasNewCommits
-                ? $"There are {_gitVersion.CommitsSinceVersionSource} new commits since last tag."
+                ? $"There are {GitVersion.CommitsSinceVersionSource} new commits since last tag."
                 : "No new commits since last tag. Skipping tag creation.");
         });
 

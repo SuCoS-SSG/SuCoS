@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Reflection;
 using CommandLine;
 using Serilog;
@@ -17,7 +18,7 @@ namespace SuCoS;
 /// </remarks>
 public class Program(ILogger loggerInitial)
 {
-    private ILogger logger = null!;
+    private ILogger _logger = null!;
 
     /// <summary>
     /// Basic logo of the program, for fun
@@ -53,11 +54,11 @@ public class Program(ILogger loggerInitial)
     {
         OutputLogo();
         OutputWelcome();
-        logger = loggerInitial;
+        _logger = loggerInitial;
         return await Parser.Default.ParseArguments<BuildOptions, ServeOptions, CheckLinkOptions, NewSiteOptions, NewThemeOptions>(args)
             .WithParsed<GenerateOptions>(options =>
             {
-                logger = CreateLogger(options.Verbose);
+                _logger = CreateLogger(options.Verbose);
             })
             .WithParsed<BuildOptions>(options =>
             {
@@ -77,12 +78,12 @@ public class Program(ILogger loggerInitial)
     {
         try
         {
-            var command = new BuildCommand(options, logger, new FileSystem());
+            var command = new BuildCommand(options, _logger, new FileSystem());
             return Task.FromResult(command.Run());
         }
         catch (Exception ex)
         {
-            logger.Error($"Build failed: {ex.Message}");
+            _logger.Error($"Build failed: {ex.Message}");
             return Task.FromResult(1);
         }
     }
@@ -92,7 +93,7 @@ public class Program(ILogger loggerInitial)
         try
         {
             using var sourceFileWatcher = new SourceFileWatcher();
-            using var serveCommand = new ServeCommand(options, logger, sourceFileWatcher, new FileSystem());
+            using var serveCommand = new ServeCommand(options, _logger, sourceFileWatcher, new FileSystem());
             serveCommand.StartServer();
             await Task.Delay(-1).ConfigureAwait(false);  // Wait forever.
         }
@@ -100,11 +101,11 @@ public class Program(ILogger loggerInitial)
         {
             if (options.Verbose)
             {
-                logger.Error(ex, "Serving failed");
+                _logger.Error(ex, "Serving failed");
             }
             else
             {
-                logger.Error($"Serving failed: {ex.Message}");
+                _logger.Error($"Serving failed: {ex.Message}");
             }
 
             return 1;
@@ -115,20 +116,20 @@ public class Program(ILogger loggerInitial)
 
     private Task<int> CheckLinkCommand(CheckLinkOptions options)
     {
-        var command = new CheckLinkCommand(options, logger);
+        var command = new CheckLinkCommand(options, _logger);
         return command.Run();
     }
 
     private Task<int> NewSiteCommand(NewSiteOptions options)
     {
         var fileSystem = new FileSystem();
-        var command = Commands.NewSiteCommand.Create(options, logger, fileSystem);
+        var command = Commands.NewSiteCommand.Create(options, _logger, fileSystem);
         return Task.FromResult(command.Run());
     }
 
     private Task<int> NewThemeCommand(NewThemeOptions options)
     {
-        var command = new NewThemeCommand(options, logger);
+        var command = new NewThemeCommand(options, _logger);
         return Task.FromResult(command.Run());
     }
 
@@ -140,7 +141,7 @@ public class Program(ILogger loggerInitial)
     public static ILogger CreateLogger(bool verbose = false) => new LoggerConfiguration()
         .MinimumLevel.Is(verbose ? LogEventLevel.Debug : LogEventLevel.Information)
         // .WriteTo.Async(a => a.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture))
-        .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
+        .WriteTo.Console(formatProvider: CultureInfo.CurrentCulture)
         .CreateLogger();
 
     /// <summary>
@@ -149,8 +150,8 @@ public class Program(ILogger loggerInitial)
     public void OutputWelcome()
     {
         var assemblyName = Assembly.GetExecutingAssembly().GetName();
-        var appName = assemblyName?.Name;
-        var appVersion = assemblyName?.Version;
+        var appName = assemblyName.Name;
+        var appVersion = assemblyName.Version;
         loggerInitial.Information("{name} v{version}", appName, appVersion);
     }
 
