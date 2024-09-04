@@ -22,7 +22,7 @@ internal sealed partial class Build : NukeBuild
     public readonly bool PublishSingleFile = true;
 
     [Parameter("publish-trimmed (default: false)")]
-    public readonly bool PublishTrimmed = false;
+    public readonly bool PublishTrimmed = true;
 
     [Parameter("publish-ready-to-run (default: true)")]
     public readonly bool PublishReadyToRun = true;
@@ -38,11 +38,13 @@ internal sealed partial class Build : NukeBuild
                 .SetRuntime(RuntimeIdentifier)
                 .SetSelfContained(PublishSelfContained)
                 .SetPublishSingleFile(PublishSingleFile)
-                .SetPublishTrimmed(PublishTrimmed)
                 .SetPublishReadyToRun(PublishReadyToRun)
+                .SetPublishTrimmed(PublishTrimmed)
                 .SetVersion(CurrentVersion)
                 .SetAssemblyVersion(CurrentVersion)
                 .SetInformationalVersion(CurrentVersion)
+                .AddProperty("TrimMode", "partial")
+                .AddProperty("EnableTrimAnalyzer", PublishTrimmed)
             );
         });
 }

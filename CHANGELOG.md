@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-- Bump dependency versions to the latest
+- Added: Trim executable to reduce the size by half: from about 80 mb to only only 40 mb
+- Changed: Bump dependency versions to the latest version at 2024-08-02
 - Added Debian package build during publishing
 
 ## v[4.2.1] 2024-06-20
