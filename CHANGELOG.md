@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## v[4.3.0] 2024-09-05
+
 - Added: Trim executable to reduce the size by half: from about 80 mb to only only 40 mb
 - Changed: Bump dependency versions to the latest version at 2024-08-02
 - Added Debian package build during publishing
@@ -123,7 +125,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added First Commit!
 
-[Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v4.2.1...HEAD
+[Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v4.3.0...HEAD
+[4.3.0]: https://gitlab.com/sucos/sucos/-/compare/v4.2.1...v4.3.0
 [4.2.1]: https://gitlab.com/sucos/sucos/-/compare/v4.2.0...v4.2.1
 [4.2.0]: https://gitlab.com/sucos/sucos/-/compare/v4.1.0...v4.2.0
 [4.1.0]: https://gitlab.com/sucos/sucos/-/compare/v4.0.1...v4.1.0
