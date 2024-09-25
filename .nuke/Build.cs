@@ -1,6 +1,8 @@
 using Nuke.Common;
 using Nuke.Common.CI;
 
+namespace SuCoS.NUKE;
+
 /// <summary>
 /// This is the main build file for the project.
 /// </summary>

@@ -5,6 +5,8 @@ using System.Text.RegularExpressions;
 using Nuke.Common;
 using Serilog;
 
+namespace SuCoS.NUKE;
+
 /// <summary>
 /// This is the main build file for the project.
 /// This partial is responsible for the updating the Changelog.

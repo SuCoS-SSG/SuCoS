@@ -1,11 +1,13 @@
 using System.ComponentModel;
 using Nuke.Common.Tooling;
 
-[TypeConverter(typeof(TypeConverter<Configuration>))]
-public class Configuration : Enumeration
-{
-    public static Configuration Debug { get; set; } = new() { Value = nameof(Debug) };
-    public static Configuration Release { get; set; } = new() { Value = nameof(Release) };
+namespace SuCoS.NUKE;
 
-    public static implicit operator string(Configuration configuration) => configuration?.Value;
+[TypeConverter(typeof(TypeConverter<ConfigurationPreset>))]
+public class ConfigurationPreset : Enumeration
+{
+    public static ConfigurationPreset Debug { get; set; } = new() { Value = nameof(Debug) };
+    public static ConfigurationPreset Release { get; set; } = new() { Value = nameof(Release) };
+
+    public static implicit operator string(ConfigurationPreset configuration) => configuration?.Value;
 }

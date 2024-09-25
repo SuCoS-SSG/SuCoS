@@ -7,7 +7,8 @@ assembly-informational-format: '{InformationalVersion}' # Defines the format for
 
 build-metadata-padding: 4 # The padding for build metadata
 commits-since-version-source-padding: 4 # Sets the padding for the number of commits since the version source
-continuous-delivery-fallback-tag: ci # Specifies the fallback tag used in Continuous Delivery mode
+#continuous-delivery-fallback-tag: ci # Specifies the fallback tag used in Continuous Delivery mode
+continuous-delivery-fallback-label: ci # Specifies the fallback tag used in Continuous Delivery mode
 increment: Inherit # Inherits the version increment from the last tagged version (Major, Minor, Patch, None, Inherit)
 legacy-semver-padding: 4 # The padding for legacy SemVer versions
 no-bump-message: '\+semver:\s?(none|skip)' # Defines the message pattern that won't trigger version increments

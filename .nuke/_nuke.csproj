@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <RootNamespace></RootNamespace>
+    <RootNamespace>SuCoS.NUKE</RootNamespace>
     <NoWarn>CS0649;CS0169</NoWarn>
     <NukeRootDirectory>..</NukeRootDirectory>
     <NukeScriptDirectory>..\source</NukeScriptDirectory>
@@ -16,17 +16,13 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Nuke.Common" Version="8.0.0" />
+    <PackageReference Include="Nuke.Common" Version="8.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageDownload Include="coverlet.console" Version="[6.0.2]" />
-    <PackageDownload Include="GitVersion.Tool" Version="[5.12.0]" />
-    <PackageDownload Include="ReportGenerator" Version="[5.2.5]" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="..\global.json" />
+    <PackageDownload Include="GitVersion.Tool" Version="[6.0.2]" />
+    <PackageDownload Include="ReportGenerator" Version="[5.3.9]" />
   </ItemGroup>
 
 </Project>

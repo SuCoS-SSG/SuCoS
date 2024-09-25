@@ -9,6 +9,8 @@ using Nuke.Common.Tools.Git;
 using Nuke.Common.Tools.GitVersion;
 using Serilog;
 
+namespace SuCoS.NUKE;
+
 /// <summary>
 /// This is the main build file for the project.
 /// This partial is responsible for the versioning using GitVersion.
@@ -17,7 +19,7 @@ internal sealed partial class Build
 {
     [GitRepository] private readonly GitRepository Repository;
 
-    [GitVersion] private readonly GitVersion GitVersion;
+    [GitVersion] private readonly GitVersion GitVersion = new();
 
     /// <summary>
     /// The current version, using GitVersion.

@@ -3,6 +3,8 @@ using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
 
+namespace SuCoS.NUKE;
+
 /// <summary>
 /// This is the main build file for the project.
 /// This partial is responsible for the publish debian package.

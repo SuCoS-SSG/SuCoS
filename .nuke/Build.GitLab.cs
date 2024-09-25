@@ -14,6 +14,8 @@ using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.Git;
 using Serilog;
 
+namespace SuCoS.NUKE;
+
 /// <summary>
 /// This is the main build file for the project.
 /// This partial is responsible integrating the GitLab CI/CD.

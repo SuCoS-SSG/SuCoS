@@ -1,67 +1,136 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/build",
-  "title": "Build Schema",
+  "properties": {
+    "ChangelogFile": {
+      "type": "string",
+      "description": "Changelog file"
+    },
+    "Configuration": {
+      "type": "string",
+      "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)"
+    },
+    "ContainerDefaultRid": {
+      "type": "string",
+      "description": "GitLab Project Full Address"
+    },
+    "ContainerRegistryImage": {
+      "type": "string",
+      "description": "GitLab Project CI_REGISTRY_IMAGE"
+    },
+    "GitLabApiBaseUrl": {
+      "type": "string",
+      "description": "GitLab API URL"
+    },
+    "GitlabPrivateToken": {
+      "type": "string",
+      "description": "GitLab private token"
+    },
+    "GitLabProjectId": {
+      "type": "integer",
+      "description": "GitLab ProjectId",
+      "format": "int64"
+    },
+    "PublishDirectory": {
+      "type": "string",
+      "description": "publish-directory (default: ./publish/{runtimeIdentifier})"
+    },
+    "PublishReadyToRun": {
+      "type": "boolean",
+      "description": "publish-ready-to-run (default: true)"
+    },
+    "PublishSelfContained": {
+      "type": "boolean",
+      "description": "publish-self-contained (default: true)"
+    },
+    "PublishSingleFile": {
+      "type": "boolean",
+      "description": "publish-single-file (default: true)"
+    },
+    "PublishTrimmed": {
+      "type": "boolean",
+      "description": "publish-trimmed (default: false)"
+    },
+    "RepositoryCompareLink": {
+      "type": "string",
+      "description": "Container image full name"
+    },
+    "RuntimeIdentifier": {
+      "type": "string",
+      "description": "Runtime identifier for the build (e.g., win-x64, linux-x64, osx-x64) (default: linux-x64)"
+    },
+    "Solution": {
+      "type": "string",
+      "description": "Path to a solution file that is automatically loaded"
+    }
+  },
   "definitions": {
-    "build": {
-      "type": "object",
+    "Host": {
+      "type": "string",
+      "enum": [
+        "AppVeyor",
+        "AzurePipelines",
+        "Bamboo",
+        "Bitbucket",
+        "Bitrise",
+        "GitHubActions",
+        "GitLab",
+        "Jenkins",
+        "Rider",
+        "SpaceAutomation",
+        "TeamCity",
+        "Terminal",
+        "TravisCI",
+        "VisualStudio",
+        "VSCode"
+      ]
+    },
+    "ExecutableTarget": {
+      "type": "string",
+      "enum": [
+        "CheckNewCommits",
+        "Clean",
+        "Compile",
+        "CreateCommit",
+        "CreateContainer",
+        "CreateDebianPackage",
+        "GitLabCreateCommit",
+        "GitLabCreateRelease",
+        "GitLabCreateTag",
+        "GitLabPushContainer",
+        "GitLabPushDebianPackage",
+        "GitLabUploadPackage",
+        "Publish",
+        "Restore",
+        "ShowCurrentVersion",
+        "Test",
+        "TestReport",
+        "UpdateChangelog",
+        "UpdateProjectVersions"
+      ]
+    },
+    "Verbosity": {
+      "type": "string",
+      "description": "",
+      "enum": [
+        "Verbose",
+        "Normal",
+        "Minimal",
+        "Quiet"
+      ]
+    },
+    "NukeBuild": {
       "properties": {
-        "ChangelogFile": {
-          "type": "string",
-          "description": "Changelog file"
-        },
-        "Configuration": {
-          "type": "string",
-          "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)"
-        },
-        "ContainerDefaultRid": {
-          "type": "string",
-          "description": "GitLab Project Full Address"
-        },
-        "ContainerRegistryImage": {
-          "type": "string",
-          "description": "GitLab Project CI_REGISTRY_IMAGE"
-        },
         "Continue": {
           "type": "boolean",
           "description": "Indicates to continue a previously failed build attempt"
-        },
-        "GitLabApiBaseUrl": {
-          "type": "string",
-          "description": "GitLab API URL"
-        },
-        "GitlabPrivateToken": {
-          "type": "string",
-          "description": "GitLab private token"
-        },
-        "GitLabProjectId": {
-          "type": "string",
-          "description": "GitLab ProjectId"
         },
         "Help": {
           "type": "boolean",
           "description": "Shows the help text for this build assembly"
         },
         "Host": {
-          "type": "string",
           "description": "Host for execution. Default is 'automatic'",
-          "enum": [
-            "AppVeyor",
-            "AzurePipelines",
-            "Bamboo",
-            "Bitbucket",
-            "Bitrise",
-            "GitHubActions",
-            "GitLab",
-            "Jenkins",
-            "Rider",
-            "SpaceAutomation",
-            "TeamCity",
-            "Terminal",
-            "TravisCI",
-            "VisualStudio",
-            "VSCode"
-          ]
+          "$ref": "#/definitions/Host"
         },
         "NoLogo": {
           "type": "boolean",
@@ -82,109 +151,30 @@
             "type": "string"
           }
         },
-        "PublishDirectory": {
-          "type": "string",
-          "description": "publish-directory (default: ./publish/{runtimeIdentifier})"
-        },
-        "PublishReadyToRun": {
-          "type": "boolean",
-          "description": "publish-ready-to-run (default: true)"
-        },
-        "PublishSelfContained": {
-          "type": "boolean",
-          "description": "publish-self-contained (default: true)"
-        },
-        "PublishSingleFile": {
-          "type": "boolean",
-          "description": "publish-single-file (default: true)"
-        },
-        "PublishTrimmed": {
-          "type": "boolean",
-          "description": "publish-trimmed (default: false)"
-        },
-        "RepositoryCompareLink": {
-          "type": "string",
-          "description": "Container image full name"
-        },
         "Root": {
           "type": "string",
           "description": "Root directory during build execution"
-        },
-        "RuntimeIdentifier": {
-          "type": "string",
-          "description": "Runtime identifier for the build (e.g., win-x64, linux-x64, osx-x64) (default: linux-x64)"
         },
         "Skip": {
           "type": "array",
           "description": "List of targets to be skipped. Empty list skips all dependencies",
           "items": {
-            "type": "string",
-            "enum": [
-              "CheckNewCommits",
-              "Clean",
-              "Compile",
-              "CreateCommit",
-              "CreateContainer",
-              "CreateDebianPackage",
-              "GitLabCreateCommit",
-              "GitLabCreateRelease",
-              "GitLabCreateTag",
-              "GitLabPushContainer",
-              "GitLabPushDebianPackage",
-              "GitLabUploadPackage",
-              "Publish",
-              "Restore",
-              "ShowCurrentVersion",
-              "Test",
-              "TestReport",
-              "UpdateChangelog",
-              "UpdateProjectVersions"
-            ]
+            "$ref": "#/definitions/ExecutableTarget"
           }
-        },
-        "Solution": {
-          "type": "string",
-          "description": "Path to a solution file that is automatically loaded"
         },
         "Target": {
           "type": "array",
           "description": "List of targets to be invoked. Default is '{default_target}'",
           "items": {
-            "type": "string",
-            "enum": [
-              "CheckNewCommits",
-              "Clean",
-              "Compile",
-              "CreateCommit",
-              "CreateContainer",
-              "CreateDebianPackage",
-              "GitLabCreateCommit",
-              "GitLabCreateRelease",
-              "GitLabCreateTag",
-              "GitLabPushContainer",
-              "GitLabPushDebianPackage",
-              "GitLabUploadPackage",
-              "Publish",
-              "Restore",
-              "ShowCurrentVersion",
-              "Test",
-              "TestReport",
-              "UpdateChangelog",
-              "UpdateProjectVersions"
-            ]
+            "$ref": "#/definitions/ExecutableTarget"
           }
         },
         "Verbosity": {
-          "type": "string",
           "description": "Logging verbosity during build execution. Default is 'Normal'",
-          "enum": [
-            "Minimal",
-            "Normal",
-            "Quiet",
-            "Verbose"
-          ]
+          "$ref": "#/definitions/Verbosity"
         }
       }
     }
-  }
+  },
+  "$ref": "#/definitions/NukeBuild"
 }

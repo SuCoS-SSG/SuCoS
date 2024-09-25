@@ -5,6 +5,8 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Cri = (string identifier, string family);
 
+namespace SuCoS.NUKE;
+
 /// <summary>
 /// This is the main build file for the project.
 /// This partial is responsible for create the Container (Docker) image.

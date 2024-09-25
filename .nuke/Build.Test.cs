@@ -5,6 +5,8 @@ using Nuke.Common.Tools.Coverlet;
 using Nuke.Common.Tools.ReportGenerator;
 using Serilog;
 
+namespace SuCoS.NUKE;
+
 /// <summary>
 /// This is the main build file for the project.
 /// This partial is responsible for the build process.

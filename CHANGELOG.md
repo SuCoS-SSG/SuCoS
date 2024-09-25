@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+- Changed: Bump dependency versions to the latest version at 2024-09
+
 ## v[4.3.0] 2024-09-05
 
 - Added: Trim executable to reduce the size by half: from about 80 mb to only only 40 mb
