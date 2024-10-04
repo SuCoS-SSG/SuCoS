@@ -246,9 +246,9 @@ public class Site : ISite
                 var sectionName = GetFirstDirectory(relativePath);
                 var kind = directoryDepth switch
                 {
-                    0 => Kind.Home,
-                    1 => isTaxonomy ? Kind.Taxonomy : Kind.Section,
-                    _ => isTaxonomy ? Kind.Term : Kind.List
+                    0 => Kind.home,
+                    1 => isTaxonomy ? Kind.taxonomy : Kind.section,
+                    _ => isTaxonomy ? Kind.term : Kind.list
                 };
 
                 FrontMatter frontMatter = new()
@@ -260,7 +260,7 @@ public class Site : ISite
                     SourceFullPath = Urlizer.Path(Path.Combine(
                         SourceContentPath, relativePath, IndexLeafFileConst)),
                     Title = title,
-                    Type = kind == Kind.Home ? "index" : sectionName,
+                    Type = kind == Kind.home ? "index" : sectionName,
                     Url = relativePath
                 };
 
@@ -284,13 +284,13 @@ public class Site : ISite
             return page;
         }
 
-        if (page.Kind != Kind.Home)
+        if (page.Kind != Kind.home)
         {
             page.PagesReferences.Add(originalPage.Permalink);
         }
 
         // TODO: still too hardcoded to add the tags reference
-        if ((page.Kind & Kind.IsTaxonomy) != Kind.IsTaxonomy)
+        if ((page.Kind & Kind.istaxonomy) != Kind.istaxonomy)
         {
             return page;
         }
@@ -352,7 +352,7 @@ public class Site : ISite
             {
                 _ = OutputReferences.TryRemove(page.Permalink!, out _);
                 page.Permalink = "/";
-                page.Kind = Kind.Home;
+                page.Kind = Kind.home;
 
                 _ = OutputReferences.GetOrAdd(page.Permalink, page);
                 Home = page;
@@ -456,8 +456,8 @@ public class Site : ISite
         if (!string.IsNullOrEmpty(page.Section)
             && OutputReferences.TryGetValue('/' + page.Section!, out var output)
             && (output is IPage section)
-            && page.Kind != Kind.Section
-            && page.Kind != Kind.Taxonomy)
+            && page.Kind != Kind.section
+            && page.Kind != Kind.taxonomy)
         {
             section.PagesReferences.Add(page.Permalink!);
         }

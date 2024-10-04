@@ -74,7 +74,7 @@ public class SiteTests : TestSetup
         // Assert
         Assert.Equal(expectedQuantity, Site.OutputReferences.Values.Count(output => output is IPage
         {
-            Kind: Kind.Section
+            Kind: Kind.section
         }));
     }
 

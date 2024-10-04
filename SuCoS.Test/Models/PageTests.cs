@@ -60,7 +60,7 @@ word03 word04 word05 6 7 [eight](https://example.com)
 
         // Assert
         Assert.Equal(string.Empty, page.Section);
-        Assert.Equal(Kind.Single, page.Kind);
+        Assert.Equal(Kind.single, page.Kind);
         Assert.Equal("page", page.Type);
         Assert.Null(page.Url);
         Assert.Empty(page.Params);
@@ -245,8 +245,8 @@ word03 word04 word05 6 7 [eight](https://example.com)
     }
 
     [Theory]
-    [InlineData(Kind.Single, true)]
-    [InlineData(Kind.List, false)]
+    [InlineData(Kind.single, true)]
+    [InlineData(Kind.list, false)]
     public void RegularPages_ShouldReturnCorrectPages_WhenKindIsSingle(Kind kind, bool isExpectedPage)
     {
         var page = new Page(FrontMatterMock, Site) { Kind = kind };

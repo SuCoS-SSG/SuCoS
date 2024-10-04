@@ -73,7 +73,7 @@ public interface IPage : IFrontMatter, IOutput
     /// <summary>
     /// Just a simple check if the current page is a "page"
     /// </summary>
-    public bool IsPage => (Kind & Kind.Single) == Kind.Single && (Kind & Kind.System) != Kind.System;
+    public bool IsPage => (Kind & Kind.single) == Kind.single && (Kind & Kind.system) != Kind.system;
 
     /// <summary>
     /// The number of words in the main content

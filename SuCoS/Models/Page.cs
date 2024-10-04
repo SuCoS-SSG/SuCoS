@@ -62,7 +62,7 @@ public class Page : IPage
     public string RawContent => _frontMatter.RawContent;
 
     /// <inheritdoc/>
-    public Kind Kind { get; set; } = Kind.Single;
+    public Kind Kind { get; set; } = Kind.single;
 
     /// <inheritdoc/>
     public string? SourceRelativePath => _frontMatter.SourceRelativePath;
@@ -153,7 +153,7 @@ public class Page : IPage
     /// <summary>
     /// Just a simple check if the current page is a "page"
     /// </summary>
-    public bool IsPage => Kind == Kind.Single;
+    public bool IsPage => Kind == Kind.single;
 
     /// <summary>
     /// The number of words in the main content
