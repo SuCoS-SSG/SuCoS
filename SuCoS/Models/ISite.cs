@@ -23,6 +23,11 @@ public interface ISite : ISiteSettings
     public IGenerateOptions Options { get; set; }
 
     /// <summary>
+    /// Theme used.
+    /// </summary>
+    public Theme? Theme { get; }
+
+    /// <summary>
     /// The path of the content, based on the source path.
     /// </summary>
     public string SourceContentPath { get; }
@@ -38,14 +43,14 @@ public interface ISite : ISiteSettings
     public string SourceThemePath { get; }
 
     /// <summary>
-    /// List of all pages, including generated.
-    /// </summary>
-    public IEnumerable<IPage> Pages { get; }
-
-    /// <summary>
     /// List of all pages, including generated, by their permalink.
     /// </summary>
     public ConcurrentDictionary<string, IOutput> OutputReferences { get; }
+
+    /// <summary>
+    /// List of all pages, including generated.
+    /// </summary>
+    public IEnumerable<IPage> Pages { get; }
 
     /// <summary>
     /// List of pages from the content folder.
@@ -116,37 +121,6 @@ public interface ISite : ISiteSettings
         bool overwrite = false);
 
     /// <summary>
-    /// Check if the page have the conditions to be published: valid date and not draft,
-    /// unless a command line option to force it.
-    /// </summary>
-    /// <param name="frontMatter">Page or front matter</param>
-    /// <param name="options">options</param>
-    /// <returns></returns>
-    public bool IsValidPage(
-        in IFrontMatter frontMatter,
-        IGenerateOptions? options);
-
-    /// <summary>
-    /// Check if the page have a publishing date from the past.
-    /// </summary>
-    /// <param name="frontMatter">Page or front matter</param>
-    /// <param name="options">options</param>
-    /// <returns></returns>
-    public bool IsValidDate(
-        in IFrontMatter frontMatter,
-        IGenerateOptions? options);
-
-    /// <summary>
-    /// Check if the page is expired
-    /// </summary>
-    public bool IsDateExpired(in IFrontMatter frontMatter);
-
-    /// <summary>
-    /// Check if the page is publishable
-    /// </summary>
-    public bool IsDatePublishable(in IFrontMatter frontMatter);
-
-    /// <summary>
     /// Creates the page for the site index.
     /// </summary>
     /// <param name="relativePath">The relative path of the page.</param>
@@ -159,4 +133,35 @@ public interface ISite : ISiteSettings
         string title,
         bool isTaxonomy = false,
         IPage? originalPage = null);
+
+    /// <summary>
+    /// Check if the page have the conditions to be published: valid date and not draft,
+    /// unless a command line option to force it.
+    /// </summary>
+    /// <param name="frontMatter">Page or front matter</param>
+    /// <param name="options">options</param>
+    /// <returns></returns>
+    public bool IsPageValid(
+        in IFrontMatter frontMatter,
+        IGenerateOptions? options);
+
+    /// <summary>
+    /// Check if the page have a publishing date from the past.
+    /// </summary>
+    /// <param name="frontMatter">Page or front matter</param>
+    /// <param name="options">options</param>
+    /// <returns></returns>
+    public bool IsDateValid(
+        in IFrontMatter frontMatter,
+        IGenerateOptions? options);
+
+    /// <summary>
+    /// Check if the page is expired
+    /// </summary>
+    public bool IsDateExpired(in IFrontMatter frontMatter);
+
+    /// <summary>
+    /// Check if the page is publishable
+    /// </summary>
+    public bool IsDatePublishable(in IFrontMatter frontMatter);
 }

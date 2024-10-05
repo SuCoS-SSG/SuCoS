@@ -1,3 +1,4 @@
+global using CacheTemplateIndex = (string? seection, SuCoS.Models.Kind? kind, string? type);
 using System.Collections.Concurrent;
 using SuCoS.Models;
 
@@ -11,12 +12,12 @@ public class SiteCacheManager
     /// <summary>
     /// Cache for content templates.
     /// </summary>
-    public Dictionary<(string?, Kind?, string?), string> ContentTemplateCache { get; } = [];
+    public Dictionary<CacheTemplateIndex, string> ContentTemplateCache { get; } = [];
 
     /// <summary>
     /// Cache for base templates.
     /// </summary>
-    public Dictionary<(string?, Kind?, string?), string> BaseTemplateCache { get; } = [];
+    public Dictionary<CacheTemplateIndex, string> BaseTemplateCache { get; } = [];
 
     /// <summary>
     /// Cache for tag page.

@@ -8,28 +8,25 @@
 *.swp
 *.user
 *.xproj
-bin/
-obj/
-# Visual Studio Code
-.vscode/
+**/bin/
+**/obj/
 # build results
 [Dd]ebug/
 [Rr]elease/
 build/
 x64/
-# Visual Studio 2015/2017 cache/options directory
+# IDEs
+.idea/
 .vs/
+.vscode/
+.zed/
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
-# NUNIT
-*.VisualState.xml
-TestResult.xml
-# Build Results of an ATL Project
+# .NET Core
 [Dd]ebugPS/
 [Rr]eleasePS/
 dlldata.c
-# .NET Core
 .nuke/temp
 *.bak
 *.cache
@@ -37,18 +34,15 @@ dlldata.c
 *.sdf
 *.sln.docstates
 *.suo
-*.vs/
 **/*.[a-z]db*
-**/bin/
-**/obj/
 artifacts/
+
 **/publish/
 **/public/
 output/
 project.fragment.lock.json
 project.lock.json
 **/coverage-results/
-.idea/
 qodana.yaml
 qodana.sarif.json
 .nuke/Debian/DEBIAN/control

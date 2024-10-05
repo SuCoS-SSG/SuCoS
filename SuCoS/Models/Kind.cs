@@ -50,5 +50,5 @@ public enum Kind
     /// <summary>
     /// Each taxonomy (category, tags) item
     /// </summary>
-    term = system | single | istaxonomy | list,
+    term = system | single | istaxonomy | list
 }

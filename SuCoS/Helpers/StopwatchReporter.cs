@@ -13,8 +13,8 @@ namespace SuCoS.Helpers;
 public class StopwatchReporter
 {
     private readonly ILogger _logger;
-    private readonly Dictionary<string, Stopwatch> _stopwatches;
-    private readonly Dictionary<string, int> _itemCounts;
+    private readonly Dictionary<string, Stopwatch> _stopwatches = [];
+    private readonly Dictionary<string, int> _itemCounts = [];
 
     /// <summary>
     /// Constructor
@@ -22,8 +22,6 @@ public class StopwatchReporter
     public StopwatchReporter(ILogger logger)
     {
         _logger = logger;
-        _stopwatches = [];
-        _itemCounts = [];
     }
 
     /// <summary>

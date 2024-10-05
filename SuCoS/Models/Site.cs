@@ -23,14 +23,6 @@ public class Site : ISite
 
     #endregion IParams
 
-    /// <inheritdoc/>
-    public Sucos SuCoS { get; } = new Sucos();
-
-    /// <summary>
-    /// Command line options
-    /// </summary>
-    public IGenerateOptions Options { get; set; }
-
     #region SiteSettings
 
     /// <inheritdoc/>
@@ -50,38 +42,32 @@ public class Site : ISite
 
     #endregion SiteSettings
 
-    /// <summary>
-    /// The path of the content, based on the source path.
-    /// </summary>
+    #region ISite
+
+    /// <inheritdoc/>
+    public Sucos SuCoS { get; } = new Sucos();
+
+    /// <inheritdoc/>
+    public IGenerateOptions Options { get; set; }
+
+    /// <inheritdoc/>
+    public Theme? Theme { get; }
+
+    /// <inheritdoc/>
     public string SourceContentPath => Path.Combine(Options.Source, "content");
 
-    /// <summary>
-    /// The path of the static content (that will be copied as is), based on the source path.
-    /// </summary>
+    /// <inheritdoc/>
     public string SourceStaticPath => Path.Combine(Options.Source, "static");
 
-    /// <summary>
-    /// The path theme.
-    /// </summary>
+    /// <inheritdoc/>
     public string SourceThemePath => Path.Combine(Options.Source,
         _settings.ThemeDir, _settings.Theme ?? string.Empty);
 
     /// <inheritdoc/>
-    public IEnumerable<string> SourceFolders =>
-    [
-        SourceContentPath,
-        SourceStaticPath,
-        SourceThemePath
-    ];
+    public ConcurrentDictionary<string, IOutput> OutputReferences { get; } =
+        new();
 
-    /// <summary>
-    /// Theme used.
-    /// </summary>
-    public Theme? Theme { get; }
-
-    /// <summary>
-    /// List of all pages, including generated.
-    /// </summary>
+    /// <inheritdoc/>
     public IEnumerable<IPage> Pages
     {
         get
@@ -94,15 +80,7 @@ public class Site : ISite
         }
     }
 
-    /// <summary>
-    /// List of all pages, including generated, by their permalink.
-    /// </summary>
-    public ConcurrentDictionary<string, IOutput> OutputReferences { get; } =
-        new();
-
-    /// <summary>
-    /// List of pages from the content folder.
-    /// </summary>
+    /// <inheritdoc/>
     public IEnumerable<IPage> RegularPages
     {
         get
@@ -117,28 +95,42 @@ public class Site : ISite
         }
     }
 
-    /// <summary>
-    /// The page of the home page;
-    /// </summary>
+    /// <inheritdoc/>
     public IPage? Home { get; private set; }
 
-    /// <summary>
-    /// Manage all caching lists for the site
-    /// </summary>
+    /// <inheritdoc/>
     public SiteCacheManager CacheManager { get; } = new();
 
-    /// <summary>
-    /// The logger instance.
-    /// </summary>
+    /// <inheritdoc/>
+    public IMetadataParser Parser { get; }
+
+    /// <inheritdoc/>
+    public ITemplateEngine TemplateEngine { get; }
+
+    /// <inheritdoc/>
     public ILogger Logger { get; }
+
+    /// <inheritdoc/>
+    public IEnumerable<string> SourceFolders =>
+    [
+        SourceContentPath,
+        SourceStaticPath,
+        SourceThemePath
+    ];
+
+    /// <inheritdoc/>
+    public void ResetCache()
+    {
+        CacheManager.ResetCache();
+        OutputReferences.Clear();
+    }
+
+    #endregion
 
     /// <summary>
     /// Number of files parsed, used in the report.
     /// </summary>
     public int FilesParsedToReport => _filesParsedToReport;
-
-    /// <inheritdoc/>
-    public IMetadataParser Parser { get; }
 
     private int _filesParsedToReport;
 
@@ -162,9 +154,6 @@ public class Site : ISite
     /// </summary>
     private readonly ISystemClock _clock;
 
-    /// <inheritdoc/>
-    public ITemplateEngine TemplateEngine { get; }
-
     /// <summary>
     /// Constructor
     /// </summary>
@@ -172,7 +161,8 @@ public class Site : ISite
         in IGenerateOptions options,
         in SiteSettings settings,
         in IMetadataParser parser,
-        in ILogger logger, ISystemClock? clock)
+        in ILogger logger,
+        ISystemClock? clock)
     {
         Options = options;
         _settings = settings;
@@ -185,14 +175,7 @@ public class Site : ISite
         Theme = Theme.CreateFromSite(this);
     }
 
-    /// <summary>
-    /// Resets the template cache to force a reload of all templates.
-    /// </summary>
-    public void ResetCache()
-    {
-        CacheManager.ResetCache();
-        OutputReferences.Clear();
-    }
+    #region ISite methods
 
     /// <inheritdoc/>
     public void ParseAndScanSourceFiles(IFileSystem fs, string? directory,
@@ -217,7 +200,7 @@ public class Site : ISite
                     return;
                 }
 
-                IPage? _ = PageCreate(frontMatter, parent);
+                PageCreate(frontMatter, parent);
             });
 
         var subdirectories = fs.DirectoryGetDirectories(directory);
@@ -227,6 +210,54 @@ public class Site : ISite
                 ParseAndScanSourceFiles(fs, subdirectory, level + 1, parent,
                     cascade);
             });
+    }
+
+    /// <summary>
+    /// Extra calculation and automatic data for each page.
+    /// </summary>
+    /// <param name="page">The given page to be processed</param>
+    /// <param name="parent">The parent page, if any</param>
+    /// <param name="overwrite"></param>
+    public void PostProcessPage(in IPage page, IPage? parent = null,
+        bool overwrite = false)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+
+        page.Parent = parent;
+        page.Permalink = page.CreatePermalink();
+        lock (_syncLockPostProcess)
+        {
+            if (!OutputReferences.TryGetValue(page.Permalink,
+                    out var oldOutput) || overwrite)
+            {
+                page.PostProcess();
+
+                // Replace the old page with the newly created one
+                if (oldOutput is IPage oldPage)
+                {
+                    foreach (var pageOld in oldPage.PagesReferences)
+                    {
+                        page.PagesReferences.Add(pageOld);
+                    }
+                }
+
+                // Register the page for all urls
+                foreach (var pageOutput in page.AllOutputUrLs)
+                {
+                    _ = OutputReferences.TryAdd(pageOutput.Key,
+                        pageOutput.Value);
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(page.Section)
+            && OutputReferences.TryGetValue('/' + page.Section!, out var output)
+            && (output is IPage section)
+            && page.Kind != Kind.section
+            && page.Kind != Kind.taxonomy)
+        {
+            section.PagesReferences.Add(page.Permalink!);
+        }
     }
 
     /// <inheritdoc/>
@@ -298,6 +329,48 @@ public class Site : ISite
         originalPage.TagsReference.Add(page);
         return page;
     }
+
+    /// <inheritdoc />
+    public bool IsPageValid(in IFrontMatter frontMatter,
+        IGenerateOptions? options)
+    {
+        ArgumentNullException.ThrowIfNull(frontMatter);
+
+        return IsDateValid(frontMatter, options)
+               && (frontMatter.Draft is null || frontMatter.Draft == false ||
+                   (options?.Draft ?? false));
+    }
+
+    /// <inheritdoc />
+    public bool IsDateValid(in IFrontMatter frontMatter,
+        IGenerateOptions? options)
+    {
+        ArgumentNullException.ThrowIfNull(frontMatter);
+
+        return (!IsDateExpired(frontMatter) || (options?.Expired ?? false))
+               && (IsDatePublishable(frontMatter) ||
+                   (options?.Future ?? false));
+    }
+
+    /// <inheritdoc />
+    public bool IsDateExpired(in IFrontMatter frontMatter)
+    {
+        ArgumentNullException.ThrowIfNull(frontMatter);
+
+        return frontMatter.ExpiryDate is not null &&
+               frontMatter.ExpiryDate <= _clock.Now;
+    }
+
+    /// <inheritdoc />
+    public bool IsDatePublishable(in IFrontMatter frontMatter)
+    {
+        ArgumentNullException.ThrowIfNull(frontMatter);
+
+        return frontMatter.GetPublishDate is null ||
+               frontMatter.GetPublishDate <= _clock.Now;
+    }
+
+    #endregion ISite methods
 
     private static string GetFirstDirectory(string relativePath) =>
         GetDirectories(relativePath).Length > 0
@@ -385,7 +458,9 @@ public class Site : ISite
                               ?? throw new FormatException(
                                   $"Error parsing front matter for {fileFullPath}");
 
-            return cascade is not null? cascade.Merge(frontMatter) : frontMatter;
+            return cascade is not null
+                ? cascade.Merge(frontMatter)
+                : frontMatter;
         }
         catch (Exception ex)
         {
@@ -400,7 +475,7 @@ public class Site : ISite
     {
         Page? page = null;
 
-        if (IsValidPage(frontMatter, Options))
+        if (IsPageValid(frontMatter, Options))
         {
             page = new(frontMatter, this)
             {
@@ -413,97 +488,5 @@ public class Site : ISite
         _ = Interlocked.Increment(ref _filesParsedToReport);
 
         return page;
-    }
-
-    /// <summary>
-    /// Extra calculation and automatic data for each page.
-    /// </summary>
-    /// <param name="page">The given page to be processed</param>
-    /// <param name="parent">The parent page, if any</param>
-    /// <param name="overwrite"></param>
-    public void PostProcessPage(in IPage page, IPage? parent = null,
-        bool overwrite = false)
-    {
-        ArgumentNullException.ThrowIfNull(page);
-
-        page.Parent = parent;
-        page.Permalink = page.CreatePermalink();
-        lock (_syncLockPostProcess)
-        {
-            if (!OutputReferences.TryGetValue(page.Permalink,
-                    out var oldOutput) || overwrite)
-            {
-                page.PostProcess();
-
-                // Replace the old page with the newly created one
-                if (oldOutput is IPage oldPage)
-                {
-                    foreach (var pageOld in oldPage.PagesReferences)
-                    {
-                        page.PagesReferences.Add(pageOld);
-                    }
-                }
-
-                // Register the page for all urls
-                foreach (var pageOutput in page.AllOutputUrLs)
-                {
-                    _ = OutputReferences.TryAdd(pageOutput.Key,
-                        pageOutput.Value);
-                }
-            }
-        }
-
-        if (!string.IsNullOrEmpty(page.Section)
-            && OutputReferences.TryGetValue('/' + page.Section!, out var output)
-            && (output is IPage section)
-            && page.Kind != Kind.section
-            && page.Kind != Kind.taxonomy)
-        {
-            section.PagesReferences.Add(page.Permalink!);
-        }
-    }
-
-    /// <inheritdoc />
-    public bool IsValidPage(in IFrontMatter frontMatter,
-        IGenerateOptions? options)
-    {
-        ArgumentNullException.ThrowIfNull(frontMatter);
-
-        return IsValidDate(frontMatter, options)
-               && (frontMatter.Draft is null || frontMatter.Draft == false ||
-                   (options?.Draft ?? false));
-    }
-
-    /// <inheritdoc />
-    public bool IsValidDate(in IFrontMatter frontMatter,
-        IGenerateOptions? options)
-    {
-        ArgumentNullException.ThrowIfNull(frontMatter);
-
-        return (!IsDateExpired(frontMatter) || (options?.Expired ?? false))
-               && (IsDatePublishable(frontMatter) ||
-                   (options?.Future ?? false));
-    }
-
-    /// <summary>
-    /// Check if the page is expired
-    /// </summary>
-    public bool IsDateExpired(in IFrontMatter frontMatter)
-    {
-        ArgumentNullException.ThrowIfNull(frontMatter);
-
-        return frontMatter.ExpiryDate is not null &&
-               frontMatter.ExpiryDate <= _clock.Now;
-    }
-
-    /// <summary>
-    /// Check if the page is publishable
-    /// </summary>
-    public bool IsDatePublishable(in IFrontMatter frontMatter)
-    {
-        ArgumentNullException.ThrowIfNull(frontMatter);
-
-        return frontMatter.GetPublishDate is null ||
-               frontMatter.GetPublishDate <= _clock.Now;
     }
 }

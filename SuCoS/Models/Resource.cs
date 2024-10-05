@@ -17,9 +17,17 @@ public class Resource : IResource
     /// <inheritdoc/>
     public string? SourceRelativePath => null;
 
+    #region IOutput
+
     /// <inheritdoc/>
     public string? Permalink { get; set; }
 
+    #endregion IOutput
+
+    #region IParams
+
     /// <inheritdoc/>
     public Dictionary<string, object> Params { get; set; } = [];
+
+    #endregion IParams
 }

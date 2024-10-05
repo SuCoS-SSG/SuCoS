@@ -109,7 +109,7 @@ public class Page : IPage
     /// <summary>
     /// Secondary URL patterns to be used to create the url.
     /// </summary>
-    public Collection<string>? AliasesProcessed { get; set; }
+    public Collection<string>? AliasesProcessed { get; private set; }
 
     /// <inheritdoc/>
     public string? Permalink { get; set; }
@@ -159,7 +159,8 @@ public class Page : IPage
     /// The number of words in the main content
     /// </summary>
     public int WordCount => Plain
-        .Split(NonWords, StringSplitOptions.RemoveEmptyEntries).Length;
+                            .Split(NonWords,
+                                StringSplitOptions.RemoveEmptyEntries).Length;
 
     private static readonly char[] NonWords =
         [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
@@ -172,22 +173,13 @@ public class Page : IPage
     /// <summary>
     /// The processed content.
     /// </summary>
-    public string Content
-    {
-        get
-        {
-            ContentCache = ParseAndRenderTemplate(false,
-                "Error rendering theme template: {Error}");
-            return ContentCache!;
-        }
-    }
+    public string Content => ParseAndRenderTemplate(false);
 
     /// <summary>
     /// Creates the output file by applying the theme templates to the page content.
     /// </summary>
     /// <returns>The processed output file content.</returns>
-    public string CompleteContent =>
-        ParseAndRenderTemplate(true, "Error parsing theme template: {Error}");
+    public string CompleteContent => ParseAndRenderTemplate(true);
 
     /// <summary>
     /// Other content that mention this content.
@@ -223,8 +215,8 @@ public class Page : IPage
         get
         {
             _regularPagesCache ??= Pages
-                .Where(page => page.IsPage)
-                .ToList();
+                                   .Where(page => page.IsPage)
+                                   .ToList();
             return _regularPagesCache;
         }
     }
@@ -416,11 +408,13 @@ endif
         try
         {
             var resourceFiles = Directory.GetFiles(SourceFullPathDirectory)
-                .Where(file =>
-                    file != SourceFullPath &&
-                    (BundleType == BundleType.Leaf || !file.EndsWith(".md",
-                        StringComparison.OrdinalIgnoreCase))
-                );
+                                         .Where(file =>
+                                             file != SourceFullPath &&
+                                             (BundleType == BundleType.Leaf ||
+                                              !file.EndsWith(".md",
+                                                  StringComparison
+                                                      .OrdinalIgnoreCase))
+                                         );
 
             foreach (var resourceFilename in resourceFiles)
             {
@@ -447,7 +441,7 @@ endif
                         var file = new InMemoryDirectoryInfo("./",
                             new[] { filenameOriginal });
                         if (resourceDefinition.GlobMatcher.Execute(file)
-                            .HasMatches)
+                                              .HasMatches)
                         {
                             filename =
                                 Site.TemplateEngine.ParseResource(
@@ -480,10 +474,9 @@ endif
         }
     }
 
-    private string ParseAndRenderTemplate(bool isBaseTemplate,
-        string errorMessage)
+    private string ParseAndRenderTemplate(bool isBaseTemplate)
     {
-        var fileContents = FileUtils.GetTemplate(Site.SourceThemePath, this,
+        var fileContents = this.GetTemplate(Site.SourceThemePath,
             Site.CacheManager, isBaseTemplate);
         if (string.IsNullOrEmpty(fileContents))
         {
@@ -496,7 +489,9 @@ endif
         }
         catch (FormatException ex)
         {
-            Site.Logger.Error(ex, errorMessage);
+            Site.Logger.Error(ex,
+                "Error rendering theme template: {fileContents}",
+                fileContents);
             return string.Empty;
         }
     }

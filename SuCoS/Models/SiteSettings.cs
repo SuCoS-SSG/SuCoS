@@ -39,9 +39,7 @@ public class SiteSettings : ISiteSettings
     /// </summary>
     public string ThemeDir { get; set; } = "themes";
 
-    /// <summary>
-    /// The appearance of a URL is either ugly or pretty.
-    /// </summary>
+    /// <inheritdoc/>
     public bool UglyUrLs { get; set; }
 
     #region IParams

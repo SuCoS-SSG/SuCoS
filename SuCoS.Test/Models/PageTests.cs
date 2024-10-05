@@ -189,7 +189,7 @@ word03 word04 word05 6 7 [eight](https://example.com)
         _ = options.Draft.Returns(draftOption);
 
         // Assert
-        Assert.Equal(expectedValue, Site.IsValidPage(page, options));
+        Assert.Equal(expectedValue, Site.IsPageValid(page, options));
     }
 
     [Theory]
@@ -209,7 +209,7 @@ word03 word04 word05 6 7 [eight](https://example.com)
         _ = options.Future.Returns(futureOption);
 
         // Assert
-        Assert.Equal(expected, Site.IsValidDate(page, options));
+        Assert.Equal(expected, Site.IsDateValid(page, options));
     }
 
     [Theory]
