@@ -61,8 +61,13 @@ public class Page : IPage
     /// <inheritdoc/>
     public string RawContent => _frontMatter.RawContent;
 
+    List<IPage> IFrontMatter.FrontMatterPages => _frontMatter.FrontMatterPages;
+
     /// <inheritdoc/>
-    public Kind Kind { get; set; } = Kind.single;
+    public IFrontMatter? FrontMatterParent => _frontMatter.FrontMatterParent;
+
+    /// <inheritdoc/>
+    public Kind Kind => _frontMatter.Kind;
 
     /// <inheritdoc/>
     public string? SourceRelativePath => _frontMatter.SourceRelativePath;
@@ -121,10 +126,12 @@ public class Page : IPage
     public ConcurrentBag<string> PagesReferences { get; } = [];
 
     /// <inheritdoc/>
-    public IPage? Parent { get; set; }
+    public IPage? Parent => FrontMatterParent?.FrontMatterPages.Count > 0
+        ? FrontMatterParent.FrontMatterPages[0]
+        : null;
 
     /// <inheritdoc/>
-    public BundleType BundleType { get; set; } = BundleType.None;
+    public BundleType BundleType => _frontMatter.BundleType;
 
     /// <inheritdoc/>
     public Collection<Resource>? Resources { get; set; }
@@ -135,10 +142,23 @@ public class Page : IPage
     public string Plain =>
         Markdown.ToPlainText(RawContent, SiteHelper.MarkdownPipeline);
 
-    /// <summary>
-    /// A list of tags, if any.
-    /// </summary>
-    public ConcurrentBag<IPage> TagsReference { get; } = [];
+    /// <inheritdoc/>
+    public List<IPage> TagsReference
+    {
+        get
+        {
+            List<IPage> tagsReferences = [];
+            foreach (var tag in FrontMatterTagsReference)
+            {
+                tagsReferences.AddRange(tag.FrontMatterPages);
+            }
+            return tagsReferences;
+        }
+    }
+
+    /// <inheritdoc/>
+    public List<FrontMatter> FrontMatterTagsReference =>
+        _frontMatter.FrontMatterTagsReference;
 
     /// <summary>
     /// Just a simple check if the current page is the home page
@@ -189,21 +209,10 @@ public class Page : IPage
     {
         get
         {
-            if (PagesCached is not null)
-            {
-                return PagesCached;
-            }
-
-            PagesCached = [];
-            foreach (var permalink in PagesReferences)
-            {
-                if (Site.OutputReferences[permalink] is IPage page)
-                {
-                    PagesCached.Add(page);
-                }
-            }
-
-            return PagesCached;
+            _pages ??= (_frontMatter as FrontMatter)?.PagePages
+                .SelectMany(page => page.FrontMatterPages)
+                .ToList() ?? [];
+            return _pages;
         }
     }
 
@@ -214,10 +223,9 @@ public class Page : IPage
     {
         get
         {
-            _regularPagesCache ??= Pages
-                                   .Where(page => page.IsPage)
-                                   .ToList();
-            return _regularPagesCache;
+            _regularPages ??= Pages
+                                   .Where(page => page.IsPage);
+            return _regularPages;
         }
     }
 
@@ -263,17 +271,11 @@ public class Page : IPage
         }
     }
 
-
     /// <summary>
     /// The markdown content.
     /// </summary>
     private Lazy<string> ContentPreRenderedCached => new(() =>
         Markdown.ToHtml(RawContent, SiteHelper.MarkdownPipeline));
-
-    /// <summary>
-    /// The cached content.
-    /// </summary>
-    private string? ContentCache { get; set; }
 
     private const string UrlForIndex = @"{%- liquid
 if page.Parent
@@ -299,9 +301,9 @@ echo page.SourceFileNameWithoutExtension
 endif
 -%}";
 
-    private List<IPage>? _regularPagesCache;
+    private IEnumerable<IPage>? _regularPages;
 
-    private List<IPage>? PagesCached { get; set; }
+    private List<IPage>? _pages;
 
     /// <summary>
     /// Constructor
@@ -354,18 +356,6 @@ endif
             foreach (var alias in Aliases)
             {
                 AliasesProcessed.Add(CreatePermalink(alias));
-            }
-        }
-
-        // TODO: remove the hard coded
-        // Create tag pages, if any
-        if (Tags is not null)
-        {
-            Site.CreateSystemPage("tags", "Tags", true);
-            foreach (var tagName in Tags)
-            {
-                Site.CreateSystemPage(Path.Combine("tags", tagName), tagName,
-                    true, this);
             }
         }
 

@@ -36,9 +36,15 @@ public static class SiteHelper
 
         stopwatch.Start("Parse");
 
-        site.ParseAndScanSourceFiles(fs, site.SourceContentPath);
+        site.ScanAndParseSourceFiles(fs, site.SourceContentPath);
 
         stopwatch.Stop("Parse", site.FilesParsedToReport);
+
+        stopwatch.Start("Generate Pages");
+
+        site.ProcessPages();
+
+        stopwatch.Stop("Generate Pages", site.FilesParsedToReport);
 
         if (fs.DirectoryExists(Path.GetFullPath(site.SourceThemePath)))
         {

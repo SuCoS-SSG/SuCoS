@@ -81,14 +81,43 @@ public class FrontMatter : IFrontMatter
     public DateTime? GetPublishDate => PublishDate ?? Date;
 
     /// <inheritdoc/>
+    [YamlIgnore]
+    public List<IPage> FrontMatterPages { get; private set; } = [];
+
+    /// <inheritdoc/>
     public Dictionary<string, object> Params { get; set; } = [];
 
+    /// <inheritdoc/>
+    [YamlIgnore]
+    public BundleType BundleType { get; set; }
+
+    /// <inheritdoc/>
+    [YamlIgnore]
+    public Kind Kind { get; set; } = Kind.single;
+
     #endregion IFrontMatter
+
+    /// <summary>
+    /// Content parent, normally from the File System;
+    /// </summary>
+    [YamlIgnore]
+    public IFrontMatter? FrontMatterParent { get; set; }
 
     /// <summary>
     /// Cascade front matter data to its children.
     /// </summary>
     public FrontMatter? Cascade { get; set; }
+
+    /// <summary>
+    /// List of tags.
+    /// </summary>
+    public List<FrontMatter> FrontMatterTagsReference { get; } = [];
+
+    /// <summary>
+    /// List of tags.
+    /// </summary>
+    [YamlIgnore]
+    public HashSet<FrontMatter> PagePages { get; private init; } = [];
 
     /// <summary>
     /// Constructor
@@ -191,9 +220,10 @@ public class FrontMatter : IFrontMatter
             RawContent = string.IsNullOrEmpty(other.RawContent) ? RawContent : other.RawContent,
             SourceRelativePath = string.IsNullOrEmpty(other.SourceRelativePath) ? SourceRelativePath : other.SourceRelativePath,
             SourceFullPath = string.IsNullOrEmpty(other.SourceFullPath) ? SourceFullPath : other.SourceFullPath,
-            Params = other.Params.Any() ? other.Params : Params,
-            Cascade = other.Cascade ?? Cascade
+            Params = other.Params.Count != 0 ? other.Params : Params,
+            Cascade = other.Cascade ?? Cascade,
+            PagePages = other.PagePages,
+            FrontMatterPages = other.FrontMatterPages
         };
     }
-
 }

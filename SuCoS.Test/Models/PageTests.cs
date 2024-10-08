@@ -249,7 +249,12 @@ word03 word04 word05 6 7 [eight](https://example.com)
     [InlineData(Kind.list, false)]
     public void RegularPages_ShouldReturnCorrectPages_WhenKindIsSingle(Kind kind, bool isExpectedPage)
     {
-        var page = new Page(FrontMatterMock, Site) { Kind = kind };
+        var page = new Page(new FrontMatter
+        {
+            Title = TitleConst,
+            SourceRelativePath = SourcePathConst,
+            Kind = kind
+        }, Site);
 
         // Act
         Site.PostProcessPage(page);
@@ -297,7 +302,7 @@ word03 word04 word05 6 7 [eight](https://example.com)
     // [InlineData("/index/post-01", 1)]
     [InlineData("/index/post-01/post-01", 2)]
     // [InlineData("/articles/article-01", 0)]
-    public void Cascade_ShouldCascasdeValues(string url, int weight)
+    public void Cascade_ShouldCascadeValues(string url, int weight)
     {
         GenerateOptions options = new()
         {
@@ -306,7 +311,8 @@ word03 word04 word05 6 7 [eight](https://example.com)
         Site.Options = options;
 
         // Act
-        Site.ParseAndScanSourceFiles(new FileSystem(), null);
+        Site.ScanAndParseSourceFiles(new FileSystem());
+        Site.ProcessPages();
         Site.OutputReferences.TryGetValue(url, out var itemPage );
         var page = itemPage as Page;
 
@@ -317,7 +323,7 @@ word03 word04 word05 6 7 [eight](https://example.com)
     [Theory]
     [InlineData("/index/post-01", "cascade")]
     [InlineData("/index/post-01/post-01", "own")]
-    public void Cascade_ShouldCascasdeParams(string url, string? valueString)
+    public void Cascade_ShouldCascadeParams(string url, string? valueString)
     {
         GenerateOptions options = new()
         {
@@ -326,7 +332,8 @@ word03 word04 word05 6 7 [eight](https://example.com)
         Site.Options = options;
 
         // Act
-        Site.ParseAndScanSourceFiles(new FileSystem(), null);
+        Site.ScanAndParseSourceFiles(new FileSystem());
+        Site.ProcessPages();
         Site.OutputReferences.TryGetValue(url, out var itemPage );
         var page = itemPage as Page;
 

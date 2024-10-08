@@ -64,8 +64,7 @@ public class Site : ISite
         _settings.ThemeDir, _settings.Theme ?? string.Empty);
 
     /// <inheritdoc/>
-    public ConcurrentDictionary<string, IOutput> OutputReferences { get; } =
-        new();
+    public ConcurrentDictionary<string, IOutput> OutputReferences { get; } = [];
 
     /// <inheritdoc/>
     public IEnumerable<IPage> Pages
@@ -74,7 +73,8 @@ public class Site : ISite
         {
             _pagesCache ??= OutputReferences.Values
                 .Where(output => output is IPage)
-                .Select(output => (output as IPage)!)
+                .Select(
+                    output => (output as IPage)!)
                 .OrderBy(page => -page.Weight);
             return _pagesCache!;
         }
@@ -87,7 +87,10 @@ public class Site : ISite
         {
             _regularPagesCache ??= OutputReferences
                 .Where(pair =>
-                    pair.Value is IPage { IsPage: true } page &&
+                    pair.Value is IPage
+                    {
+                        IsPage: true
+                    } page &&
                     pair.Key == page.Permalink)
                 .Select(pair => (pair.Value as IPage)!)
                 .OrderBy(page => -page.Weight);
@@ -154,6 +157,9 @@ public class Site : ISite
     /// </summary>
     private readonly ISystemClock _clock;
 
+    private readonly ConcurrentDictionary<string, FrontMatter> _frontMatters =
+        [];
+
     /// <summary>
     /// Constructor
     /// </summary>
@@ -178,20 +184,22 @@ public class Site : ISite
     #region ISite methods
 
     /// <inheritdoc/>
-    public void ParseAndScanSourceFiles(IFileSystem fs, string? directory,
-        int level = 0, IPage? parent = null, FrontMatter? cascade = null)
+    public void ScanAndParseSourceFiles(IFileSystem fs, string? directory,
+        int level = 0, FrontMatter? parent = null, FrontMatter? cascade = null)
     {
         ArgumentNullException.ThrowIfNull(fs);
 
         directory ??= SourceContentPath;
 
-        var markdownFiles = fs.DirectoryGetFiles(directory, "*.md");
-
         cascade ??= new FrontMatter();
-        ParseIndexPage(directory, level, ref parent, ref cascade,
+
+        var markdownFiles = fs.DirectoryGetFiles(directory, "*.md").ToList();
+        ParseIndexFrontMatter(directory, level, ref parent, ref cascade,
             ref markdownFiles);
 
-        _ = Parallel.ForEach(markdownFiles,
+        // Other source files that are not index
+        // _ = Parallel.ForEach(markdownFiles,
+        markdownFiles.ForEach(
             filePath =>
             {
                 var frontMatter = ParseFrontMatter(filePath, cascade);
@@ -200,30 +208,26 @@ public class Site : ISite
                     return;
                 }
 
-                PageCreate(frontMatter, parent);
+                frontMatter.FrontMatterParent = parent;
+
+                FrontMatterAdd(frontMatter, cascade);
             });
 
         var subdirectories = fs.DirectoryGetDirectories(directory);
-        _ = Parallel.ForEach(subdirectories,
+        subdirectories.ToList().ForEach(
+            // _ = Parallel.ForEach(subdirectories,
             subdirectory =>
             {
-                ParseAndScanSourceFiles(fs, subdirectory, level + 1, parent,
+                ScanAndParseSourceFiles(fs, subdirectory, level + 1, parent,
                     cascade);
             });
     }
 
-    /// <summary>
-    /// Extra calculation and automatic data for each page.
-    /// </summary>
-    /// <param name="page">The given page to be processed</param>
-    /// <param name="parent">The parent page, if any</param>
-    /// <param name="overwrite"></param>
-    public void PostProcessPage(in IPage page, IPage? parent = null,
-        bool overwrite = false)
+    /// <inheritdoc/>
+    public void PostProcessPage(in IPage page, bool overwrite = false)
     {
         ArgumentNullException.ThrowIfNull(page);
 
-        page.Parent = parent;
         page.Permalink = page.CreatePermalink();
         lock (_syncLockPostProcess)
         {
@@ -242,10 +246,18 @@ public class Site : ISite
                 }
 
                 // Register the page for all urls
-                foreach (var pageOutput in page.AllOutputUrLs)
+                foreach (var pageOutput in page.AllOutputUrLs.Where(
+                             pageOutput => !OutputReferences.TryAdd(
+                                 pageOutput.Key,
+                                 pageOutput.Value)))
                 {
-                    _ = OutputReferences.TryAdd(pageOutput.Key,
-                        pageOutput.Value);
+                    Logger.Error(
+                        "Duplicate permalink '{permalink}' from `{file}`. Was from '{from}'.",
+                        pageOutput.Key,
+                        (pageOutput.Value as Page)!.SourceRelativePath,
+                        (OutputReferences[pageOutput.Key] as Page)!
+                        .SourceRelativePath
+                    );
                 }
             }
         }
@@ -260,74 +272,53 @@ public class Site : ISite
         }
     }
 
-    /// <inheritdoc/>
-    public IPage CreateSystemPage(string relativePath, string title,
-        bool isTaxonomy = false, IPage? originalPage = null)
+    /// <summary>
+    /// Create fake front matter for system-created pages
+    /// </summary>
+    /// <param name="relativePath"></param>
+    /// <param name="title"></param>
+    /// <param name="isTaxonomy"></param>
+    private FrontMatter CreateSystemFrontMatter(
+        string relativePath,
+        string title,
+        bool isTaxonomy = false)
     {
         relativePath = Urlizer.Path(relativePath);
-        relativePath = relativePath == "homepage" ? "/" : relativePath;
 
-        var id = relativePath;
-
-        // Get or create the page
-        var lazyPage = CacheManager.AutomaticContentCache.GetOrAdd(id,
-            new Lazy<IPage>(() =>
+        if (!CacheManager.AutomaticContentCache.TryGetValue(relativePath,
+                out var frontMatter))
+        {
+            var directoryDepth = GetDirectoryDepth(relativePath);
+            var sectionName = GetFirstDirectory(relativePath);
+            var kind = directoryDepth switch
             {
-                var directoryDepth = GetDirectoryDepth(relativePath);
-                var sectionName = GetFirstDirectory(relativePath);
-                var kind = directoryDepth switch
-                {
-                    0 => Kind.home,
-                    1 => isTaxonomy ? Kind.taxonomy : Kind.section,
-                    _ => isTaxonomy ? Kind.term : Kind.list
-                };
+                0 => Kind.home,
+                1 => isTaxonomy ? Kind.taxonomy : Kind.section,
+                _ => isTaxonomy ? Kind.term : Kind.list
+            };
 
-                FrontMatter frontMatter = new()
-                {
-                    Section = directoryDepth == 0 ? "index" : sectionName,
-                    SourceRelativePath =
-                        Urlizer.Path(Path.Combine(relativePath,
-                            IndexLeafFileConst)),
-                    SourceFullPath = Urlizer.Path(Path.Combine(
-                        SourceContentPath, relativePath, IndexLeafFileConst)),
-                    Title = title,
-                    Type = kind == Kind.home ? "index" : sectionName,
-                    Url = relativePath
-                };
-
-                IPage? parent = null;
-
-                var newPage = new Page(frontMatter, this)
-                {
-                    BundleType = BundleType.Branch,
-                    Kind = kind
-                };
-                PostProcessPage(newPage, parent);
-                return newPage;
-            }));
-
-        // get the page from the lazy object
-        var page = lazyPage.Value;
-
-        if (originalPage is null ||
-            string.IsNullOrEmpty(originalPage.Permalink))
-        {
-            return page;
+            frontMatter = new FrontMatter
+            {
+                Section = directoryDepth == 0 ? "index" : sectionName,
+                SourceRelativePath = SourceRelativePath(relativePath),
+                SourceFullPath = Urlizer.Path(Path.Combine(SourceContentPath,
+                    relativePath, IndexBranchFileConst)),
+                Title = title,
+                Type = kind == Kind.home ? "index" : sectionName,
+                Url = relativePath,
+                BundleType = BundleType.Branch,
+                Kind = kind
+            };
+            CacheManager.AutomaticContentCache.TryAdd(relativePath,
+                frontMatter);
         }
 
-        if (page.Kind != Kind.home)
-        {
-            page.PagesReferences.Add(originalPage.Permalink);
-        }
+        return frontMatter;
+    }
 
-        // TODO: still too hardcoded to add the tags reference
-        if ((page.Kind & Kind.istaxonomy) != Kind.istaxonomy)
-        {
-            return page;
-        }
-
-        originalPage.TagsReference.Add(page);
-        return page;
+    private static string SourceRelativePath(string? relativePath)
+    {
+        return Urlizer.Path(Path.Combine(relativePath ?? "", IndexBranchFileConst));
     }
 
     /// <inheritdoc />
@@ -384,8 +375,12 @@ public class Site : ISite
         (relativePath ?? string.Empty).Split('/',
             StringSplitOptions.RemoveEmptyEntries);
 
-    private void ParseIndexPage(string? directory, int level, ref IPage? parent,
-        ref FrontMatter cascade, ref string[] markdownFiles)
+    private void ParseIndexFrontMatter(
+        string? directory,
+        int level,
+        ref FrontMatter? parent,
+        ref FrontMatter cascade,
+        ref List<string> markdownFiles)
     {
         var indexLeafBundlePage = markdownFiles.FirstOrDefault(file =>
             Path.GetFileName(file) == IndexLeafFileConst);
@@ -393,60 +388,105 @@ public class Site : ISite
         var indexBranchBundlePage = markdownFiles.FirstOrDefault(file =>
             Path.GetFileName(file) == IndexBranchFileConst);
 
-        if (indexLeafBundlePage is not null ||
-            indexBranchBundlePage is not null)
+        FrontMatter? frontMatter = null;
+
+        var hasIndex = indexLeafBundlePage is not null ||
+                       indexBranchBundlePage is not null;
+
+        if (hasIndex)
         {
             // Determine the file to use and the bundle type
             var selectedFile = indexLeafBundlePage ?? indexBranchBundlePage;
-            var bundleType = selectedFile == indexLeafBundlePage
-                ? BundleType.Leaf
-                : BundleType.Branch;
 
             // Remove the selected file from markdownFiles
-            markdownFiles = bundleType == BundleType.Leaf
-                ? []
-                : markdownFiles.Where(file => file != selectedFile).ToArray();
+            markdownFiles = markdownFiles.Where(file =>
+                file != indexLeafBundlePage &&
+                file != indexBranchBundlePage).ToList();
 
-            var frontMatter = ParseFrontMatter(selectedFile!, cascade);
+            frontMatter = ParseFrontMatter(selectedFile!, cascade);
             if (frontMatter is null)
             {
                 return;
             }
 
+            frontMatter.BundleType = selectedFile == indexLeafBundlePage
+                ? BundleType.Leaf
+                : BundleType.Branch;
+
+            // Use interlocked to safely increment the counter in a multithreaded environment
+            _ = Interlocked.Increment(ref _filesParsedToReport);
+
             cascade = frontMatter.Cascade ?? cascade;
-
-            IPage? page = PageCreate(frontMatter, parent, bundleType);
-            if (page is null)
-            {
-                return;
-            }
-
-            if (level == 0)
-            {
-                _ = OutputReferences.TryRemove(page.Permalink!, out _);
-                page.Permalink = "/";
-                page.Kind = Kind.home;
-
-                _ = OutputReferences.GetOrAdd(page.Permalink, page);
-                Home = page;
-            }
-            else
-            {
-                parent = page;
-            }
+            frontMatter.FrontMatterParent = parent;
         }
-        else if (level == 0)
+        else
         {
-            Home = CreateSystemPage(string.Empty, Title);
+            switch (level)
+            {
+                case 0:
+                    frontMatter = CreateSystemFrontMatter(String.Empty, Title);
+                    break;
+                case 1:
+                {
+                    var section = new DirectoryInfo(directory!).Name;
+                    frontMatter = CreateSystemFrontMatter(section, section);
+                    break;
+                }
+            }
         }
-        else if (level == 1 && directory is not null)
+
+        if (frontMatter is null)
         {
-            var section = new DirectoryInfo(directory).Name;
-            parent = CreateSystemPage(section, section);
+            return;
         }
+
+        switch (level)
+        {
+            case 0:
+                frontMatter.Kind = Kind.home;
+                frontMatter.Url = "/";
+                break;
+            case 1:
+                frontMatter.Kind = hasIndex ? frontMatter.Kind : Kind.section;
+                frontMatter.Type ??= "section";
+                parent = frontMatter;
+                break;
+            default:
+                parent = frontMatter;
+                break;
+        }
+
+        FrontMatterAdd(frontMatter);
     }
 
-    private FrontMatter? ParseFrontMatter(in string fileFullPath, FrontMatter? cascade)
+    /// <inheritdoc />
+    public FrontMatter? FrontMatterAdd(FrontMatter? frontMatter,
+        FrontMatter? cascade = null)
+    {
+        if (frontMatter is null)
+        {
+            return null;
+        }
+
+        if (!_frontMatters.TryAdd(frontMatter.SourceRelativePath!, frontMatter))
+        {
+            Logger.Error("Duplicate front matter found : {filepath}",
+                frontMatter.SourceRelativePath);
+        }
+
+        var path = SourceRelativePath(frontMatter.Section);
+        if (!string.IsNullOrEmpty(frontMatter.Section) && _frontMatters.TryGetValue(path,
+                out var sectionFrontMatter))
+        {
+            LinkContent(frontMatter, sectionFrontMatter, false);
+        }
+
+        GenerateTags(frontMatter);
+        return frontMatter;
+    }
+
+    private FrontMatter? ParseFrontMatter(in string fileFullPath,
+        FrontMatter? cascade)
     {
         var fileRelativePath =
             Path.GetRelativePath(SourceContentPath, fileFullPath);
@@ -470,18 +510,84 @@ public class Site : ISite
         return null;
     }
 
-    private Page? PageCreate(IFrontMatter frontMatter, in IPage? parent,
-        BundleType bundleType = BundleType.None)
+    // TODO: taxonomy should be customizable
+    private void GenerateTags(FrontMatter frontMatter)
     {
-        Page? page = null;
+        if (frontMatter.Tags == null)
+        {
+            return;
+        }
 
+        if (!_frontMatters.TryGetValue($"tags/_index.md",
+                out var tagsFrontMatter))
+        {
+            tagsFrontMatter = CreateSystemFrontMatter("tags", "Tags");
+            if (!_frontMatters.TryAdd(
+                    tagsFrontMatter.SourceRelativePath!,
+                    tagsFrontMatter))
+            {
+                Log.Error("already exist!");
+            }
+        }
+        LinkContent(frontMatter, tagsFrontMatter, false);
+
+        foreach (var tag in frontMatter.Tags)
+        {
+            var path = SourceRelativePath(Path.Combine("tags", tag));
+            if (!_frontMatters.TryGetValue(path, out var tagFrontMatter))
+            {
+                tagFrontMatter =
+                    CreateSystemFrontMatter(Path.Combine("tags", tag), tag);
+                tagFrontMatter.FrontMatterParent = tagsFrontMatter;
+                _frontMatters.TryAdd(tagFrontMatter.SourceRelativePath!,
+                    tagFrontMatter);
+            }
+
+            LinkContent(frontMatter, tagFrontMatter, true);
+        }
+    }
+
+    private static void LinkContent(FrontMatter content1, FrontMatter content2,
+        bool isTag)
+    {
+        if (isTag)
+        {
+            content1.FrontMatterTagsReference.Add(content2);
+        }
+
+        content2.PagePages.Add(content1);
+    }
+
+    /// <summary>
+    /// Create a Page from front matter
+    /// </summary>
+    /// <param name="frontMatter"></param>
+    public Page? PageCreate(IFrontMatter frontMatter)
+    {
+        ArgumentNullException.ThrowIfNull(frontMatter);
+
+        // Create the parent if it does not exist
+        if (frontMatter.FrontMatterParent is FrontMatter
+            {
+                FrontMatterPages.Count: 0
+            })
+        {
+            PageCreate(frontMatter.FrontMatterParent);
+        }
+
+        Page? page = null;
         if (IsPageValid(frontMatter, Options))
         {
-            page = new(frontMatter, this)
+            page = new(frontMatter, this);
+            PostProcessPage(page, true);
+            frontMatter.FrontMatterPages.Add(page);
+
+            if (Home is null &&
+                page.SourceRelativePath is IndexBranchFileConst
+                    or IndexLeafFileConst)
             {
-                BundleType = bundleType
-            };
-            PostProcessPage(page, parent, true);
+                Home = page;
+            }
         }
 
         // Use interlocked to safely increment the counter in a multithreaded environment
@@ -489,4 +595,18 @@ public class Site : ISite
 
         return page;
     }
+
+    /// <summary>
+    /// Create pages from front matter
+    /// </summary>
+    public void ProcessPages() =>
+        _frontMatters
+            .Where(fm => fm.Value.FrontMatterPages.Count == 0)
+            .OrderBy(fm =>
+                !fm.Value.SourceRelativePath!.EndsWith("index.md",
+                    StringComparison.OrdinalIgnoreCase))
+            .ThenBy(fm => fm.Value.SourceRelativePathDirectory)
+            .Select(fm => fm.Value)
+            .ToList()
+            .ForEach(fm => PageCreate(fm));
 }

@@ -102,37 +102,26 @@ public interface ISite : ISiteSettings
     /// <param name="parent">Page of the upper directory</param>
     /// <param name="cascade"></param>
     /// <returns></returns>
-    public void ParseAndScanSourceFiles(
+    public void ScanAndParseSourceFiles(
         IFileSystem fs,
-        string? directory,
+        string? directory = null,
         int level = 0,
-        IPage? parent = null,
+        FrontMatter? parent = null,
         FrontMatter? cascade = null);
+
+    /// <summary>
+    /// Expand the front matter to full blown pages.
+    /// </summary>
+    public void ProcessPages();
 
     /// <summary>
     /// Extra calculation and automatic data for each page.
     /// </summary>
     /// <param name="page">The given page to be processed</param>
-    /// <param name="parent">The parent page, if any</param>
     /// <param name="overwrite"></param>
     public void PostProcessPage(
         in IPage page,
-        IPage? parent = null,
         bool overwrite = false);
-
-    /// <summary>
-    /// Creates the page for the site index.
-    /// </summary>
-    /// <param name="relativePath">The relative path of the page.</param>
-    /// <param name="title"></param>
-    /// <param name="isTaxonomy"></param>
-    /// <param name="originalPage"></param>
-    /// <returns>The created page for the index.</returns>
-    public IPage CreateSystemPage(
-        string relativePath,
-        string title,
-        bool isTaxonomy = false,
-        IPage? originalPage = null);
 
     /// <summary>
     /// Check if the page have the conditions to be published: valid date and not draft,
@@ -164,4 +153,18 @@ public interface ISite : ISiteSettings
     /// Check if the page is publishable
     /// </summary>
     public bool IsDatePublishable(in IFrontMatter frontMatter);
+
+    /// <summary>
+    /// Create a Page from front matter
+    /// </summary>
+    /// <param name="frontMatter"></param>
+    public Page? PageCreate(IFrontMatter frontMatter);
+
+    /// <summary>
+    /// Include the Front Matter into the site
+    /// </summary>
+    /// <param name="frontMatter"></param>
+    /// <param name="cascade"></param>
+    FrontMatter? FrontMatterAdd(FrontMatter? frontMatter,
+        FrontMatter? cascade = null);
 }

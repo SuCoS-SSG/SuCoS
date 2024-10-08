@@ -13,9 +13,9 @@ public class YamlParserTests : TestSetup
     private const string PageFrontMatterConst = """
                                                 Title: Test Title
                                                 Type: post
-                                                Date: 2023-07-01
-                                                LastMod: 2023-06-01
-                                                PublishDate: 2023-06-01
+                                                Date: 2023-01-01
+                                                LastMod: 2023-02-01
+                                                PublishDate: 2023-03-01
                                                 ExpiryDate: 2024-06-01
                                                 Tags:
                                                   - Test
@@ -135,9 +135,9 @@ public class YamlParserTests : TestSetup
     public void ParseFrontMatter_ShouldParseOtherFieldsCorrectly()
     {
         // Arrange
-        var expectedDate = DateTime.Parse("2023-07-01", CultureInfo.InvariantCulture);
-        var expectedLastMod = DateTime.Parse("2023-06-01", CultureInfo.InvariantCulture);
-        var expectedPublishDate = DateTime.Parse("2023-06-01", CultureInfo.InvariantCulture);
+        var expectedDate = DateTime.Parse("2023-01-01", CultureInfo.InvariantCulture);
+        var expectedLastMod = DateTime.Parse("2023-02-01", CultureInfo.InvariantCulture);
+        var expectedPublishDate = DateTime.Parse("2023-03-01", CultureInfo.InvariantCulture);
         var expectedExpiryDate = DateTime.Parse("2024-06-01", CultureInfo.InvariantCulture);
 
         // Act
@@ -198,7 +198,7 @@ public class YamlParserTests : TestSetup
     public void ParseFrontMatter_ShouldParseContentInSiteFolder()
     {
         // Arrange
-        var date = DateTime.Parse("2023-07-01", CultureInfo.InvariantCulture);
+        var date = DateTime.Parse("2023-01-01", CultureInfo.InvariantCulture);
         var frontMatter = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
         Page page = new(frontMatter, Site);
 
@@ -209,18 +209,21 @@ public class YamlParserTests : TestSetup
         Assert.Equal(date, frontMatter.Date);
     }
 
+    // [Fact(Skip = "Not done in the  ")]
     [Fact]
     public void ParseFrontMatter_ShouldCreateTags()
     {
         // Arrange
         var frontMatter = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
-        Page page = new(frontMatter, Site);
 
         // Act
-        Site.PostProcessPage(page);
+        Site.FrontMatterAdd(frontMatter);
+        Site.ProcessPages();
+        Site.OutputReferences.TryGetValue("/test-title", out var output);
+        var page = output as Page;
 
         // Assert
-        Assert.Equal(2, page.TagsReference.Count);
+        Assert.Equal(2, page?.TagsReference.Count);
     }
 
     [Fact]
@@ -240,6 +243,7 @@ public class YamlParserTests : TestSetup
     {
         // Act
         var (metadata, rawContent) = _parser.SplitFrontMatter(PageContent);
+        metadata = metadata.Replace("\r\n", "\n", StringComparison.Ordinal);
 
         // Assert
         Assert.Equal(PageFrontMatterConst.TrimEnd(), metadata);

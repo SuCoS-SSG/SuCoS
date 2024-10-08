@@ -26,7 +26,8 @@ public class RegisteredPageRequestHandlerTests : TestSetup
         var registeredPageRequest = new RegisteredPageRequest(Site);
 
         // Act
-        Site.ParseAndScanSourceFiles(_fs, Path.Combine(siteFullPath, "content"));
+        Site.ScanAndParseSourceFiles(_fs, Path.Combine(siteFullPath, "content"));
+        Site.ProcessPages();
 
         // Assert
         Assert.Equal(exist, registeredPageRequest.Check(requestPath));
@@ -54,7 +55,8 @@ public class RegisteredPageRequestHandlerTests : TestSetup
         _ = response.OutputStream.Returns(stream);
 
         // Act
-        Site.ParseAndScanSourceFiles(_fs, Path.Combine(siteFullPath, "content"));
+        Site.ScanAndParseSourceFiles(_fs, Path.Combine(siteFullPath, "content"));
+        Site.ProcessPages();
         _ = registeredPageRequest.Check(requestPath);
         var code = await registeredPageRequest.Handle(response, requestPath, DateTime.Now).ConfigureAwait(true);
 

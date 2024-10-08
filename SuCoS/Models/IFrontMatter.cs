@@ -108,4 +108,30 @@ public interface IFrontMatter : IParams, IFile
     /// The date to be considered as the publishing date.
     /// </summary>
     DateTime? GetPublishDate => PublishDate ?? Date;
+
+    /// <summary>
+    /// Pages created based on this Front Matter
+    /// </summary>
+    List<IPage> FrontMatterPages { get; }
+
+    /// <summary>
+    /// The Front Matter parent content
+    /// </summary>
+    IFrontMatter? FrontMatterParent { get; }
+
+    /// <summary>
+    /// The bundle type of the page.
+    /// </summary>
+    BundleType BundleType { get; }
+
+    /// <summary>
+    /// The kind of the page, if it's a single page, a list of pages or the home page.
+    /// It's used to determine the proper theme file.
+    /// </summary>
+    Kind Kind { get; }
+
+    /// <summary>
+    /// List of tags.
+    /// </summary>
+    public List<FrontMatter> FrontMatterTagsReference { get; }
 }

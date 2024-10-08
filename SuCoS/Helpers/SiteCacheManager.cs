@@ -22,7 +22,7 @@ public class SiteCacheManager
     /// <summary>
     /// Cache for tag page.
     /// </summary>
-    public ConcurrentDictionary<string, Lazy<IPage>> AutomaticContentCache { get; } = new();
+    public ConcurrentDictionary<string, FrontMatter> AutomaticContentCache { get; } = new();
 
     /// <summary>
     /// Resets the template cache to force a reload of all templates.

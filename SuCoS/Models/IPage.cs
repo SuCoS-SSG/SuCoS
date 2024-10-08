@@ -11,12 +11,6 @@ namespace SuCoS.Models;
 public interface IPage : IFrontMatter, IOutput
 {
     /// <summary>
-    /// The kind of the page, if it's a single page, a list of pages or the home page.
-    /// It's used to determine the proper theme file.
-    /// </summary>
-    Kind Kind { get; set; }
-
-    /// <summary>
     /// The source directory of the file.
     /// </summary>
     public string? SourcePathLastDirectory => string.IsNullOrEmpty(SourceRelativePathDirectory)
@@ -43,12 +37,7 @@ public interface IPage : IFrontMatter, IOutput
     /// Other content that mention this content.
     /// Used to create the tags list and Related Posts section.
     /// </summary>
-    public IPage? Parent { get; set; }
-
-    /// <summary>
-    /// The bundle type of the page.
-    /// </summary>
-    public BundleType BundleType { get; set; }
+    public IPage? Parent { get; }
 
     /// <summary>
     /// Page resources. All files that accompany a page.
@@ -63,7 +52,7 @@ public interface IPage : IFrontMatter, IOutput
     /// <summary>
     /// A list of tags, if any.
     /// </summary>
-    public ConcurrentBag<IPage> TagsReference { get; }
+    public List<IPage> TagsReference { get; }
 
     /// <summary>
     /// Just a simple check if the current page is the home page
