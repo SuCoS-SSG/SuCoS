@@ -2,6 +2,7 @@ using System;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.Coverlet;
+using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.ReportGenerator;
 using Serilog;
 
@@ -13,32 +14,33 @@ namespace SuCoS.NUKE;
 /// </summary>
 internal sealed partial class Build
 {
-    private  AbsolutePath TestDllDirectory => Solution.SuCoS_Test.Directory / "bin" / "Debug" / "net8.0";
-    private  AbsolutePath TestAssembly => TestDllDirectory / Solution.SuCoS_Test.Name + ".dll";
-    private static AbsolutePath CoverageDirectory => RootDirectory / "coverage-results";
-    private static AbsolutePath CoverageResultDirectory => CoverageDirectory / "coverage";
-    private static AbsolutePath CoverageResultFile => CoverageResultDirectory / "coverage.xml";
+    // private  AbsolutePath TestDllDirectory => Solution.SuCoS_Test.Directory;// / "bin" / "Debug" / "net9.0";
+    // private  AbsolutePath TestAssembly => TestDllDirectory / Solution.SuCoS_Test.Name + ".dll";
+    private static AbsolutePath CoverageDirectory => RootDirectory / "coverage";
+    private static AbsolutePath CoverageResultFile => CoverageDirectory / "coverage.xml";
     private static AbsolutePath CoverageReportDirectory => CoverageDirectory / "report";
     private static AbsolutePath CoverageReportSummaryDirectory => CoverageReportDirectory / "Summary.txt";
 
     private Target Test => td => td
         .After(Compile)
+        .Produces(CoverageResultFile)
         .Executes(() =>
-        {
-            _ = CoverageResultDirectory.CreateDirectory();
-            _ = CoverletTasks.Coverlet(s => s
-                    .SetTarget("dotnet")
-                    .SetTargetArgs("test --no-build --no-restore")
-                    .SetAssembly(TestAssembly)
-                    // .SetThreshold(75)
-                    .SetOutput(CoverageResultFile)
-                    .SetFormat(CoverletOutputFormat.cobertura)
-                    .SetExcludeByFile(["**/*.g.cs"]) // Exclude source generated files
-            );
-        });
+            DotNetTasks.DotNetTest(settings => settings
+                    .SetProjectFile(Solution.SuCoS_Test)
+                    .SetConfiguration(ConfigurationSet)
+
+                    // Test Coverage
+                    .SetResultsDirectory(CoverageDirectory)
+                    .SetCoverletOutput(CoverageResultFile)
+                    .SetCoverletOutputFormat(CoverletOutputFormat.cobertura)
+                    .SetExcludeByFile("*.g.cs") // Exclude source generated files
+                    .EnableCollectCoverage()
+            )
+        );
 
     public Target TestReport => td => td
         .DependsOn(Test)
+        .Consumes(Test, CoverageResultFile)
         .Executes(() =>
         {
             _ = CoverageReportDirectory.CreateDirectory();

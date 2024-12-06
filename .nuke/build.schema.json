@@ -1,68 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "properties": {
-    "ChangelogFile": {
-      "type": "string",
-      "description": "Changelog file"
-    },
-    "Configuration": {
-      "type": "string",
-      "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)"
-    },
-    "ContainerDefaultRid": {
-      "type": "string",
-      "description": "GitLab Project Full Address"
-    },
-    "ContainerRegistryImage": {
-      "type": "string",
-      "description": "GitLab Project CI_REGISTRY_IMAGE"
-    },
-    "GitLabApiBaseUrl": {
-      "type": "string",
-      "description": "GitLab API URL"
-    },
-    "GitlabPrivateToken": {
-      "type": "string",
-      "description": "GitLab private token"
-    },
-    "GitLabProjectId": {
-      "type": "integer",
-      "description": "GitLab ProjectId",
-      "format": "int64"
-    },
-    "PublishDirectory": {
-      "type": "string",
-      "description": "publish-directory (default: ./publish/{runtimeIdentifier})"
-    },
-    "PublishReadyToRun": {
-      "type": "boolean",
-      "description": "publish-ready-to-run (default: true)"
-    },
-    "PublishSelfContained": {
-      "type": "boolean",
-      "description": "publish-self-contained (default: true)"
-    },
-    "PublishSingleFile": {
-      "type": "boolean",
-      "description": "publish-single-file (default: true)"
-    },
-    "PublishTrimmed": {
-      "type": "boolean",
-      "description": "publish-trimmed (default: false)"
-    },
-    "RepositoryCompareLink": {
-      "type": "string",
-      "description": "Container image full name"
-    },
-    "RuntimeIdentifier": {
-      "type": "string",
-      "description": "Runtime identifier for the build (e.g., win-x64, linux-x64, osx-x64) (default: linux-x64)"
-    },
-    "Solution": {
-      "type": "string",
-      "description": "Path to a solution file that is automatically loaded"
-    }
-  },
   "definitions": {
     "Host": {
       "type": "string",
@@ -176,5 +113,74 @@
       }
     }
   },
-  "$ref": "#/definitions/NukeBuild"
+  "allOf": [
+    {
+      "properties": {
+        "ChangelogFile": {
+          "type": "string",
+          "description": "Changelog file"
+        },
+        "Configuration": {
+          "type": "string",
+          "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)"
+        },
+        "ContainerDefaultRid": {
+          "type": "string",
+          "description": "GitLab Project Full Address"
+        },
+        "ContainerRegistryImage": {
+          "type": "string",
+          "description": "GitLab Project CI_REGISTRY_IMAGE"
+        },
+        "GitLabApiBaseUrl": {
+          "type": "string",
+          "description": "GitLab API URL"
+        },
+        "GitlabPrivateToken": {
+          "type": "string",
+          "description": "GitLab private token"
+        },
+        "GitLabProjectId": {
+          "type": "integer",
+          "description": "GitLab ProjectId",
+          "format": "int64"
+        },
+        "PublishDirectory": {
+          "type": "string",
+          "description": "publish-directory (default: ./publish/{runtimeIdentifier})"
+        },
+        "PublishReadyToRun": {
+          "type": "boolean",
+          "description": "publish-ready-to-run (default: true)"
+        },
+        "PublishSelfContained": {
+          "type": "boolean",
+          "description": "publish-self-contained (default: true)"
+        },
+        "PublishSingleFile": {
+          "type": "boolean",
+          "description": "publish-single-file (default: true)"
+        },
+        "PublishTrimmed": {
+          "type": "boolean",
+          "description": "publish-trimmed (default: false)"
+        },
+        "RepositoryCompareLink": {
+          "type": "string",
+          "description": "Container image full name"
+        },
+        "RuntimeIdentifier": {
+          "type": "string",
+          "description": "Runtime identifier for the build (e.g., win-x64, linux-x64, osx-x64) (default: linux-x64)"
+        },
+        "Solution": {
+          "type": "string",
+          "description": "Path to a solution file that is automatically loaded"
+        }
+      }
+    },
+    {
+      "$ref": "#/definitions/NukeBuild"
+    }
+  ]
 }

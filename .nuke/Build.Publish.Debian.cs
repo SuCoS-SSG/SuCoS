@@ -24,8 +24,8 @@ internal sealed partial class Build
             var sucosPath = debianPath / "usr" / "local" / "bin" / "SuCoS";
             var debianControlFilePre = debianPath / "DEBIAN" / "_control";
             var debianControlFile = debianPath / "DEBIAN" / "control";
-            FileSystemTasks.CopyFile(debianControlFilePre, debianControlFile, FileExistsPolicy.Overwrite);
-            FileSystemTasks.CopyFile(PublishDir / "SuCoS", sucosPath, FileExistsPolicy.Overwrite);
+            debianControlFilePre.Copy(debianControlFile, ExistsPolicy.FileOverwrite);
+            (PublishDir / "SuCoS").Copy(sucosPath, ExistsPolicy.FileOverwrite);
 
             var controlContent = debianControlFile.ReadAllText()
                 .Replace("SUCOS_VERSION", VersionFull, StringComparison.InvariantCulture);

@@ -56,8 +56,7 @@ internal sealed partial class Build
                 .AddProperty("ContainerImageTags", tags)
                 .AddProperty("ContainerFamily",
                     ContainerRuntimeIdentifier!.Value.family)
-                .SetProcessArgumentConfigurator(s2 => s2
-                    .Add("-target:PublishContainer"))
+                .AddProcessAdditionalArguments("-target:PublishContainer")
             );
         });
 
@@ -69,8 +68,8 @@ internal sealed partial class Build
     /// </summary>
     private Cri? ContainerRuntimeIdentifier => RuntimeIdentifier switch
     {
-        "linux-x64" => ("linux-x64", "jammy-chiseled"),
-        "linux-musl-x64" => ("alpine", "alpine"),
+        "linux-x64" => (identifier: "linux-x64", family: "noble-chiseled"),
+        "linux-musl-x64" => (identifier: "alpine", family: "alpine"),
         _ => null,
     };
 
@@ -84,8 +83,9 @@ internal sealed partial class Build
 
         var tags = tagsDefault
             .Select(tag => string.IsNullOrEmpty(tag)
-                ? $"{cri.identifier}"
-                : $"{tag}-{cri.identifier}").ToList();
+                ? cri.identifier
+                : $"{tag}-{cri.identifier}")
+            .ToList();
 
         if (ContainerDefaultRid != RuntimeIdentifier)
         {

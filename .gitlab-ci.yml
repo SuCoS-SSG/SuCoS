@@ -1,4 +1,4 @@
-image: mcr.microsoft.com/dotnet/sdk:8.0
+image: mcr.microsoft.com/dotnet/sdk:9.0
 
 stages:
     - build-test
@@ -36,16 +36,16 @@ test:
             ./build.sh Restore Compile TestReport Publish CreateContainer \
               --configuration "Debug" \
               --publish-directory "./publish"
-        - set +e; bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage-results/coverage/coverage.xml
+        - set +e; bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage/coverage.xml
     coverage: '/^  Line coverage: (\d*.\d*)%/'
     artifacts:
         paths:
-            - coverage-results/report/*
+            - coverage/report/*
             - publish/*
         reports:
             coverage_report:
                 coverage_format: cobertura
-                path: coverage-results/coverage/coverage.xml
+                path: coverage/coverage.xml
 
 # check if there is new commits, if so, create a tag and a release
 # this will trigger the publishing stage "publish"

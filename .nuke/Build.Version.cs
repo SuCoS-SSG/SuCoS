@@ -19,7 +19,7 @@ internal sealed partial class Build
 {
     [GitRepository] private readonly GitRepository Repository;
 
-    [GitVersion] private readonly GitVersion GitVersion = new();
+    [GitVersion] private readonly GitVersion GitVersion;
 
     /// <summary>
     /// The current version, using GitVersion.
