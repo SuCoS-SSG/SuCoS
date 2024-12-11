@@ -34,7 +34,7 @@ internal sealed partial class Build
         });
 
     private Target Compile => td => td
-        .DependsOn(Restore)
+        .After(Restore)
         .Executes(() =>
         {
             Log.Debug("Configuration {Configuration}", ConfigurationSet);

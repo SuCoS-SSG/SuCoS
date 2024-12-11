@@ -30,7 +30,7 @@ public class Sucos
 }
 
 /// <summary>
-/// (Code generated from SuCoSGenerator.cs) Build/compilation metadata.
+/// (Code generated from SuCoSGenerator.cs) Build/compilation front matter.
 /// </summary>
 public static partial class SucosExt
 {

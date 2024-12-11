@@ -37,7 +37,8 @@ public class RegisteredPageResourceRequest : IServerHandlers
             return "404";
         }
         response.ContentType = resource.MimeType;
-        await using var fileStream = new FileStream(resource.SourceFullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        await using var fileStream = new FileStream(
+            resource.SourceFullPath(_site.SourceContentPath), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         await fileStream.CopyToAsync(response.OutputStream).ConfigureAwait(false);
         return "resource";
 

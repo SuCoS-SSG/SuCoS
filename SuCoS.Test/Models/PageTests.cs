@@ -39,10 +39,10 @@ word03 word04 word05 6 7 [eight](https://example.com)
                                                """;
 
     [Theory]
-    [InlineData("Test Title", "/path/to/file.md", "file", "/path/to")]
+    [InlineData(TitleConst, SourcePathConst, "file", "/path/to")]
     public void FrontMatter_ShouldCreateWithCorrectProperties(string title, string sourcePath, string sourceFileNameWithoutExtension, string sourcePathDirectory)
     {
-        var page = new Page(FrontMatterMock, Site);
+        var page = new Page(ContentSourceMock, Site);
 
         // Assert
         Assert.Equal(title, page.Title);
@@ -56,7 +56,7 @@ word03 word04 word05 6 7 [eight](https://example.com)
     public void FrontMatter_ShouldHaveDefaultValuesForOptionalProperties()
     {
         // Arrange
-        var page = new Page(FrontMatterMock, Site);
+        var page = new Page(ContentSourceMock, Site);
 
         // Assert
         Assert.Equal(string.Empty, page.Section);
@@ -84,12 +84,11 @@ word03 word04 word05 6 7 [eight](https://example.com)
     [InlineData("/test-title-2")]
     public void Aliases_ShouldParseAsUrls(string url)
     {
-        var page = new Page(new FrontMatter
+        var page = new Page(new(SourcePathConst, new FrontMatter
         {
             Title = TitleConst,
-            SourceRelativePath = SourcePathConst,
             Aliases = ["v123", "{{ page.Title }}", "{{ page.Title }}-2"]
-        }, Site);
+        }), Site);
 
         // Act
         Site.PostProcessPage(page);
@@ -106,12 +105,11 @@ word03 word04 word05 6 7 [eight](https://example.com)
     [InlineData(1, false)]
     public void IsDateExpired_ShouldReturnExpectedResult(int days, bool expected)
     {
-        var page = new Page(new FrontMatter
+        var page = new Page(new(SourcePathConst, new FrontMatter
         {
             Title = TitleConst,
-            SourceRelativePath = SourcePathConst,
             ExpiryDate = SystemClockMock.Now.AddDays(days)
-        }, Site);
+        }), Site);
 
         // Assert
         Assert.Equal(expected, Site.IsDateExpired(page));
@@ -125,13 +123,16 @@ word03 word04 word05 6 7 [eight](https://example.com)
     [InlineData("2022-01-01", "2024-01-01", true)]
     public void IsDatePublishable_ShouldReturnCorrectValues(string? publishDate, string? date, bool expectedValue)
     {
-        var page = new Page(new FrontMatter
+        var page = new Page(new(SourcePathConst, new FrontMatter
         {
             Title = TitleConst,
-            SourceRelativePath = SourcePathConst,
-            PublishDate = publishDate is null ? null : DateTime.Parse(publishDate, CultureInfo.InvariantCulture),
-            Date = date is null ? null : DateTime.Parse(date, CultureInfo.InvariantCulture)
-        }, Site);
+            PublishDate = publishDate is null
+                ? null
+                : DateTime.Parse(publishDate, CultureInfo.InvariantCulture),
+            Date = date is null
+                ? null
+                : DateTime.Parse(date, CultureInfo.InvariantCulture)
+        }), Site);
 
         // Assert
         Assert.Equal(expectedValue, Site.IsDatePublishable(page));
@@ -176,14 +177,13 @@ word03 word04 word05 6 7 [eight](https://example.com)
     [InlineData("2022-01-01", "2024-01-01", true, true, true)]
     public void IsValidPage_ShouldReturnCorrectValues(string? publishDate, string? date, bool? draft, bool draftOption, bool expectedValue)
     {
-        var page = new Page(new FrontMatter
+        var page = new Page(new(SourcePathConst, new FrontMatter
         {
             Title = TitleConst,
-            SourceRelativePath = SourcePathConst,
             PublishDate = publishDate is null ? null : DateTime.Parse(publishDate, CultureInfo.InvariantCulture),
             Date = date is null ? null : DateTime.Parse(date, CultureInfo.InvariantCulture),
             Draft = draft
-        }, Site);
+        }), Site);
 
         var options = Substitute.For<IGenerateOptions>();
         _ = options.Draft.Returns(draftOption);
@@ -197,12 +197,11 @@ word03 word04 word05 6 7 [eight](https://example.com)
     [InlineData(true, true)]
     public void IsValidDate_ShouldReturnExpectedResult(bool futureOption, bool expected)
     {
-        var page = new Page(new FrontMatter
+        var page = new Page(new(SourcePathConst, new FrontMatter
         {
             Title = TitleConst,
-            SourceRelativePath = SourcePathConst,
             Date = SystemClockMock.Now.AddDays(1)
-        }, Site);
+        }), Site);
 
         // Act
         var options = Substitute.For<IGenerateOptions>();
@@ -217,11 +216,10 @@ word03 word04 word05 6 7 [eight](https://example.com)
     [InlineData("/another/path/index.md", "/test-title")]
     public void CreatePermalink_ShouldReturnCorrectUrl_WhenUrlIsNull(string sourcePath, string expectedUrl)
     {
-        var page = new Page(new FrontMatter
+        var page = new Page(new(sourcePath, new FrontMatter
         {
             Title = TitleConst,
-            SourceRelativePath = sourcePath
-        }, Site);
+        }), Site);
 
         // Assert
         Assert.Equal(expectedUrl, page.CreatePermalink());
@@ -232,12 +230,11 @@ word03 word04 word05 6 7 [eight](https://example.com)
     [InlineData("{{ page.Title }}/{{ page.SourceFileNameWithoutExtension }}", "/test-title/file")]
     public void Permalink_CreateWithDefaultOrCustomURLTemplate(string? urlTemplate, string expectedPermalink)
     {
-        var page = new Page(new FrontMatter
+        var page = new Page(new(SourcePathConst, new FrontMatter
         {
             Title = TitleConst,
-            SourceRelativePath = SourcePathConst,
             Url = urlTemplate
-        }, Site);
+        }), Site);
         var actualPermalink = page.CreatePermalink();
 
         // Assert
@@ -249,12 +246,15 @@ word03 word04 word05 6 7 [eight](https://example.com)
     [InlineData(Kind.list, false)]
     public void RegularPages_ShouldReturnCorrectPages_WhenKindIsSingle(Kind kind, bool isExpectedPage)
     {
-        var page = new Page(new FrontMatter
+        var page = new Page(new(SourcePathConst)
         {
-            Title = TitleConst,
-            SourceRelativePath = SourcePathConst,
+            FrontMatter = new()
+            {
+                Title = TitleConst,
+            },
             Kind = kind
-        }, Site);
+        }
+        , Site);
 
         // Act
         Site.PostProcessPage(page);
@@ -268,10 +268,7 @@ word03 word04 word05 6 7 [eight](https://example.com)
     [InlineData(Markdown2Const, 8)]
     public void WordCount_ShouldReturnCorrectCounts(string rawContent, int wordCountExpected)
     {
-        var page = new Page(new FrontMatter
-        {
-            RawContent = rawContent
-        }, Site);
+        var page = new Page(new(SourcePathConst, new(), rawContent), Site);
 
         // Assert
         Assert.Equal(wordCountExpected, page.WordCount);
@@ -283,10 +280,7 @@ word03 word04 word05 6 7 [eight](https://example.com)
     public void Plain_ShouldReturnCorrectPlainString(string rawContent, string plain)
     {
         ArgumentException.ThrowIfNullOrEmpty(plain);
-        var page = new Page(new FrontMatter
-        {
-            RawContent = rawContent
-        }, Site);
+        var page = new Page(new(SourcePathConst, new(), rawContent), Site);
         // Required to make the test pass on Windows
         plain = plain.Replace("\r\n", "\n", StringComparison.Ordinal);
 
@@ -313,7 +307,7 @@ word03 word04 word05 6 7 [eight](https://example.com)
         // Act
         Site.ScanAndParseSourceFiles(new FileSystem());
         Site.ProcessPages();
-        Site.OutputReferences.TryGetValue(url, out var itemPage );
+        Site.OutputReferences.TryGetValue(url, out var itemPage);
         var page = itemPage as Page;
 
         // Assert
@@ -334,7 +328,7 @@ word03 word04 word05 6 7 [eight](https://example.com)
         // Act
         Site.ScanAndParseSourceFiles(new FileSystem());
         Site.ProcessPages();
-        Site.OutputReferences.TryGetValue(url, out var itemPage );
+        Site.OutputReferences.TryGetValue(url, out var itemPage);
         var page = itemPage as Page;
 
         // Assert

@@ -9,42 +9,44 @@ namespace SuCoS.Models;
 public interface IFile
 {
     /// <summary>
-    /// The source filename, without the extension. ;)
-    /// </summary>
-    string SourceFullPath { get; }
-
-    /// <summary>
     /// The source file/folder, relative to content folder
     /// </summary>
-    string? SourceRelativePath { get; }
+    string SourceRelativePath { get; }
 
     /// <summary>
     /// The source directory of the file, without the file name.
     /// </summary>
-    string? SourceRelativePathDirectory => Urlizer.Path(Path.GetDirectoryName(SourceFullPath));
-
-    /// <summary>
-    /// The full source directory of the file, without the file name.
-    /// </summary>
-    string? SourceFullPathDirectory => Urlizer.Path(Path.GetDirectoryName(SourceFullPath));
+    string? SourceRelativePathDirectory => Urlizer.Path(Path.GetDirectoryName(SourceRelativePath));
 
     /// <summary>
     /// The source filename, without the extension. ;)
     /// </summary>
-    string? SourceFileNameWithoutExtension => Path.GetFileNameWithoutExtension(SourceFullPath);
+    string? SourceFileNameWithoutExtension => Path.GetFileNameWithoutExtension(SourceRelativePath);
 
     /// <summary>
     /// File extension.
     /// </summary>
-    string Extension => Path.GetExtension(SourceFullPath);
+    string Extension => Path.GetExtension(SourceRelativePath);
 
     /// <summary>
     /// File MIME type.
     /// </summary>
-    string MimeType => MimeString.FromFileName(SourceFullPath);
+    string MimeType => MimeString.FromFileName(SourceRelativePath);
 
     /// <summary>
     /// File size in bytes.
     /// </summary>
-    long Size => new FileInfo(SourceFullPath).Length;
+    long Size => new FileInfo(SourceRelativePath).Length;
+
+    /// <summary>
+    /// The source filename, without the extension. ;)
+    /// </summary>
+    string SourceFullPath(string basePath) =>
+        Path.Combine(basePath, SourceRelativePath);
+
+    /// <summary>
+    /// The full source directory of the file, without the file name.
+    /// </summary>
+    string? SourceFullPathDirectory(string basePath) =>
+        Urlizer.Path(Path.GetDirectoryName(SourceFullPath(basePath)));
 }

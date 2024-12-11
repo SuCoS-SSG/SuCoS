@@ -5,7 +5,7 @@ namespace SuCoS.Models;
 /// <summary>
 /// Basic structure needed to generate user content and system content
 /// </summary>
-public interface IFrontMatter : IParams, IFile
+public interface IFrontMatter : IParams
 {
     /// <summary>
     /// The content Title.
@@ -98,40 +98,4 @@ public interface IFrontMatter : IParams, IFile
     /// List of resource definitions.
     /// </summary>
     List<FrontMatterResources>? ResourceDefinitions { get; set; }
-
-    /// <summary>
-    /// Raw content from the Markdown file, bellow the front matter.
-    /// </summary>
-    string RawContent { get; }
-
-    /// <summary>
-    /// The date to be considered as the publishing date.
-    /// </summary>
-    DateTime? GetPublishDate => PublishDate ?? Date;
-
-    /// <summary>
-    /// Pages created based on this Front Matter
-    /// </summary>
-    List<IPage> FrontMatterPages { get; }
-
-    /// <summary>
-    /// The Front Matter parent content
-    /// </summary>
-    IFrontMatter? FrontMatterParent { get; }
-
-    /// <summary>
-    /// The bundle type of the page.
-    /// </summary>
-    BundleType BundleType { get; }
-
-    /// <summary>
-    /// The kind of the page, if it's a single page, a list of pages or the home page.
-    /// It's used to determine the proper theme file.
-    /// </summary>
-    Kind Kind { get; }
-
-    /// <summary>
-    /// List of tags.
-    /// </summary>
-    public List<FrontMatter> FrontMatterTagsReference { get; }
 }

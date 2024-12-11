@@ -24,7 +24,7 @@ public class TestSetup
     protected const string TestSitePathConst08 = ".TestSites/08-theme-html";
     protected const string TestSitePathConst09 = ".TestSites/09-cascade";
 
-    protected readonly IMetadataParser FrontMatterParser = new YamlParser();
+    protected readonly IFrontMatterParser FrontMatterParser = new YamlParser();
     protected readonly IGenerateOptions GenerateOptionsMock = Substitute.For<IGenerateOptions>();
     private readonly SiteSettings _siteSettingsMock = Substitute.For<SiteSettings>();
     protected readonly ILogger LoggerMock = Substitute.For<ILogger>();
@@ -32,8 +32,11 @@ public class TestSetup
     protected readonly IFrontMatter FrontMatterMock = new FrontMatter
     {
         Title = TitleConst,
-        SourceRelativePath = SourcePathConst
     };
+    protected readonly ContentSource ContentSourceMock = new(SourcePathConst, new FrontMatter
+    {
+        Title = TitleConst,
+    });
 
     protected ISite Site;
 

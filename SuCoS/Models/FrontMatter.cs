@@ -53,79 +53,19 @@ public class FrontMatter : IFrontMatter
     public List<FrontMatterResources>? ResourceDefinitions { get; set; }
 
     /// <inheritdoc/>
-    [YamlIgnore]
-    public string RawContent { get; set; } = string.Empty;
-
-    /// <inheritdoc/>
-    [YamlIgnore]
-    public string? SourceRelativePath { get; set; }
-
-    /// <inheritdoc/>
-    [YamlIgnore]
-    public string SourceFullPath { get; set; }
-
-    /// <inheritdoc/>
-    [YamlIgnore]
-    public string SourceRelativePathDirectory =>
-        (Path.GetDirectoryName(SourceRelativePath) ?? string.Empty)
-        .Replace('\\', '/');
-
-    /// <inheritdoc/>
-    [YamlIgnore]
-    public string SourceFileNameWithoutExtension =>
-        (Path.GetFileNameWithoutExtension(SourceRelativePath) ?? string.Empty)
-        .Replace('\\', '/');
-
-    /// <inheritdoc/>
-    [YamlIgnore]
-    public DateTime? GetPublishDate => PublishDate ?? Date;
-
-    /// <inheritdoc/>
-    [YamlIgnore]
-    public List<IPage> FrontMatterPages { get; private set; } = [];
-
-    /// <inheritdoc/>
     public Dictionary<string, object> Params { get; set; } = [];
-
-    /// <inheritdoc/>
-    [YamlIgnore]
-    public BundleType BundleType { get; set; }
-
-    /// <inheritdoc/>
-    [YamlIgnore]
-    public Kind Kind { get; set; } = Kind.single;
-
-    #endregion IFrontMatter
-
-    /// <summary>
-    /// Content parent, normally from the File System;
-    /// </summary>
-    [YamlIgnore]
-    public IFrontMatter? FrontMatterParent { get; set; }
 
     /// <summary>
     /// Cascade front matter data to its children.
     /// </summary>
     public FrontMatter? Cascade { get; set; }
 
-    /// <summary>
-    /// List of tags.
-    /// </summary>
-    public List<FrontMatter> FrontMatterTagsReference { get; } = [];
-
-    /// <summary>
-    /// List of tags.
-    /// </summary>
-    [YamlIgnore]
-    public HashSet<FrontMatter> PagePages { get; private init; } = [];
+    #endregion IFrontMatter
 
     /// <summary>
     /// Constructor
     /// </summary>
-    public FrontMatter()
-    {
-        SourceFullPath = string.Empty;
-    }
+    public FrontMatter() { }
 
     /// <summary>
     /// Constructor
@@ -135,37 +75,30 @@ public class FrontMatter : IFrontMatter
     public FrontMatter(string title, string sourcePath)
     {
         Title = title;
-        SourceRelativePath = sourcePath;
-        SourceFullPath = sourcePath;
     }
 
     /// <summary>
-    /// Create a front matter from a given metadata + content
+    /// Create a front matter from a given front matter + content
     /// </summary>
-    /// <param name="metadata"></param>
-    /// <param name="rawContent"></param>
+    /// <param name="frontMatterString"></param>
     /// <param name="fileFullPath"></param>
     /// <param name="fileRelativePath"></param>
     /// <param name="parser"></param>
     /// <returns></returns>
     public static FrontMatter Parse(
-        string metadata,
-        in string rawContent,
+        string frontMatterString,
         in string fileFullPath,
         in string fileRelativePath,
-        IMetadataParser parser
+        IFrontMatterParser parser
     )
     {
         ArgumentNullException.ThrowIfNull(fileFullPath);
         ArgumentNullException.ThrowIfNull(fileRelativePath);
         ArgumentNullException.ThrowIfNull(parser);
 
-        var frontMatter = parser.Parse<FrontMatter>(metadata);
+        var frontMatter = parser.Parse<FrontMatter>(frontMatterString);
         var section = SiteHelper.GetSection(fileRelativePath);
-        frontMatter.RawContent = rawContent;
         frontMatter.Section = section;
-        frontMatter.SourceRelativePath = fileRelativePath;
-        frontMatter.SourceFullPath = fileFullPath;
         frontMatter.Type ??= section;
         return frontMatter;
     }
@@ -178,10 +111,10 @@ public class FrontMatter : IFrontMatter
     /// <param name="parser"></param>
     /// <param name="content"></param>
     /// <returns></returns>
-    public static FrontMatter Parse(
+    public static (FrontMatter, string) Parse(
         in string fileFullPath,
         in string fileRelativePath,
-        IMetadataParser parser,
+        IFrontMatterParser parser,
         string content
     )
     {
@@ -189,9 +122,8 @@ public class FrontMatter : IFrontMatter
         ArgumentNullException.ThrowIfNull(fileRelativePath);
         ArgumentNullException.ThrowIfNull(parser);
 
-        var (metadata, rawContent) = parser.SplitFrontMatter(content);
-        return Parse(metadata, rawContent, fileFullPath, fileRelativePath,
-            parser);
+        var (frontMatter, rawContent) = parser.SplitFrontMatterAndContent(content);
+        return (Parse(frontMatter, fileFullPath, fileRelativePath, parser), rawContent);
     }
 
     /// <summary>
@@ -217,13 +149,8 @@ public class FrontMatter : IFrontMatter
             Weight = other.Weight != 0 ? other.Weight : Weight,
             Tags = other.Tags ?? Tags,
             ResourceDefinitions = other.ResourceDefinitions ?? ResourceDefinitions,
-            RawContent = string.IsNullOrEmpty(other.RawContent) ? RawContent : other.RawContent,
-            SourceRelativePath = string.IsNullOrEmpty(other.SourceRelativePath) ? SourceRelativePath : other.SourceRelativePath,
-            SourceFullPath = string.IsNullOrEmpty(other.SourceFullPath) ? SourceFullPath : other.SourceFullPath,
             Params = other.Params.Count != 0 ? other.Params : Params,
-            Cascade = other.Cascade ?? Cascade,
-            PagePages = other.PagePages,
-            FrontMatterPages = other.FrontMatterPages
+            Cascade = other.Cascade ?? Cascade
         };
     }
 }

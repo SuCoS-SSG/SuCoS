@@ -181,7 +181,7 @@ public class SiteTests : TestSetup
         Assert.NotNull(tagSectionPage);
         Assert.Equal(10, tagSectionPage.Pages.Count());
         Assert.Equal(10, tagSectionPage.RegularPages.Count());
-        Assert.Equal("tags/_index.md", tagSectionPage.SourceRelativePath);
+        Assert.Equal("tags/_index.md", (tagSectionPage as IFile).SourceRelativePath);
         Assert.Equal("tags", tagSectionPage.SourceRelativePathDirectory);
         Assert.Equal("tags", tagSectionPage.SourcePathLastDirectory);
     }

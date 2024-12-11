@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-- Changed: Bump dependency versions to the latest version at 2024-09
+- Changed: separation of Front Matter (just the metadata) and Content (front matter + content)
+- Changed: the .NET to version 9
+- Changed: Bump dependency versions to the latest version at 2024-12
 - Changed: create all Front Matter before creating pages
 
 ## v[4.3.0] 2024-09-05

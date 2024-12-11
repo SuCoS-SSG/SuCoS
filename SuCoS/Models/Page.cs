@@ -9,216 +9,67 @@ namespace SuCoS.Models;
 /// <summary>
 /// Each page data created from source files or from the system.
 /// </summary>
-public class Page : IPage
+public class Page : IPage, IContentSource, IFrontMatter, IOutput
 {
-    private readonly IFrontMatter _frontMatter;
-
-    #region IFrontMatter
+    #region IPage
 
     /// <inheritdoc/>
-    public string? Title => _frontMatter.Title;
+    public ContentSource ContentSource { get; init; }
 
     /// <inheritdoc/>
-    public string? Type => _frontMatter.Type;
-
-    /// <inheritdoc/>
-    public string? Url => _frontMatter.Url;
-
-    /// <inheritdoc/>
-    public bool? Draft => _frontMatter.Draft;
-
-    /// <inheritdoc/>
-    public List<string>? Aliases => _frontMatter.Aliases;
-
-    /// <inheritdoc/>
-    public string? Section => _frontMatter.Section;
-
-    /// <inheritdoc/>
-    public DateTime? Date => _frontMatter.Date;
-
-    /// <inheritdoc/>
-    public DateTime? LastMod => _frontMatter.LastMod;
-
-    /// <inheritdoc/>
-    public DateTime? PublishDate => _frontMatter.PublishDate;
-
-    /// <inheritdoc/>
-    public DateTime? ExpiryDate => _frontMatter.ExpiryDate;
-
-    /// <inheritdoc/>
-    public int Weight => _frontMatter.Weight;
-
-    /// <inheritdoc/>
-    public List<string>? Tags => _frontMatter.Tags;
-
-    /// <inheritdoc/>
-    public List<FrontMatterResources>? ResourceDefinitions
-    {
-        get => _frontMatter.ResourceDefinitions;
-        set => _frontMatter.ResourceDefinitions = value;
-    }
-
-    /// <inheritdoc/>
-    public string RawContent => _frontMatter.RawContent;
-
-    List<IPage> IFrontMatter.FrontMatterPages => _frontMatter.FrontMatterPages;
-
-    /// <inheritdoc/>
-    public IFrontMatter? FrontMatterParent => _frontMatter.FrontMatterParent;
-
-    /// <inheritdoc/>
-    public Kind Kind => _frontMatter.Kind;
-
-    /// <inheritdoc/>
-    public string? SourceRelativePath => _frontMatter.SourceRelativePath;
-
-    /// <inheritdoc/>
-    public string? SourceRelativePathDirectory =>
-        _frontMatter.SourceRelativePathDirectory;
-
-    /// <inheritdoc/>
-    public string SourceFullPath => _frontMatter.SourceFullPath;
-
-    /// <inheritdoc/>
-    public string? SourceFullPathDirectory =>
-        _frontMatter.SourceFullPathDirectory;
-
-    /// <inheritdoc/>
-    public string? SourceFileNameWithoutExtension =>
-        _frontMatter.SourceFileNameWithoutExtension;
-
-    /// <inheritdoc/>
-    public Dictionary<string, object> Params
-    {
-        get => _frontMatter.Params;
-        set => _frontMatter.Params = value;
-    }
-
-    #endregion IFrontMatter
-
-    /// <summary>
-    /// The source directory of the file.
-    /// </summary>
-    public string? SourcePathLastDirectory =>
-        string.IsNullOrEmpty(SourceRelativePathDirectory)
-            ? null
-            : Path.GetFileName(Path.GetFullPath(
-                SourceRelativePathDirectory.TrimEnd(Path.DirectorySeparatorChar,
-                    Path.AltDirectorySeparatorChar)));
-
-    /// <summary>
-    /// Point to the site configuration.
-    /// </summary>
     public ISite Site { get; }
 
-    /// <summary>
-    /// Secondary URL patterns to be used to create the url.
-    /// </summary>
+    /// <inheritdoc/>
     public Collection<string>? AliasesProcessed { get; private set; }
 
     /// <inheritdoc/>
-    public string? Permalink { get; set; }
-
-    /// <summary>
-    /// Other content that mention this content.
-    /// Used to create the tags list and Related Posts section.
-    /// </summary>
     public ConcurrentBag<string> PagesReferences { get; } = [];
 
     /// <inheritdoc/>
-    public IPage? Parent => FrontMatterParent?.FrontMatterPages.Count > 0
-        ? FrontMatterParent.FrontMatterPages[0]
+    public IPage? Parent => ContentSourceParent?.ContentSourceToPages.Count > 0
+        ? ContentSourceParent.ContentSourceToPages[0]
         : null;
 
     /// <inheritdoc/>
-    public BundleType BundleType => _frontMatter.BundleType;
-
-    /// <inheritdoc/>
-    public Collection<Resource>? Resources { get; set; }
-
-    /// <summary>
-    /// Plain markdown content, without HTML.
-    /// </summary>
     public string Plain =>
         Markdown.ToPlainText(RawContent, SiteHelper.MarkdownPipeline);
 
     /// <inheritdoc/>
-    public List<IPage> TagsReference
-    {
-        get
-        {
-            List<IPage> tagsReferences = [];
-            foreach (var tag in FrontMatterTagsReference)
-            {
-                tagsReferences.AddRange(tag.FrontMatterPages);
-            }
-            return tagsReferences;
-        }
-    }
-
-    /// <inheritdoc/>
-    public List<FrontMatter> FrontMatterTagsReference =>
-        _frontMatter.FrontMatterTagsReference;
-
-    /// <summary>
-    /// Just a simple check if the current page is the home page
-    /// </summary>
     public bool IsHome => Site.Home == this;
 
-    /// <summary>
-    /// Just a simple check if the current page is a section page
-    /// </summary>
-    public bool IsSection => Type == "section";
-
-    /// <summary>
-    /// Just a simple check if the current page is a "page"
-    /// </summary>
+    /// <inheritdoc/>
     public bool IsPage => Kind == Kind.single;
 
-    /// <summary>
-    /// The number of words in the main content
-    /// </summary>
+    /// <inheritdoc/>
+    public bool IsSection => Type == "section";
+
+    /// <inheritdoc/>
     public int WordCount => Plain
-                            .Split(NonWords,
-                                StringSplitOptions.RemoveEmptyEntries).Length;
+        .Split(NonWords,
+            StringSplitOptions.RemoveEmptyEntries).Length;
 
-    private static readonly char[] NonWords =
-        [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
-
-    /// <summary>
-    /// The markdown content converted to HTML
-    /// </summary>
+    /// <inheritdoc/>
     public string ContentPreRendered => ContentPreRenderedCached.Value;
 
-    /// <summary>
-    /// The processed content.
-    /// </summary>
+    /// <inheritdoc/>
     public string Content => ParseAndRenderTemplate(false);
 
-    /// <summary>
-    /// Creates the output file by applying the theme templates to the page content.
-    /// </summary>
-    /// <returns>The processed output file content.</returns>
+    /// <inheritdoc/>
     public string CompleteContent => ParseAndRenderTemplate(true);
 
-    /// <summary>
-    /// Other content that mention this content.
-    /// Used to create the tags list and Related Posts section.
-    /// </summary>
+    /// <inheritdoc/>
     public IEnumerable<IPage> Pages
     {
         get
         {
-            _pages ??= (_frontMatter as FrontMatter)?.PagePages
-                .SelectMany(page => page.FrontMatterPages)
+            _pages ??= ContentSource.PagePages
+                .SelectMany(page => page.ContentSourceToPages)
                 .ToList() ?? [];
             return _pages;
         }
     }
 
-    /// <summary>
-    /// List of pages from the content folder.
-    /// </summary>
+    /// <inheritdoc/>
     public IEnumerable<IPage> RegularPages
     {
         get
@@ -229,9 +80,7 @@ public class Page : IPage
         }
     }
 
-    /// <summary>
-    /// Get all URLs related to this content.
-    /// </summary>
+    /// <inheritdoc/>
     public Dictionary<string, IOutput> AllOutputUrLs
     {
         get
@@ -269,49 +118,6 @@ public class Page : IPage
 
             return urls;
         }
-    }
-
-    /// <summary>
-    /// The markdown content.
-    /// </summary>
-    private Lazy<string> ContentPreRenderedCached => new(() =>
-        Markdown.ToHtml(RawContent, SiteHelper.MarkdownPipeline));
-
-    private const string UrlForIndex = @"{%- liquid
-if page.Parent
-echo page.Parent.Permalink
-echo '/'
-endif
-if page.Title != ''
-echo page.Title
-else
-echo page.SourcePathLastDirectory
-endif
--%}";
-
-    private const string UrlForNonIndex = @"{%- liquid
-if page.Parent
-echo page.Parent.Permalink
-echo '/'
-endif
-if page.Title != ''
-echo page.Title
-else
-echo page.SourceFileNameWithoutExtension
-endif
--%}";
-
-    private IEnumerable<IPage>? _regularPages;
-
-    private List<IPage>? _pages;
-
-    /// <summary>
-    /// Constructor
-    /// </summary>
-    public Page(in IFrontMatter frontMatter, in ISite site)
-    {
-        _frontMatter = frontMatter;
-        Site = site;
     }
 
     /// <summary>
@@ -362,8 +168,182 @@ endif
         ScanForResources();
     }
 
+    #endregion IPage
+
+    #region IFrontMatter
+
+    /// <inheritdoc/>
+    public string? Title => ContentSource.Title;
+
+    /// <inheritdoc/>
+    public string? Section => ContentSource.Section;
+
+    /// <inheritdoc/>
+    public string? Url => ContentSource.Url;
+
+    /// <inheritdoc/>
+    public bool? Draft => ContentSource.Draft;
+
+    /// <inheritdoc/>
+    public List<string>? Aliases => ContentSource.Aliases;
+
+    /// <inheritdoc/>
+    public DateTime? Date => ContentSource.Date;
+
+    /// <inheritdoc/>
+    public DateTime? LastMod => ContentSource.LastMod;
+
+    /// <inheritdoc/>
+    public DateTime? PublishDate => ContentSource.PublishDate;
+
+    /// <inheritdoc/>
+    public DateTime? ExpiryDate => ContentSource.ExpiryDate;
+
+    /// <inheritdoc/>
+    public int Weight => ContentSource.Weight;
+
+    /// <inheritdoc/>
+    public List<string>? Tags => ContentSource.Tags;
+
+    /// <inheritdoc/>
+    public List<FrontMatterResources>? ResourceDefinitions
+    {
+        get => ContentSource.ResourceDefinitions;
+        set => ContentSource.ResourceDefinitions = value;
+    }
+
+    /// <inheritdoc/>
+    public string RawContent => ContentSource.RawContent;
+
+    /// <inheritdoc/>
+    public List<IPage> ContentSourceToPages => ContentSource.ContentSourceToPages;
+
+    /// <inheritdoc/>
+    public ContentSource? ContentSourceParent => ContentSource.ContentSourceParent;
+
+    /// <inheritdoc/>
+    public string SourceRelativePath => ContentSource.SourceRelativePath;
+
+    /// <inheritdoc/>
+    public string? SourceRelativePathDirectory =>
+        ContentSource.SourceRelativePathDirectory;
+
+    /// <inheritdoc/>
+    public string? SourceFileNameWithoutExtension =>
+        (ContentSource as IFile).SourceFileNameWithoutExtension;
+
+    #endregion IFrontMatter
+
+    #region IContentSource
+
+    /// <inheritdoc/>
+    public string? Type => ContentSource.Type;
+
+    /// <inheritdoc/>
+    public Kind Kind => ContentSource.Kind;
+
+    /// <inheritdoc/>
+    public BundleType BundleType => ContentSource.BundleType;
+
+    /// <inheritdoc/>
+    public List<ContentSource> ContentSourceTags =>
+        ContentSource.ContentSourceTags;
+
+    #endregion IContentSource
+
+    #region IParams
+    /// <inheritdoc/>
+    public Dictionary<string, object> Params
+    {
+        get => ContentSource.Params;
+        set => ContentSource.Params = value;
+    }
+    #endregion IParams
+
+    #region IOutput
+
+    /// <inheritdoc/>
+    public string? Permalink { get; set; }
+
+    #endregion IOutput
+
+    /// <summary>
+    /// The source directory of the file.
+    /// </summary>
+    public string? SourcePathLastDirectory =>
+        string.IsNullOrEmpty(SourceRelativePathDirectory)
+            ? null
+            : Path.GetFileName(Path.GetFullPath(
+                SourceRelativePathDirectory.TrimEnd(Path.DirectorySeparatorChar,
+                    Path.AltDirectorySeparatorChar)));
+
+
+    /// <inheritdoc/>
+    public Collection<Resource>? Resources { get; set; }
+
+    /// <inheritdoc/>
+    public List<IPage> TagsReference
+    {
+        get
+        {
+            List<IPage> tagsReferences = [];
+            foreach (var tag in ContentSourceTags)
+            {
+                tagsReferences.AddRange(tag.ContentSourceToPages);
+            }
+            return tagsReferences;
+        }
+    }
+
+    private static readonly char[] NonWords =
+        [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
+
+    /// <summary>
+    /// The markdown content.
+    /// </summary>
+    private Lazy<string> ContentPreRenderedCached => new(() =>
+        Markdown.ToHtml(RawContent, SiteHelper.MarkdownPipeline));
+
+    private const string UrlForIndex = @"{%- liquid
+if page.Parent
+echo page.Parent.Permalink
+echo '/'
+endif
+if page.Title != ''
+echo page.Title
+else
+echo page.SourcePathLastDirectory
+endif
+-%}";
+
+    private const string UrlForNonIndex = @"{%- liquid
+if page.Parent
+echo page.Parent.Permalink
+echo '/'
+endif
+if page.Title != ''
+echo page.Title
+else
+echo page.SourceFileNameWithoutExtension
+endif
+-%}";
+
+    private IEnumerable<IPage>? _regularPages;
+
+    private List<IPage>? _pages;
+
     private int _counterInternal;
+
     private bool _counterInternalLock;
+
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    public Page(in ContentSource contentSource, in ISite site)
+    {
+        ContentSource = contentSource;
+        Site = site;
+    }
 
     private int Counter
     {
@@ -380,7 +360,7 @@ endif
 
     private void ScanForResources()
     {
-        if (string.IsNullOrEmpty(SourceFullPathDirectory))
+        if (string.IsNullOrEmpty((ContentSource as IFile).SourceFullPathDirectory(Site.SourceContentPath)))
         {
             return;
         }
@@ -390,16 +370,16 @@ endif
             return;
         }
 
-        if (!Directory.Exists(SourceFullPathDirectory))
+        if (!Directory.Exists((ContentSource as IFile).SourceFullPathDirectory(Site.SourceContentPath)))
         {
             return;
         }
 
         try
         {
-            var resourceFiles = Directory.GetFiles(SourceFullPathDirectory)
+            var resourceFiles = Directory.GetFiles(Site.SourceContentPath)
                                          .Where(file =>
-                                             file != SourceFullPath &&
+                                             file != (ContentSource as IFile).SourceFullPath(Site.SourceContentPath) &&
                                              (BundleType == BundleType.Leaf ||
                                               !file.EndsWith(".md",
                                                   StringComparison

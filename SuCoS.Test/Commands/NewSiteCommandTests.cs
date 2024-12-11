@@ -155,7 +155,7 @@ public class NewSiteCommandTests
         var options = new NewSiteOptions { Output = "test", Force = true };
         _fileSystem.FileExists(Arg.Any<string>()).Returns(false);
         _site.Parser
-            .When(x => x.Export(Arg.Any<SiteSettings>(), Arg.Any<string>()))
+            .When(x => x.SerializeAndSave(Arg.Any<SiteSettings>(), Arg.Any<string>()))
             .Do(_ => throw new ArgumentNullException());
 
         var newSiteCommand = new NewSiteCommand(options, _logger, _fileSystem, _site);

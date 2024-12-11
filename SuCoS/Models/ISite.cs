@@ -68,9 +68,9 @@ public interface ISite : ISiteSettings
     public SiteCacheManager CacheManager { get; }
 
     /// <summary>
-    /// Metadata parser
+    /// Fronrt Matter parser
     /// </summary>
-    public IMetadataParser Parser { get; }
+    public IFrontMatterParser Parser { get; }
 
     /// <summary>
     /// The template engine.
@@ -94,7 +94,7 @@ public interface ISite : ISiteSettings
 
     /// <summary>
     /// Search recursively for all markdown files in the content folder, then
-    /// parse their content for front matter metadata and markdown.
+    /// parse their content for front matter front matter and markdown.
     /// </summary>
     /// <param name="fs"></param>
     /// <param name="directory">Folder to scan</param>
@@ -106,7 +106,7 @@ public interface ISite : ISiteSettings
         IFileSystem fs,
         string? directory = null,
         int level = 0,
-        FrontMatter? parent = null,
+        ContentSource? parent = null,
         FrontMatter? cascade = null);
 
     /// <summary>
@@ -131,40 +131,38 @@ public interface ISite : ISiteSettings
     /// <param name="options">options</param>
     /// <returns></returns>
     public bool IsPageValid(
-        in IFrontMatter frontMatter,
+        in IContentSource frontMatter,
         IGenerateOptions? options);
 
     /// <summary>
     /// Check if the page have a publishing date from the past.
     /// </summary>
-    /// <param name="frontMatter">Page or front matter</param>
+    /// <param name="contentSource">Page or content Source</param>
     /// <param name="options">options</param>
     /// <returns></returns>
     public bool IsDateValid(
-        in IFrontMatter frontMatter,
+        in IContentSource contentSource,
         IGenerateOptions? options);
 
     /// <summary>
     /// Check if the page is expired
     /// </summary>
-    public bool IsDateExpired(in IFrontMatter frontMatter);
+    public bool IsDateExpired(in IContentSource contentSource);
 
     /// <summary>
     /// Check if the page is publishable
     /// </summary>
-    public bool IsDatePublishable(in IFrontMatter frontMatter);
+    public bool IsDatePublishable(in IContentSource contentSource);
 
     /// <summary>
     /// Create a Page from front matter
     /// </summary>
-    /// <param name="frontMatter"></param>
-    public Page? PageCreate(IFrontMatter frontMatter);
+    /// <param name="contentSource"></param>
+    public Page? PageCreate(ContentSource contentSource);
 
     /// <summary>
     /// Include the Front Matter into the site
     /// </summary>
-    /// <param name="frontMatter"></param>
-    /// <param name="cascade"></param>
-    FrontMatter? FrontMatterAdd(FrontMatter? frontMatter,
-        FrontMatter? cascade = null);
+    /// <param name="contentSource"></param>
+    ContentSource? ContentSourceAdd(ContentSource? contentSource);
 }

@@ -40,7 +40,7 @@ public class Theme
         ];
 
     /// <summary>
-    /// Create a Theme from a given metadata content.
+    /// Create a Theme from a given front matter content.
     /// </summary>
     /// <param name="site"></param>
     /// <param name="data"></param>
@@ -55,7 +55,7 @@ public class Theme
     }
 
     /// <summary>
-    /// Create a Theme from a given metadata file path.
+    /// Create a Theme from a given front matter file path.
     /// </summary>
     /// <param name="site"></param>
     /// <returns></returns>

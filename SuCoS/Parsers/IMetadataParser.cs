@@ -1,16 +1,16 @@
 namespace SuCoS.Parsers;
 
 /// <summary>
-/// Responsible for parsing the content metadata
+/// Responsible for parsing the content front matter
 /// </summary>
-public interface IMetadataParser
+public interface IFrontMatterParser
 {
     /// <summary>
     /// Extract the front matter from the content.
     /// </summary>
     /// <param name="fileContent"></param>
     /// <returns></returns>
-    (string, string) SplitFrontMatter(in string fileContent);
+    (string frontMatter, string rawContent) SplitFrontMatterAndContent(in string fileContent);
 
     /// <summary>
     /// Parse a string content to the T class.
@@ -20,9 +20,9 @@ public interface IMetadataParser
     T Parse<T>(string content);
 
     /// <summary>
-    /// Deserialized an object.
+    /// Deserialize an object into a file.
     /// </summary>
     /// <param name="data"></param>
-    /// <param name="path"></param>
-    void Export<T>(T data, string path);
+    /// <param name="fileFullPath"></param>
+    void SerializeAndSave<T>(T data, string fileFullPath);
 }

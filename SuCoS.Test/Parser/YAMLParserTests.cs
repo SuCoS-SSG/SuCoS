@@ -100,7 +100,7 @@ public class YamlParserTests : TestSetup
     public void ParseFrontMatter_ShouldParseTitleCorrectly(string fileContent, string expectedTitle)
     {
         // Arrange
-        var frontMatter = FrontMatter.Parse(FileRelativePathConst, FileFullPathConst, _parser, fileContent);
+        (var frontMatter, _) = FrontMatter.Parse(FileRelativePathConst, FileFullPathConst, _parser, fileContent);
 
         // Assert
         Assert.Equal(expectedTitle, frontMatter.Title);
@@ -125,7 +125,7 @@ public class YamlParserTests : TestSetup
         var expectedDate = DateTime.Parse(expectedDateString, CultureInfo.InvariantCulture);
 
         // Act
-        var frontMatter = FrontMatter.Parse(FileRelativePathConst, FileFullPathConst, _parser, fileContent);
+        (var frontMatter, _) = FrontMatter.Parse(FileRelativePathConst, FileFullPathConst, _parser, fileContent);
 
         // Assert
         Assert.Equal(expectedDate, frontMatter.Date);
@@ -141,7 +141,7 @@ public class YamlParserTests : TestSetup
         var expectedExpiryDate = DateTime.Parse("2024-06-01", CultureInfo.InvariantCulture);
 
         // Act
-        var frontMatter = FrontMatter.Parse(FileRelativePathConst, FileFullPathConst, _parser, PageContent);
+        (var frontMatter, _) = FrontMatter.Parse(FileRelativePathConst, FileFullPathConst, _parser, PageContent);
 
         // Assert
         Assert.Equal("Test Title", frontMatter.Title);
@@ -186,8 +186,9 @@ public class YamlParserTests : TestSetup
     public void ParseParams_ShouldFillParamsWithNonMatchingFields()
     {
         // Arrange
-        var frontMatter = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
-        var page = new Page(frontMatter, Site);
+        (var frontMatter, _) = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
+        ContentSource contentSource = new(string.Empty, frontMatter);
+        var page = new Page(contentSource, Site);
 
         // Assert
         Assert.False(page.Params.ContainsKey("customParam"));
@@ -199,8 +200,9 @@ public class YamlParserTests : TestSetup
     {
         // Arrange
         var date = DateTime.Parse("2023-01-01", CultureInfo.InvariantCulture);
-        var frontMatter = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
-        Page page = new(frontMatter, Site);
+        (var frontMatter, _) = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
+        ContentSource contentSource = new(string.Empty, frontMatter);
+        var page = new Page(contentSource, Site);
 
         // Act
         Site.PostProcessPage(page);
@@ -214,10 +216,11 @@ public class YamlParserTests : TestSetup
     public void ParseFrontMatter_ShouldCreateTags()
     {
         // Arrange
-        var frontMatter = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
+        (var frontMatter, _) = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
+        ContentSource contentSource = new(string.Empty, frontMatter);
 
         // Act
-        Site.FrontMatterAdd(frontMatter);
+        Site.ContentSourceAdd(contentSource);
         Site.ProcessPages();
         Site.OutputReferences.TryGetValue("/test-title", out var output);
         var page = output as Page;
@@ -229,7 +232,7 @@ public class YamlParserTests : TestSetup
     [Fact]
     public void FrontMatterParse_RawContentNull()
     {
-        _ = Assert.Throws<FormatException>(() => FrontMatter.Parse("invalidFrontMatter", "", "fakePath", "fakePath", FrontMatterParser));
+        _ = Assert.Throws<FormatException>(() => FrontMatter.Parse("invalidFrontMatter", "fakePath", "fakePath", FrontMatterParser));
     }
 
     [Fact]
@@ -239,14 +242,14 @@ public class YamlParserTests : TestSetup
     }
 
     [Fact]
-    public void ParseYAML_ShouldSplitTheMetadata()
+    public void ParseYAML_ShouldSplitTheFrontMatter()
     {
         // Act
-        var (metadata, rawContent) = _parser.SplitFrontMatter(PageContent);
-        metadata = metadata.Replace("\r\n", "\n", StringComparison.Ordinal);
+        var (frontMatter, rawContent) = _parser.SplitFrontMatterAndContent(PageContent);
+        frontMatter = frontMatter.Replace("\r\n", "\n", StringComparison.Ordinal);
 
         // Assert
-        Assert.Equal(PageFrontMatterConst.TrimEnd(), metadata);
+        Assert.Equal(PageFrontMatterConst.TrimEnd(), frontMatter);
         Assert.Equal(PageMarkdownConst, rawContent);
     }
 
@@ -315,7 +318,7 @@ public class YamlParserTests : TestSetup
     public void FrontMatter_ShouldIgnoreCase(string fileContent)
     {
         // Arrange
-        var frontMatter = FrontMatter.Parse(FileRelativePathConst, FileFullPathConst, _parser, fileContent);
+        (var frontMatter, _) = FrontMatter.Parse(FileRelativePathConst, FileFullPathConst, _parser, fileContent);
 
         // Assert
         Assert.Equal("title-test", frontMatter.Title);

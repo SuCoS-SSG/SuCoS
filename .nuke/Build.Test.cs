@@ -33,7 +33,7 @@ internal sealed partial class Build
                     .SetResultsDirectory(CoverageDirectory)
                     .SetCoverletOutput(CoverageResultFile)
                     .SetCoverletOutputFormat(CoverletOutputFormat.cobertura)
-                    .SetExcludeByFile("*.g.cs") // Exclude source generated files
+                    .SetExcludeByFile("**/*.g.cs") // Exclude source generated files
                     .EnableCollectCoverage()
             )
         );

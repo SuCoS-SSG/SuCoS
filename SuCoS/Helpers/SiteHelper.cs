@@ -23,7 +23,7 @@ public static class SiteHelper
     /// Creates the pages' dictionary.
     /// </summary>
     /// <exception cref="FormatException"></exception>
-    public static Site Init(string configFile, IGenerateOptions options, IMetadataParser parser, ILogger logger, StopwatchReporter stopwatch, IFileSystem fs)
+    public static Site Init(string configFile, IGenerateOptions options, IFrontMatterParser parser, ILogger logger, StopwatchReporter stopwatch, IFileSystem fs)
     {
         ArgumentNullException.ThrowIfNull(stopwatch);
         ArgumentNullException.ThrowIfNull(fs);
@@ -89,7 +89,7 @@ public static class SiteHelper
     /// <param name="fs"></param>
     /// <param name="configFile">The site settings file.</param>
     /// <returns>The site settings.</returns>
-    public static SiteSettings ParseSettings(string configFile, IGenerateOptions options, IMetadataParser parser, IFileSystem fs)
+    public static SiteSettings ParseSettings(string configFile, IGenerateOptions options, IFrontMatterParser parser, IFileSystem fs)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(parser);

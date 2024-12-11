@@ -55,7 +55,7 @@ public sealed class NewSiteCommand(NewSiteOptions options, ILogger logger, IFile
         try
         {
             CreateFolders(site.SourceFolders);
-            site.Parser.Export(_siteSettings, siteSettingsPath);
+            site.Parser.SerializeAndSave(_siteSettings, siteSettingsPath);
         }
         catch (Exception ex)
         {

@@ -8,7 +8,7 @@ namespace SuCoS.Parsers;
 /// <summary>
 /// Responsible for parsing the content front matter using YAML
 /// </summary>
-public class YamlParser : IMetadataParser
+public class YamlParser : IFrontMatterParser
 {
     /// <summary>
     /// YamlDotNet parser, strictly set to allow automatically parse only known fields
@@ -43,7 +43,7 @@ public class YamlParser : IMetadataParser
     }
 
     /// <inheritdoc/>
-    public void Export<T>(T data, string path)
+    public void SerializeAndSave<T>(T data, string fileFullPath)
     {
         var serializer = new SerializerBuilder()
         .IgnoreFields()
@@ -53,11 +53,11 @@ public class YamlParser : IMetadataParser
             | DefaultValuesHandling.OmitNull)
         .Build();
         var dataString = serializer.Serialize(data);
-        File.WriteAllText(path, dataString);
+        File.WriteAllText(fileFullPath, dataString);
     }
 
     /// <inheritdoc/>
-    public (string, string) SplitFrontMatter(in string fileContent)
+    public (string, string) SplitFrontMatterAndContent(in string fileContent)
     {
         using var content = new StringReader(fileContent);
         var frontMatterBuilder = new StringBuilder();

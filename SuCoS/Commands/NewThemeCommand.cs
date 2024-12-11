@@ -36,7 +36,7 @@ public sealed class NewThemeCommand(NewThemeOptions options, ILogger logger)
 
         try
         {
-            new YamlParser().Export(theme, themePath);
+            new YamlParser().SerializeAndSave(theme, themePath);
         }
         catch (Exception ex)
         {

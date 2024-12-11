@@ -15,7 +15,7 @@ public class Resource : IResource
     public required string SourceFullPath { get; init; }
 
     /// <inheritdoc/>
-    public string? SourceRelativePath => null;
+    public string SourceRelativePath => null!;
 
     #region IOutput
 

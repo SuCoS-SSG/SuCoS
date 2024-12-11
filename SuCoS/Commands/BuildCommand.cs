@@ -87,7 +87,7 @@ public class BuildCommand : BaseGeneratorCommand
                 Fs.DirectoryCreateDirectory(outputDirectory!);
 
                 // Copy the file to the output folder
-                Fs.FileCopy(resource.SourceFullPath, outputAbsolutePath, overwrite: true);
+                Fs.FileCopy(resource.SourceFullPath(Site.SourceContentPath), outputAbsolutePath, overwrite: true);
             }
         });
 

@@ -105,7 +105,7 @@ public class Site : ISite
     public SiteCacheManager CacheManager { get; } = new();
 
     /// <inheritdoc/>
-    public IMetadataParser Parser { get; }
+    public IFrontMatterParser Parser { get; }
 
     /// <inheritdoc/>
     public ITemplateEngine TemplateEngine { get; }
@@ -157,7 +157,7 @@ public class Site : ISite
     /// </summary>
     private readonly ISystemClock _clock;
 
-    private readonly ConcurrentDictionary<string, FrontMatter> _frontMatters =
+    private readonly ConcurrentDictionary<string, ContentSource> _contentSources =
         [];
 
     /// <summary>
@@ -166,7 +166,7 @@ public class Site : ISite
     public Site(
         in IGenerateOptions options,
         in SiteSettings settings,
-        in IMetadataParser parser,
+        in IFrontMatterParser parser,
         in ILogger logger,
         ISystemClock? clock)
     {
@@ -185,7 +185,7 @@ public class Site : ISite
 
     /// <inheritdoc/>
     public void ScanAndParseSourceFiles(IFileSystem fs, string? directory,
-        int level = 0, FrontMatter? parent = null, FrontMatter? cascade = null)
+        int level = 0, ContentSource? parent = null, FrontMatter? cascade = null)
     {
         ArgumentNullException.ThrowIfNull(fs);
 
@@ -202,15 +202,16 @@ public class Site : ISite
         markdownFiles.ForEach(
             filePath =>
             {
-                var frontMatter = ParseFrontMatter(filePath, cascade);
+                var (frontMatter, rawContent) = ParseFile(filePath, cascade);
                 if (frontMatter is null)
                 {
                     return;
                 }
 
-                frontMatter.FrontMatterParent = parent;
+                ContentSource contentSource = new(filePath, frontMatter, rawContent);
+                contentSource.ContentSourceParent = parent;
 
-                FrontMatterAdd(frontMatter, cascade);
+                ContentSourceAdd(contentSource);
             });
 
         var subdirectories = fs.DirectoryGetDirectories(directory);
@@ -278,7 +279,7 @@ public class Site : ISite
     /// <param name="relativePath"></param>
     /// <param name="title"></param>
     /// <param name="isTaxonomy"></param>
-    private FrontMatter CreateSystemFrontMatter(
+    private ContentSource CreateSystemContentSource(
         string relativePath,
         string title,
         bool isTaxonomy = false)
@@ -286,7 +287,7 @@ public class Site : ISite
         relativePath = Urlizer.Path(relativePath);
 
         if (!CacheManager.AutomaticContentCache.TryGetValue(relativePath,
-                out var frontMatter))
+                out var contentSource))
         {
             var directoryDepth = GetDirectoryDepth(relativePath);
             var sectionName = GetFirstDirectory(relativePath);
@@ -297,23 +298,23 @@ public class Site : ISite
                 _ => isTaxonomy ? Kind.term : Kind.list
             };
 
-            frontMatter = new FrontMatter
+            var frontMatter = new FrontMatter
             {
                 Section = directoryDepth == 0 ? "index" : sectionName,
-                SourceRelativePath = SourceRelativePath(relativePath),
-                SourceFullPath = Urlizer.Path(Path.Combine(SourceContentPath,
-                    relativePath, IndexBranchFileConst)),
                 Title = title,
                 Type = kind == Kind.home ? "index" : sectionName,
-                Url = relativePath,
+                Url = relativePath
+            };
+            contentSource = new ContentSource(SourceRelativePath(relativePath), frontMatter)
+            {
                 BundleType = BundleType.Branch,
                 Kind = kind
             };
             CacheManager.AutomaticContentCache.TryAdd(relativePath,
-                frontMatter);
+                contentSource);
         }
 
-        return frontMatter;
+        return contentSource;
     }
 
     private static string SourceRelativePath(string? relativePath)
@@ -322,43 +323,43 @@ public class Site : ISite
     }
 
     /// <inheritdoc />
-    public bool IsPageValid(in IFrontMatter frontMatter,
+    public bool IsPageValid(in IContentSource contentSource,
         IGenerateOptions? options)
     {
-        ArgumentNullException.ThrowIfNull(frontMatter);
+        ArgumentNullException.ThrowIfNull(contentSource);
 
-        return IsDateValid(frontMatter, options)
-               && (frontMatter.Draft is null || frontMatter.Draft == false ||
+        return IsDateValid(contentSource, options)
+               && (contentSource.Draft is null || contentSource.Draft == false ||
                    (options?.Draft ?? false));
     }
 
     /// <inheritdoc />
-    public bool IsDateValid(in IFrontMatter frontMatter,
+    public bool IsDateValid(in IContentSource contentSource,
         IGenerateOptions? options)
     {
-        ArgumentNullException.ThrowIfNull(frontMatter);
+        ArgumentNullException.ThrowIfNull(contentSource);
 
-        return (!IsDateExpired(frontMatter) || (options?.Expired ?? false))
-               && (IsDatePublishable(frontMatter) ||
+        return (!IsDateExpired(contentSource) || (options?.Expired ?? false))
+               && (IsDatePublishable(contentSource) ||
                    (options?.Future ?? false));
     }
 
     /// <inheritdoc />
-    public bool IsDateExpired(in IFrontMatter frontMatter)
+    public bool IsDateExpired(in IContentSource contentSource)
     {
-        ArgumentNullException.ThrowIfNull(frontMatter);
+        ArgumentNullException.ThrowIfNull(contentSource);
 
-        return frontMatter.ExpiryDate is not null &&
-               frontMatter.ExpiryDate <= _clock.Now;
+        return contentSource.ExpiryDate is not null &&
+               contentSource.ExpiryDate <= _clock.Now;
     }
 
     /// <inheritdoc />
-    public bool IsDatePublishable(in IFrontMatter frontMatter)
+    public bool IsDatePublishable(in IContentSource contentSource)
     {
-        ArgumentNullException.ThrowIfNull(frontMatter);
+        ArgumentNullException.ThrowIfNull(contentSource);
 
-        return frontMatter.GetPublishDate is null ||
-               frontMatter.GetPublishDate <= _clock.Now;
+        return contentSource.GetPublishDate is null ||
+               contentSource.GetPublishDate <= _clock.Now;
     }
 
     #endregion ISite methods
@@ -378,7 +379,7 @@ public class Site : ISite
     private void ParseIndexFrontMatter(
         string? directory,
         int level,
-        ref FrontMatter? parent,
+        ref ContentSource? parent,
         ref FrontMatter cascade,
         ref List<string> markdownFiles)
     {
@@ -388,7 +389,7 @@ public class Site : ISite
         var indexBranchBundlePage = markdownFiles.FirstOrDefault(file =>
             Path.GetFileName(file) == IndexBranchFileConst);
 
-        FrontMatter? frontMatter = null;
+        ContentSource? contentSource = null;
 
         var hasIndex = indexLeafBundlePage is not null ||
                        indexBranchBundlePage is not null;
@@ -398,44 +399,49 @@ public class Site : ISite
             // Determine the file to use and the bundle type
             var selectedFile = indexLeafBundlePage ?? indexBranchBundlePage;
 
+            var fileRelativePath = Path.GetRelativePath(SourceContentPath, selectedFile!);
+
             // Remove the selected file from markdownFiles
             markdownFiles = markdownFiles.Where(file =>
                 file != indexLeafBundlePage &&
                 file != indexBranchBundlePage).ToList();
 
-            frontMatter = ParseFrontMatter(selectedFile!, cascade);
+            var (frontMatter, rawContent) = ParseFile(selectedFile!, cascade);
+
             if (frontMatter is null)
             {
                 return;
             }
-
-            frontMatter.BundleType = selectedFile == indexLeafBundlePage
-                ? BundleType.Leaf
-                : BundleType.Branch;
+            contentSource = new(fileRelativePath!, frontMatter, rawContent)
+            {
+                BundleType = selectedFile == indexLeafBundlePage
+                        ? BundleType.Leaf
+                        : BundleType.Branch
+            };
 
             // Use interlocked to safely increment the counter in a multithreaded environment
             _ = Interlocked.Increment(ref _filesParsedToReport);
 
-            cascade = frontMatter.Cascade ?? cascade;
-            frontMatter.FrontMatterParent = parent;
+            cascade = contentSource.FrontMatter.Cascade ?? cascade;
+            contentSource.ContentSourceParent = parent;
         }
         else
         {
             switch (level)
             {
                 case 0:
-                    frontMatter = CreateSystemFrontMatter(String.Empty, Title);
+                    contentSource = CreateSystemContentSource(String.Empty, Title);
                     break;
                 case 1:
-                {
-                    var section = new DirectoryInfo(directory!).Name;
-                    frontMatter = CreateSystemFrontMatter(section, section);
-                    break;
-                }
+                    {
+                        var section = new DirectoryInfo(directory!).Name;
+                        contentSource = CreateSystemContentSource(section, section);
+                        break;
+                    }
             }
         }
 
-        if (frontMatter is null)
+        if (contentSource is null)
         {
             return;
         }
@@ -443,116 +449,116 @@ public class Site : ISite
         switch (level)
         {
             case 0:
-                frontMatter.Kind = Kind.home;
-                frontMatter.Url = "/";
+                contentSource.Kind = Kind.home;
+                contentSource.FrontMatter.Url = "/";
                 break;
             case 1:
-                frontMatter.Kind = hasIndex ? frontMatter.Kind : Kind.section;
-                frontMatter.Type ??= "section";
-                parent = frontMatter;
+                contentSource.Kind = hasIndex ? contentSource.Kind : Kind.section;
+                contentSource.Type ??= "section";
+                parent = contentSource;
                 break;
             default:
-                parent = frontMatter;
+                parent = contentSource;
                 break;
         }
 
-        FrontMatterAdd(frontMatter);
+        ContentSourceAdd(contentSource);
     }
 
     /// <inheritdoc />
-    public FrontMatter? FrontMatterAdd(FrontMatter? frontMatter,
-        FrontMatter? cascade = null)
+    public ContentSource? ContentSourceAdd(ContentSource? contentSource)
     {
-        if (frontMatter is null)
+        if (contentSource is null)
         {
             return null;
         }
 
-        if (!_frontMatters.TryAdd(frontMatter.SourceRelativePath!, frontMatter))
+        if (!_contentSources.TryAdd(contentSource.SourceRelativePath!, contentSource))
         {
             Logger.Error("Duplicate front matter found : {filepath}",
-                frontMatter.SourceRelativePath);
+                contentSource.SourceRelativePath);
         }
 
-        var path = SourceRelativePath(frontMatter.Section);
-        if (!string.IsNullOrEmpty(frontMatter.Section) && _frontMatters.TryGetValue(path,
+        var path = SourceRelativePath(contentSource.Section);
+        if (!string.IsNullOrEmpty(contentSource.Section) && _contentSources.TryGetValue(path,
                 out var sectionFrontMatter))
         {
-            LinkContent(frontMatter, sectionFrontMatter, false);
+            LinkContent(contentSource, sectionFrontMatter, false);
         }
 
-        GenerateTags(frontMatter);
-        return frontMatter;
+        GenerateTags(contentSource);
+        return contentSource;
     }
 
-    private FrontMatter? ParseFrontMatter(in string fileFullPath,
-        FrontMatter? cascade)
+    private (FrontMatter?, string) ParseFile(in string fileFullPath, FrontMatter? cascade)
     {
         var fileRelativePath =
             Path.GetRelativePath(SourceContentPath, fileFullPath);
         try
         {
             var fileContent = File.ReadAllText(fileFullPath);
-            var frontMatter = FrontMatter.Parse(fileFullPath, fileRelativePath,
-                                  Parser, fileContent)
-                              ?? throw new FormatException(
-                                  $"Error parsing front matter for {fileFullPath}");
+            var (frontMatter, rawContent) =
+                FrontMatter.Parse(fileFullPath, fileRelativePath, Parser, fileContent);
 
-            return cascade is not null
+            // throw new FormatException(
+            // $"Error parsing front matter for {fileFullPath}");
+
+            return (cascade is not null
                 ? cascade.Merge(frontMatter)
-                : frontMatter;
+                : frontMatter
+                , rawContent);
         }
         catch (Exception ex)
         {
             Logger.Error(ex, "Error parsing file {file}", fileFullPath);
         }
 
-        return null;
+        return (null, string.Empty);
     }
 
     // TODO: taxonomy should be customizable
-    private void GenerateTags(FrontMatter frontMatter)
+    private void GenerateTags(ContentSource contentSource)
     {
-        if (frontMatter.Tags == null)
+        if (contentSource.Tags == null)
         {
             return;
         }
 
-        if (!_frontMatters.TryGetValue($"tags/_index.md",
-                out var tagsFrontMatter))
+        if (!_contentSources.TryGetValue($"tags/_index.md",
+                out var tagsContentSource))
         {
-            tagsFrontMatter = CreateSystemFrontMatter("tags", "Tags");
-            if (!_frontMatters.TryAdd(
-                    tagsFrontMatter.SourceRelativePath!,
-                    tagsFrontMatter))
+            tagsContentSource = CreateSystemContentSource("tags", "Tags");
+            if (!_contentSources.TryAdd(
+                    tagsContentSource.SourceRelativePath!,
+                    tagsContentSource))
             {
                 Log.Error("already exist!");
             }
         }
-        LinkContent(frontMatter, tagsFrontMatter, false);
+        LinkContent(contentSource, tagsContentSource, false);
 
-        foreach (var tag in frontMatter.Tags)
+        foreach (var tag in contentSource.Tags)
         {
             var path = SourceRelativePath(Path.Combine("tags", tag));
-            if (!_frontMatters.TryGetValue(path, out var tagFrontMatter))
+            if (!_contentSources.TryGetValue(path, out var tagFrontMatter))
             {
                 tagFrontMatter =
-                    CreateSystemFrontMatter(Path.Combine("tags", tag), tag);
-                tagFrontMatter.FrontMatterParent = tagsFrontMatter;
-                _frontMatters.TryAdd(tagFrontMatter.SourceRelativePath!,
+                    CreateSystemContentSource(Path.Combine("tags", tag), tag);
+                tagFrontMatter.ContentSourceParent = tagsContentSource;
+                _contentSources.TryAdd(tagFrontMatter.SourceRelativePath!,
                     tagFrontMatter);
             }
 
-            LinkContent(frontMatter, tagFrontMatter, true);
+            LinkContent(contentSource, tagFrontMatter, true);
         }
     }
 
-    private static void LinkContent(FrontMatter content1, FrontMatter content2,
+    private static void LinkContent(ContentSource content1, ContentSource content2,
         bool isTag)
     {
         if (isTag)
         {
-            content1.FrontMatterTagsReference.Add(content2);
+            content1.ContentSourceTags.Add(content2);
         }
 
         content2.PagePages.Add(content1);
@@ -561,26 +567,26 @@ public class Site : ISite
     /// <summary>
     /// Create a Page from front matter
     /// </summary>
-    /// <param name="frontMatter"></param>
-    public Page? PageCreate(IFrontMatter frontMatter)
+    /// <param name="contentSource"></param>
+    public Page? PageCreate(ContentSource contentSource)
     {
-        ArgumentNullException.ThrowIfNull(frontMatter);
+        ArgumentNullException.ThrowIfNull(contentSource);
 
         // Create the parent if it does not exist
-        if (frontMatter.FrontMatterParent is FrontMatter
+        if (contentSource.ContentSourceParent is ContentSource
             {
-                FrontMatterPages.Count: 0
+                ContentSourceToPages.Count: 0
             })
         {
-            PageCreate(frontMatter.FrontMatterParent);
+            PageCreate(contentSource.ContentSourceParent);
         }
 
         Page? page = null;
-        if (IsPageValid(frontMatter, Options))
+        if (IsPageValid(contentSource, Options))
         {
-            page = new(frontMatter, this);
+            page = new(contentSource, this);
             PostProcessPage(page, true);
-            frontMatter.FrontMatterPages.Add(page);
+            contentSource.ContentSourceToPages.Add(page);
 
             if (Home is null &&
                 page.SourceRelativePath is IndexBranchFileConst
@@ -600,8 +606,8 @@ public class Site : ISite
     /// Create pages from front matter
     /// </summary>
     public void ProcessPages() =>
-        _frontMatters
-            .Where(fm => fm.Value.FrontMatterPages.Count == 0)
+        _contentSources
+            .Where(fm => fm.Value.ContentSourceToPages.Count == 0)
             .OrderBy(fm =>
                 !fm.Value.SourceRelativePath!.EndsWith("index.md",
                     StringComparison.OrdinalIgnoreCase))
