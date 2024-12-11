@@ -15,7 +15,7 @@
     <PackageProjectUrl>hhttps://sucos.brunomassa.com</PackageProjectUrl>
     <PackageTags>static site generator;ssg;yaml/blog</PackageTags>
     <InvariantGlobalization>true</InvariantGlobalization>
-    <Version>4.3.0</Version>
+    <Version>4.4.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

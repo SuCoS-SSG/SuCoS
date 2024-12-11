@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## v[4.4.0] 2024-12-11
+
 - Changed: separation of Front Matter (just the metadata) and Content (front matter + content)
 - Changed: the .NET to version 9
 - Changed: Bump dependency versions to the latest version at 2024-12
@@ -130,7 +132,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added First Commit!
 
-[Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v4.3.0...HEAD
+[Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v4.4.0...HEAD
+[4.4.0]: https://gitlab.com/sucos/sucos/-/compare/v4.3.0...v4.4.0
 [4.3.0]: https://gitlab.com/sucos/sucos/-/compare/v4.2.1...v4.3.0
 [4.2.1]: https://gitlab.com/sucos/sucos/-/compare/v4.2.0...v4.2.1
 [4.2.0]: https://gitlab.com/sucos/sucos/-/compare/v4.1.0...v4.2.0
