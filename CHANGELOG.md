@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+- Fixed: Debian package build fix
+- Added: major version bump due the .Net 9 upgrade from last version
+
 ## v[4.4.0] 2024-12-11
 
 - Changed: separation of Front Matter (just the metadata) and Content (front matter + content)

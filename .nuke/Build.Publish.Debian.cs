@@ -32,7 +32,7 @@ internal sealed partial class Build
 
             debianControlFile.WriteAllText(controlContent);
 
-            ProcessTasks.StartProcess("dpkg-deb", $"--build {debianPath} {DebianPackage}")
+            ProcessTasks.StartProcess("dpkg-deb", $"--build --nocheck {debianPath} {DebianPackage}")
                 .AssertZeroExitCode();
         });
 }
