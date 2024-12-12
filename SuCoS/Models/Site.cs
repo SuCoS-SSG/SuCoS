@@ -40,6 +40,10 @@ public class Site : ISite
     /// <inheritdoc/>
     public bool UglyUrLs => _settings.UglyUrLs;
 
+    /// <inheritdoc/>
+    public Dictionary<Kind, List<string>> KindOutputFormats =>
+        _settings.KindOutputFormats;
+
     #endregion SiteSettings
 
     #region ISite
@@ -157,8 +161,7 @@ public class Site : ISite
     /// </summary>
     private readonly ISystemClock _clock;
 
-    private readonly ConcurrentDictionary<string, ContentSource> _contentSources =
-        [];
+    private readonly ConcurrentDictionary<string, ContentSource> _contentSources = [];
 
     /// <summary>
     /// Constructor
@@ -208,7 +211,7 @@ public class Site : ISite
                     return;
                 }
 
-                ContentSource contentSource = new(filePath, frontMatter, rawContent);
+                ContentSource contentSource = new(Path.GetRelativePath(SourceContentPath, filePath), frontMatter, rawContent);
                 contentSource.ContentSourceParent = parent;
 
                 ContentSourceAdd(contentSource);
@@ -305,7 +308,7 @@ public class Site : ISite
                 Type = kind == Kind.home ? "index" : sectionName,
                 Url = relativePath
             };
-            contentSource = new ContentSource(SourceRelativePath(relativePath), frontMatter)
+            contentSource = new ContentSource(AddIndexAtPath(relativePath), frontMatter)
             {
                 BundleType = BundleType.Branch,
                 Kind = kind
@@ -317,9 +320,10 @@ public class Site : ISite
         return contentSource;
     }
 
-    private static string SourceRelativePath(string? relativePath)
+    private static string AddIndexAtPath(string? relativePath, bool useBranch = true)
     {
-        return Urlizer.Path(Path.Combine(relativePath ?? "", IndexBranchFileConst));
+        return Urlizer.Path(Path.Combine(relativePath ?? "",
+            useBranch ? IndexBranchFileConst : IndexLeafFileConst));
     }
 
     /// <inheritdoc />
@@ -479,11 +483,17 @@ public class Site : ISite
                 contentSource.SourceRelativePath);
         }
 
-        var path = SourceRelativePath(contentSource.Section);
-        if (!string.IsNullOrEmpty(contentSource.Section) && _contentSources.TryGetValue(path,
-                out var sectionFrontMatter))
+        var sectionPath1 = AddIndexAtPath(contentSource.Section);
+        var sectionPath2 = AddIndexAtPath(contentSource.Section, useBranch: false);
+        if (!string.IsNullOrEmpty(contentSource.Section) && (
+            _contentSources.TryGetValue(sectionPath2, out var section)
+            || _contentSources.TryGetValue(sectionPath1, out section)))
         {
-            LinkContent(contentSource, sectionFrontMatter, false);
+            LinkContent(contentSource, section, false);
+        }
+        else
+        {
+            Console.WriteLine(sectionPath1);
         }
 
         GenerateTags(contentSource);
@@ -523,54 +533,52 @@ public class Site : ISite
         {
             return;
         }
+        var basePath = "tags";
 
-        if (!_contentSources.TryGetValue($"tags/_index.md",
-                out var tagsContentSource))
+        if (!_contentSources.TryGetValue(Path.Combine(basePath, "_index.md"),
+                out var tagSection))
         {
-            tagsContentSource = CreateSystemContentSource("tags", "Tags");
+            tagSection = CreateSystemContentSource(basePath, "Tags");
             if (!_contentSources.TryAdd(
-                    tagsContentSource.SourceRelativePath!,
-                    tagsContentSource))
+                    tagSection.SourceRelativePath!,
+                    tagSection))
             {
                 Log.Error("already exist!");
             }
         }
-        LinkContent(contentSource, tagsContentSource, false);
+        LinkContent(contentSource, tagSection, false);
 
         foreach (var tag in contentSource.Tags)
         {
-            var path = SourceRelativePath(Path.Combine("tags", tag));
-            if (!_contentSources.TryGetValue(path, out var tagFrontMatter))
+            var path = AddIndexAtPath(Path.Combine(basePath, tag));
+            if (!_contentSources.TryGetValue(path, out var tagContentSource))
             {
-                tagFrontMatter =
-                    CreateSystemContentSource(Path.Combine("tags", tag), tag);
-                tagFrontMatter.ContentSourceParent = tagsContentSource;
-                _contentSources.TryAdd(tagFrontMatter.SourceRelativePath!,
-                    tagFrontMatter);
+                tagContentSource =
+                    CreateSystemContentSource(Path.Combine(basePath, tag), tag);
+                tagContentSource.ContentSourceParent = tagSection;
+                _contentSources.TryAdd(tagContentSource.SourceRelativePath,
+                    tagContentSource);
             }
 
-            LinkContent(contentSource, tagFrontMatter, true);
+            LinkContent(contentSource, tagContentSource, true);
         }
     }
 
-    private static void LinkContent(ContentSource content1, ContentSource content2,
+    private static void LinkContent(ContentSource content, ContentSource parent,
         bool isTag)
     {
         if (isTag)
         {
-            content1.ContentSourceTags.Add(content2);
+            content.ContentSourceTags.Add(parent);
         }
 
-        content2.PagePages.Add(content1);
+        parent.Children.Add(content);
     }
 
-    /// <summary>
-    /// Create a Page from front matter
-    /// </summary>
-    /// <param name="contentSource"></param>
-    public Page? PageCreate(ContentSource contentSource)
+    /// <inheritdoc/>
+    public List<Page> PageCreate(ContentSource contentSource)
     {
-        ArgumentNullException.ThrowIfNull(contentSource);
+        List<Page> pages = [];
 
         // Create the parent if it does not exist
         if (contentSource.ContentSourceParent is ContentSource
@@ -578,41 +586,62 @@ public class Site : ISite
                 ContentSourceToPages.Count: 0
             })
         {
-            PageCreate(contentSource.ContentSourceParent);
+            var parents = PageCreate(contentSource.ContentSourceParent);
+            pages.AddRange(parents);
+            contentSource.ContentSourceParent.ContentSourceToPages.AddRange(parents);
         }
 
-        Page? page = null;
+        var outputFormats = GetUniqueOutputFormats(contentSource.Kind, KindOutputFormats).ToList();
+
         if (IsPageValid(contentSource, Options))
         {
-            page = new(contentSource, this);
-            PostProcessPage(page, true);
-            contentSource.ContentSourceToPages.Add(page);
-
-            if (Home is null &&
-                page.SourceRelativePath is IndexBranchFileConst
-                    or IndexLeafFileConst)
+            foreach (var outputFormat in outputFormats)
             {
-                Home = page;
+                Page page = new(contentSource, this, outputFormat, outputFormats);
+                PostProcessPage(page, true);
+                contentSource.ContentSourceToPages.Add(page);
+                pages.Add(page);
+
+                if (Home is null &&
+                    page.SourceRelativePath is IndexBranchFileConst
+                    or IndexLeafFileConst)
+                {
+                    Home = page;
+                }
             }
         }
 
         // Use interlocked to safely increment the counter in a multithreaded environment
         _ = Interlocked.Increment(ref _filesParsedToReport);
 
-        return page;
+        return pages;
     }
 
     /// <summary>
-    /// Create pages from front matter
+    /// Create pages from content source
     /// </summary>
     public void ProcessPages() =>
         _contentSources
-            .Where(fm => fm.Value.ContentSourceToPages.Count == 0)
-            .OrderBy(fm =>
-                !fm.Value.SourceRelativePath!.EndsWith("index.md",
+            .Where(cs => cs.Value.ContentSourceToPages.Count == 0)
+            .OrderBy(cs =>
+                !cs.Value.SourceRelativePath!.EndsWith("index.md",
                     StringComparison.OrdinalIgnoreCase))
-            .ThenBy(fm => fm.Value.SourceRelativePathDirectory)
-            .Select(fm => fm.Value)
+            .ThenBy(cs => cs.Value.SourceRelativePathDirectory)
+            .Select(cs => cs.Value)
             .ToList()
-            .ForEach(fm => PageCreate(fm));
+            .ForEach(cs => PageCreate(cs));
+
+    /// <summary>
+    /// Return a list of all output formats for a given Kind
+    /// </summary>
+    /// <param name="kind"></param>
+    /// <param name="kindOutputFormats"></param>
+    /// <returns></returns>
+    private static List<string> GetUniqueOutputFormats(Kind kind,
+        Dictionary<Kind, List<string>> kindOutputFormats)
+        => kindOutputFormats
+           .Where(kvp => (kind & kvp.Key) == kvp.Key)
+           .SelectMany(kvp => kvp.Value)
+           .Distinct()
+           .ToList();
 }

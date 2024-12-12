@@ -77,7 +77,8 @@ public class SiteTests : TestSetup
         // Assert
         Assert.Equal(expectedQuantity, Site.OutputReferences.Values.Count(output => output is IPage
         {
-            Kind: Kind.section
+            Kind: Kind.section,
+            OutputFormat: "html"
         }));
     }
 
@@ -99,7 +100,11 @@ public class SiteTests : TestSetup
         Site.ProcessPages();
 
         // Assert
-        Assert.Equal(expectedQuantity, Site.OutputReferences.Values.Count(output => output is IPage));
+        Assert.Equal(expectedQuantity, Site.OutputReferences.Values
+            .Count(output => output is IPage
+            {
+                OutputFormat: "html"
+            }));
     }
 
     [Theory]
@@ -122,7 +127,8 @@ public class SiteTests : TestSetup
         // Assert
         Assert.Equal(expectedQuantity, Site.OutputReferences.Values.Count(output => output is IPage
         {
-            IsPage: true
+            IsPage: true,
+            OutputFormat: "html"
         }));
     }
 
@@ -176,7 +182,7 @@ public class SiteTests : TestSetup
         Site.ProcessPages();
 
         // Assert
-        Site.OutputReferences.TryGetValue("/tags", out var output);
+        Site.OutputReferences.TryGetValue("/tags/index.html", out var output);
         var tagSectionPage = output as IPage;
         Assert.NotNull(tagSectionPage);
         Assert.Equal(10, tagSectionPage.Pages.Count());
@@ -200,7 +206,7 @@ public class SiteTests : TestSetup
         Site.ProcessPages();
 
         // Assert
-        _ = Site.OutputReferences.TryGetValue("/tags/tag1", out var output);
+        _ = Site.OutputReferences.TryGetValue("/tags/tag1/index.html", out var output);
         var page = output as IPage;
         Assert.NotNull(page);
         Assert.Equal(10, page.Pages.Count());
@@ -208,11 +214,11 @@ public class SiteTests : TestSetup
     }
 
     [Theory]
-    [InlineData("/", "<p>Index Content</p>\n")]
-    [InlineData("/blog", "")]
-    [InlineData("/tags", "")]
-    [InlineData("/tags/tag1", "")]
-    [InlineData("/blog/test-content-1", "<p>Test Content 1</p>\n")]
+    [InlineData("/index.html", "<p>Index Content</p>\n")]
+    [InlineData("/blog/index.html", "")]
+    [InlineData("/tags/index.html", "")]
+    [InlineData("/tags/tag1/index.html", "")]
+    [InlineData("/blog/test-content-1/index.html", "<p>Test Content 1</p>\n")]
     public void Page_Content_ShouldReturnNullThemeContent(string url, string expectedContent)
     {
         GenerateOptions options = new()
@@ -234,19 +240,19 @@ public class SiteTests : TestSetup
     }
 
     [Theory]
-    [InlineData("/",
+    [InlineData("/index.html",
     "<p>Index Content</p>\n",
     "INDEX-<p>Index Content</p>\n")]
-    [InlineData("/blog",
+    [InlineData("/blog/index.html",
     "",
     "LIST-")]
-    [InlineData("/tags",
+    [InlineData("/tags/index.html",
     "",
     "LIST-")]
-    [InlineData("/tags/tag1",
+    [InlineData("/tags/tag1/index.html",
     "",
     "LIST-")]
-    [InlineData("/blog/test-content-1",
+    [InlineData("/blog/test-content-1/index.html",
     "<p>Test Content 1</p>\n",
     "SINGLE-<p>Test Content 1</p>\n")]
     public void Page_Content_ShouldReturnNullThemeBaseofContent(string url, string expectedContentPreRendered, string expectedContent)
@@ -273,11 +279,11 @@ public class SiteTests : TestSetup
     }
 
     [Theory]
-    [InlineData("/")]
-    [InlineData("/blog")]
-    [InlineData("/tags")]
-    [InlineData("/tags/tag1")]
-    [InlineData("/blog/test-content-1")]
+    [InlineData("/index.html")]
+    [InlineData("/blog/index.html")]
+    [InlineData("/tags/index.html")]
+    [InlineData("/tags/tag1/index.html")]
+    [InlineData("/blog/test-content-1/index.html")]
     public void Page_Content_ShouldReturnThrowNullThemeBaseofContent(string url)
     {
         GenerateOptions options = new()
@@ -301,23 +307,23 @@ public class SiteTests : TestSetup
     }
 
     [Theory]
-    [InlineData("/",
+    [InlineData("/index.html",
     "<p>Index Content</p>\n",
     "INDEX-<p>Index Content</p>\n",
     "BASEOF-INDEX-<p>Index Content</p>\n")]
-    [InlineData("/blog",
+    [InlineData("/blog/index.html",
     "",
     "LIST-",
     "BASEOF-LIST-")]
-    [InlineData("/tags",
+    [InlineData("/tags/index.html",
     "",
     "LIST-",
     "BASEOF-LIST-")]
-    [InlineData("/tags/tag1",
+    [InlineData("/tags/tag1/index.html",
     "",
     "LIST-",
     "BASEOF-LIST-")]
-    [InlineData("/blog/test-content-1",
+    [InlineData("/blog/test-content-1/index.html",
     "<p>Test Content 1</p>\n",
     "SINGLE-<p>Test Content 1</p>\n",
     "BASEOF-SINGLE-<p>Test Content 1</p>\n")]
@@ -358,14 +364,14 @@ public class SiteTests : TestSetup
         Site.ProcessPages();
 
         // Assert
-        Assert.Equal(12, Site.OutputReferences.Values.Count(output => output is IPage));
+        Assert.Equal(12, Site.OutputReferences.Values.Count(output => output is IPage { OutputFormat: "html" }));
         // Assert.Equal(20, Site.OutputReferences.Count);
-        Assert.True(Site.OutputReferences.ContainsKey("/pages/page-01"));
-        Assert.True(Site.OutputReferences.ContainsKey("/blog/blog-01"));
-        Assert.True(Site.OutputReferences.ContainsKey("/pages/page-01/page-01"));
-        Assert.True(Site.OutputReferences.ContainsKey("/blog/blog-01/blog-01"));
-        Assert.True(Site.OutputReferences.ContainsKey("/articles/article-01"));
-        Assert.True(Site.OutputReferences.ContainsKey("/index/post-01"));
-        Assert.True(Site.OutputReferences.ContainsKey("/index/post-01/post-01"));
+        Assert.True(Site.OutputReferences.ContainsKey("/pages/page-01/index.html"));
+        Assert.True(Site.OutputReferences.ContainsKey("/blog/blog-01/index.html"));
+        Assert.True(Site.OutputReferences.ContainsKey("/pages/page-01/page-01/index.html"));
+        Assert.True(Site.OutputReferences.ContainsKey("/blog/blog-01/blog-01/index.html"));
+        Assert.True(Site.OutputReferences.ContainsKey("/articles/article-01/index.html"));
+        Assert.True(Site.OutputReferences.ContainsKey("/index/post-01/index.html"));
+        Assert.True(Site.OutputReferences.ContainsKey("/index/post-01/post-01/index.html"));
     }
 }

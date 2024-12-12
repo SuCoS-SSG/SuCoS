@@ -15,6 +15,8 @@ public class RegisteredPageRequestHandlerTests : TestSetup
     [Theory]
     [InlineData("/", true)]
     [InlineData("/testPage", false)]
+    [InlineData("/index.html", true)]
+    [InlineData("/testPage/index.html", false)]
     public void Check_ReturnsTrueForRegisteredPage(string requestPath, bool exist)
     {
         // Arrange
@@ -36,6 +38,8 @@ public class RegisteredPageRequestHandlerTests : TestSetup
     [Theory]
     [InlineData("/", TestSitePathConst06, false)]
     [InlineData("/", TestSitePathConst08, true)]
+    [InlineData("/index.html", TestSitePathConst06, false)]
+    [InlineData("/index.html", TestSitePathConst08, true)]
     public async Task Handle_ReturnsExpectedContent2(string requestPath, string testSitePath, bool contains)
     {
         // Arrange

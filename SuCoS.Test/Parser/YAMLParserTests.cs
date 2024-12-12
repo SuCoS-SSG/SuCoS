@@ -10,6 +10,10 @@ public class YamlParserTests : TestSetup
 {
     private readonly YamlParser _parser = new();
 
+    // TODO: consider using these
+    // Date: 2023-07-01
+    // LastMod: 2023-06-01
+    // PublishDate: 2023-06-01
     private const string PageFrontMatterConst = """
                                                 Title: Test Title
                                                 Type: post
@@ -188,7 +192,7 @@ public class YamlParserTests : TestSetup
         // Arrange
         (var frontMatter, _) = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
         ContentSource contentSource = new(string.Empty, frontMatter);
-        var page = new Page(contentSource, Site);
+        var page = new Page(contentSource, Site, "html", []);
 
         // Assert
         Assert.False(page.Params.ContainsKey("customParam"));
@@ -202,7 +206,7 @@ public class YamlParserTests : TestSetup
         var date = DateTime.Parse("2023-01-01", CultureInfo.InvariantCulture);
         (var frontMatter, _) = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
         ContentSource contentSource = new(string.Empty, frontMatter);
-        var page = new Page(contentSource, Site);
+        var page = new Page(contentSource, Site, "html", []);
 
         // Act
         Site.PostProcessPage(page);
@@ -211,21 +215,24 @@ public class YamlParserTests : TestSetup
         Assert.Equal(date, frontMatter.Date);
     }
 
-    // [Fact(Skip = "Not done in the  ")]
     [Fact]
     public void ParseFrontMatter_ShouldCreateTags()
     {
         // Arrange
-        (var frontMatter, _) = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
-        ContentSource contentSource = new(string.Empty, frontMatter);
+        var (frontMatter, _) = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
+        ContentSource contentSource = new(string.Empty, frontMatter)
+        {
+            Kind = Kind.single
+        };
 
         // Act
         Site.ContentSourceAdd(contentSource);
         Site.ProcessPages();
-        Site.OutputReferences.TryGetValue("/test-title", out var output);
+        Site.OutputReferences.TryGetValue("/test-title/index.html", out var output);
         var page = output as Page;
 
         // Assert
+        Assert.Equal(2, page?.TagsReference.Count(cs => cs.OutputFormat == "html"));
         Assert.Equal(2, page?.TagsReference.Count);
     }
 

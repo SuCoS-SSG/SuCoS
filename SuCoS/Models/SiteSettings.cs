@@ -22,12 +22,25 @@ public class SiteSettings : ISiteSettings
     /// <inheritdoc/>
     public string BaseUrl { get; set; } = string.Empty;
 
+    /// <inheritdoc/>
+    public Dictionary<Kind, List<string>> KindOutputFormats { get; set; } =
+        new()
+        {
+            { Kind.home, ["html", "rss"] },
+            { Kind.list, ["html", "rss"] },
+            { Kind.section, ["html", "rss"] },
+            { Kind.taxonomy, ["html", "rss"] },
+            { Kind.term, ["html", "rss"] },
+            { Kind.single, ["html", "rss"] },
+            { Kind.rss, ["rss"] },
+        };
+
+    #endregion ISiteSettings
+
     /// <summary>
     /// Types of outputs
     /// </summary>
     public Dictionary<string, List<string>> Outputs { get; set; } = [];
-
-    #endregion ISiteSettings
 
     /// <summary>
     /// The global site theme.

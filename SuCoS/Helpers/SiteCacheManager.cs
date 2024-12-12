@@ -1,4 +1,4 @@
-global using CacheTemplateIndex = (string? seection, SuCoS.Models.Kind? kind, string? type);
+global using CacheTemplateIndex = (string? seection, SuCoS.Models.Kind? kind, string? type, string outputFormat);
 using System.Collections.Concurrent;
 using SuCoS.Models;
 

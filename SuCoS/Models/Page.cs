@@ -45,7 +45,7 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
 
     /// <inheritdoc/>
     public int WordCount => Plain
-        .Split(NonWords,
+        .Split(IPage.NonWords,
             StringSplitOptions.RemoveEmptyEntries).Length;
 
     /// <inheritdoc/>
@@ -58,12 +58,19 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
     public string CompleteContent => ParseAndRenderTemplate(true);
 
     /// <inheritdoc/>
+    public string OutputFormat { get; set; }
+
+    /// <inheritdoc/>
+    public List<string> OutputFormats { get; set; }
+
+    /// <inheritdoc/>
     public IEnumerable<IPage> Pages
     {
         get
         {
-            _pages ??= ContentSource.PagePages
+            _pages ??= ContentSource.Children
                 .SelectMany(page => page.ContentSourceToPages)
+                .Where(page => page.OutputFormat == OutputFormat)
                 .ToList() ?? [];
             return _pages;
         }
@@ -144,12 +151,31 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
             Site.Logger.Error(ex, "Error converting URL: {UrlForce}", urlForce);
         }
 
-        if (!Path.IsPathRooted(permalink) && !permalink.StartsWith('/'))
+        if (!permalink.StartsWith('/'))
+        // if (!Path.IsPathRooted(permalink) && !permalink.StartsWith('/'))
         {
             permalink = $"/{permalink}";
         }
 
-        return Urlizer.UrlizePath(permalink);
+        // return Urlizer.UrlizePath(permalink);
+        if ((this as IFile).SourceFullPathDirectory(Site.SourceContentPath) == "/")
+        {
+            permalink = "/";
+        }
+
+        RelPermalinkDir = Urlizer.UrlizePath(permalink);
+
+        var useUgly = (!OutputFormatObj.NoUgly &&
+                       (OutputFormatObj.Ugly || Site.UglyUrLs));
+        RelPermalinkFilename = Urlizer.UrlizePath(
+            useUgly
+                ? $"{SourceFileNameWithoutExtension}.{OutputFormatObj.Extension}"
+                : $"{OutputFormatObj.BaseName}.{OutputFormatObj.Extension}");
+
+        var urlFinal = RelPermalinkDir
+              + (RelPermalinkDir.EndsWith('/') ? string.Empty : "/")
+              + RelPermalinkFilename;
+        return urlFinal;
     }
 
     /// <inheritdoc/>
@@ -265,6 +291,12 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
     /// <inheritdoc/>
     public string? Permalink { get; set; }
 
+    /// <inheritdoc/>
+    public string? RelPermalinkDir { get; set; }
+
+    /// <inheritdoc/>
+    public string? RelPermalinkFilename { get; set; }
+
     #endregion IOutput
 
     /// <summary>
@@ -282,6 +314,7 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
     public Collection<Resource>? Resources { get; set; }
 
     /// <inheritdoc/>
+    // TODO:
     public List<IPage> TagsReference
     {
         get
@@ -289,14 +322,17 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
             List<IPage> tagsReferences = [];
             foreach (var tag in ContentSourceTags)
             {
-                tagsReferences.AddRange(tag.ContentSourceToPages);
+                tagsReferences.AddRange(tag.ContentSourceToPages
+                .Where(page => page.OutputFormat == OutputFormat));
             }
             return tagsReferences;
         }
     }
 
-    private static readonly char[] NonWords =
-        [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
+    /// <summary>
+    /// The actual object with OutputFormat data
+    /// </summary>
+    public OutputFormat OutputFormatObj { get; }
 
     /// <summary>
     /// The markdown content.
@@ -306,7 +342,7 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
 
     private const string UrlForIndex = @"{%- liquid
 if page.Parent
-echo page.Parent.Permalink
+echo page.Parent.RelPermalinkDir
 echo '/'
 endif
 if page.Title != ''
@@ -318,7 +354,7 @@ endif
 
     private const string UrlForNonIndex = @"{%- liquid
 if page.Parent
-echo page.Parent.Permalink
+echo page.Parent.RelPermalinkDir
 echo '/'
 endif
 if page.Title != ''
@@ -339,10 +375,19 @@ endif
     /// <summary>
     /// Constructor
     /// </summary>
-    public Page(in ContentSource contentSource, in ISite site)
+    public Page(in ContentSource contentSource, in ISite site, string outputFormat, List<string> outputFormats)
     {
         ContentSource = contentSource;
         Site = site;
+        OutputFormat = outputFormat;
+        OutputFormats = outputFormats;
+
+        FileUtils.OutputFormats.TryGetValue(OutputFormat, out var outputFormatObj);
+        if (outputFormatObj is null)
+        {
+            throw new ArgumentException("No output format for {OutputFormat}", OutputFormat);
+        }
+        OutputFormatObj = outputFormatObj;
     }
 
     private int Counter
@@ -433,7 +478,7 @@ endif
                     FileName = filename,
                     Permalink = Path.Combine(Permalink!, filename),
                     Params = resourceParams,
-                    SourceFullPath = resourceFilename
+                    SourceRelativePath = resourceFilename
                 };
                 Resources.Add(resource);
             }

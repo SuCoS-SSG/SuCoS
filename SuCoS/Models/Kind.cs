@@ -33,6 +33,26 @@ public enum Kind
     istaxonomy = 1 << 5,
 
     /// <summary>
+    /// RSS
+    /// </summary>
+    rss = 1 << 6,
+
+    /// <summary>
+    /// Sitemap
+    /// </summary>
+    sitemap = 1 << 7,
+
+    /// <summary>
+    /// robot.txt to prevent indexing
+    /// </summary>
+    robottxt = 1 << 8,
+
+    /// <summary>
+    /// 404 page
+    /// </summary>
+    code404 = 1 << 9,
+
+    /// <summary>
     /// Special page, like the home page. It will be rendered as index.html.
     /// </summary>
     home = system | index | list,

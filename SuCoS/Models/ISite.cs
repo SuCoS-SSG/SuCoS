@@ -158,7 +158,7 @@ public interface ISite : ISiteSettings
     /// Create a Page from front matter
     /// </summary>
     /// <param name="contentSource"></param>
-    public Page? PageCreate(ContentSource contentSource);
+    public List<Page> PageCreate(ContentSource contentSource);
 
     /// <summary>
     /// Include the Front Matter into the site

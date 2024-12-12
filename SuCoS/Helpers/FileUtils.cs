@@ -21,7 +21,7 @@ public static class FileUtils
         ArgumentNullException.ThrowIfNull(page);
         ArgumentNullException.ThrowIfNull(cacheManager);
 
-        var index = (page.Section, page.Kind, page.Type);
+        CacheTemplateIndex index = (page.Section, page.Kind, page.Type, page.OutputFormat);
 
         var cache = isBaseTemplate
             ? cacheManager.BaseTemplateCache
@@ -33,9 +33,8 @@ public static class FileUtils
             return content;
         }
 
-        var templatePaths =
-            GetTemplateLookupOrder(page, isBaseTemplate);
-        content = GetTemplate(templatePaths, themePath);
+        var templatePaths = page.GetTemplateLookupOrder(isBaseTemplate);
+        content = ReadTemplate(templatePaths, themePath);
 
         // Cache the template content for future use
         lock (cache)
@@ -52,7 +51,7 @@ public static class FileUtils
     /// <param name="templatePaths">The list of template paths to search.</param>
     /// <param name="themePath">The theme path.</param>
     /// <returns>The content of the template file, or an empty string if not found.</returns>
-    private static string GetTemplate(IEnumerable<string> templatePaths,
+    private static string ReadTemplate(IEnumerable<string> templatePaths,
         string themePath)
     {
         ArgumentNullException.ThrowIfNull(templatePaths);
@@ -75,8 +74,7 @@ public static class FileUtils
     /// <param name="page">The page to determine the template index.</param>
     /// <param name="isBaseTemplate">Indicates whether the template is a base template.</param>
     /// <returns>The list of template paths in the lookup order.</returns>
-    public static IEnumerable<string> GetTemplateLookupOrder(this Page page,
-        bool isBaseTemplate)
+    public static IEnumerable<string> GetTemplateLookupOrder(this Page page, bool isBaseTemplate)
     {
         ArgumentNullException.ThrowIfNull(page);
 
@@ -87,32 +85,63 @@ public static class FileUtils
         string[] types = page.Type is null
             ? [string.Empty, "_default"]
             : [page.Type, string.Empty, "_default"];
+        string[] outputFormats = ["." + page.OutputFormatObj!.Extension, string.Empty];
 
         // Get all the kinds including the "sub-values"
-        var kinds = GetAllKinds(page.Kind, isBaseTemplate);
-        if (isBaseTemplate)
-        {
-            kinds = kinds.Append("baseof");
-        }
+        var kinds = isBaseTemplate ? GetAllKindsBase(page.Kind) : GetAllKinds(page.Kind);
 
         // for each section, each type and each kind
         return sections
-               .SelectMany(section =>
-                   types.Select(type => new { section, type }))
-               .SelectMany(x =>
-                   kinds.Select(kind => new { x.section, x.type, kind }))
-               .Select(x =>
-                   Path.Combine(x.section, x.type, x.kind) + ".liquid")
-               .Distinct();
+            .SelectMany(section =>
+                types.Select(type => new { section, type }))
+            .SelectMany(x =>
+                kinds.Select(kind => new { x.section, x.type, kind }))
+            .SelectMany(x => outputFormats.Select(outputFormat =>
+            new { x.section, x.type, x.kind, outputFormat }))
+            .Select(x =>
+                Path.Combine(x.section, x.type, x.kind) + x.outputFormat + ".liquid")
+            .Distinct();
     }
 
-    private static IEnumerable<string> GetAllKinds(Kind kind,
-        bool isBaseTemplate) =>
+    private static IEnumerable<string> GetAllKinds(Kind kind) =>
         Enum.GetValues(typeof(Kind))
             .Cast<Kind>()
             .Where(k => kind.HasFlag(k))
-            .OrderByDescending(kind1 => kind1)
-            .Select(
-                kind1 => kind1 + (isBaseTemplate ? "-baseof" : string.Empty));
+            .OrderByDescending(kind => kind)
+            .Select(kind => kind.ToString());
 
+    private static IEnumerable<string> GetAllKindsBase(Kind kind) =>
+        GetAllKinds(kind)
+            .Select(kind => kind + "-baseof")
+            .Append("baseof");
+
+    /// <summary>
+    /// Default Output Formats
+    /// </summary>
+    public static readonly Dictionary<string, OutputFormat> OutputFormats =
+        new()
+        {
+            {
+                "html", new OutputFormat
+                {
+                    Extension = "html"
+                }
+            },
+            {
+                "rss", new OutputFormat
+                {
+                    Extension = "xml",
+                    NoUgly = true
+                }
+            },
+            {
+                "robots",
+                new OutputFormat
+                {
+                    BaseName = "robots",
+                    Extension = "xml",
+                    NoUgly = true
+                }
+            }
+        };
 }

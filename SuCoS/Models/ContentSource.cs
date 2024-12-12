@@ -108,7 +108,7 @@ public class ContentSource : IContentSource, IFrontMatter, IFile
     /// <summary>
     /// List of tags.
     /// </summary>
-    public HashSet<ContentSource> PagePages { get; set; } = [];
+    public HashSet<ContentSource> Children { get; set; } = [];
 
     /// <summary>
     /// ctr

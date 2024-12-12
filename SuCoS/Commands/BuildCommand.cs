@@ -11,6 +11,7 @@ namespace SuCoS.Commands;
 public class BuildCommand : BaseGeneratorCommand
 {
     private readonly BuildOptions _options;
+
     /// <summary>
     /// Entry point of the build command. It will be called by the main program
     /// in case the build command is invoked (which is by default).
@@ -61,6 +62,7 @@ public class BuildCommand : BaseGeneratorCommand
 
             if (output is IPage page)
             {
+                // var path = url.TrimStart('/');
                 var path = (url + (Site.UglyUrLs ? string.Empty : "/index.html")).TrimStart('/');
 
                 // Generate the output path
@@ -73,11 +75,11 @@ public class BuildCommand : BaseGeneratorCommand
                 var result = page.CompleteContent;
                 Fs.FileWriteAllText(outputAbsolutePath, result);
 
-                // Log
-                Logger.Debug("Page created: {Permalink}", outputAbsolutePath);
-
                 // Use interlocked to safely increment the counter in a multithreaded environment
                 _ = Interlocked.Increment(ref pagesCreated);
+
+                // Log
+                Logger.Debug("Page created {pagesCreated}: {Permalink}", pagesCreated, outputAbsolutePath);
             }
             else if (output is IResource resource)
             {
@@ -87,7 +89,7 @@ public class BuildCommand : BaseGeneratorCommand
                 Fs.DirectoryCreateDirectory(outputDirectory!);
 
                 // Copy the file to the output folder
-                Fs.FileCopy(resource.SourceFullPath(Site.SourceContentPath), outputAbsolutePath, overwrite: true);
+                Fs.FileCopy((resource as IFile).SourceRelativePath, outputAbsolutePath, overwrite: true);
             }
         });
 

@@ -74,7 +74,7 @@ public interface IPage : IOutput, IFrontMatter, IFile
     /// </summary>
     int WordCount => Plain.Split(NonWords, StringSplitOptions.RemoveEmptyEntries).Length;
 
-    private static readonly char[] NonWords = [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
+    protected static readonly char[] NonWords = [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
 
     /// <summary>
     /// The kind of the page, if it's a single page, a list of pages or the home page.
@@ -97,6 +97,16 @@ public interface IPage : IOutput, IFrontMatter, IFile
     /// </summary>
     /// <returns>The processed output file content.</returns>
     string CompleteContent { get; }
+
+    /// <summary>
+    /// The output format used
+    /// </summary>
+    public string OutputFormat { get; set; }
+
+    /// <summary>
+    /// All output formats of the content has
+    /// </summary>
+    public List<string> OutputFormats { get; }
 
     /// <summary>
     /// Other content that mention this content.

@@ -22,7 +22,7 @@ public class RegisteredPageRequest : IServerHandlers
     /// <inheritdoc />
     public bool Check(string requestPath)
     {
-        ArgumentNullException.ThrowIfNull(requestPath);
+        requestPath = RequestPath(requestPath);
 
         return _site.OutputReferences.TryGetValue(requestPath, out var item) && item is IPage;
     }
@@ -31,6 +31,8 @@ public class RegisteredPageRequest : IServerHandlers
     public async Task<string> Handle(IHttpListenerResponse response, string requestPath, DateTime serverStartTime)
     {
         ArgumentNullException.ThrowIfNull(response);
+
+        requestPath = RequestPath(requestPath);
 
         if (!_site.OutputReferences.TryGetValue(requestPath, out var output) ||
             output is not IPage page)
@@ -42,7 +44,26 @@ public class RegisteredPageRequest : IServerHandlers
         await using var writer = new StreamWriter(response.OutputStream, leaveOpen: true);
         await writer.WriteAsync(content).ConfigureAwait(false);
         return "dict";
+    }
 
+    private static string RequestPath(string requestPath)
+    {
+        if (string.IsNullOrEmpty(requestPath))
+        {
+            requestPath = "/";
+        }
+
+        if (!requestPath.EndsWith("/") && Path.GetExtension(requestPath).Length == 0)
+        {
+            requestPath += "/";
+        }
+
+        if (requestPath.EndsWith("/"))
+        {
+            requestPath += "index.html";
+        }
+
+        return requestPath;
     }
 
     /// <summary>

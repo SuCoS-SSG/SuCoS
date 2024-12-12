@@ -8,25 +8,30 @@ public interface ISiteSettings : IParams
     /// <summary>
     /// Site Title/Name.
     /// </summary>
-    public string Title { get; }
+    string Title { get; }
 
     /// <summary>
     /// Site description
     /// </summary>
-    public string? Description { get; }
+    string? Description { get; }
 
     /// <summary>
     /// Copyright information
     /// </summary>
-    public string? Copyright { get; }
+    string? Copyright { get; }
 
     /// <summary>
     /// The base URL that will be used to build public links.
     /// </summary>
-    public string BaseUrl { get; }
+    string BaseUrl { get; }
 
     /// <summary>
     /// The appearance of a URL is either ugly or pretty.
     /// </summary>
-    public bool UglyUrLs { get; }
+    bool UglyUrLs { get; }
+
+    /// <summary>
+    /// The output format for each content kind
+    /// </summary>
+    Dictionary<Kind, List<string>> KindOutputFormats { get; }
 }
