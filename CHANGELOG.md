@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## v[5.0.0] 2024-12-12
+
 - Added: output formats allow creating other files than HTML, like RSS
 - Added: major version bump due the .Net 9 upgrade from last version
 - Fixed: GitLab CI/CD trimming the published app
@@ -137,7 +139,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added First Commit!
 
-[Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v4.4.0...HEAD
+[Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v5.0.0...HEAD
+[5.0.0]: https://gitlab.com/sucos/sucos/-/compare/v4.4.0...v5.0.0
 [4.4.0]: https://gitlab.com/sucos/sucos/-/compare/v4.3.0...v4.4.0
 [4.3.0]: https://gitlab.com/sucos/sucos/-/compare/v4.2.1...v4.3.0
 [4.2.1]: https://gitlab.com/sucos/sucos/-/compare/v4.2.0...v4.2.1
