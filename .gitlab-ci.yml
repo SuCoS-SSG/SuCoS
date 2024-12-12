@@ -1,108 +1,108 @@
 image: mcr.microsoft.com/dotnet/sdk:9.0
 
 stages:
-    - build-test
-    - check-and-create-release
-    - publish
+  - build-test
+  - check-and-create-release
+  - publish
 
 variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-    NUKE_TELEMETRY_OPTOUT: "1" # Disable
-    IGNORE_NORMALISATION_GIT_HEAD_MOVE: "1"
-    # To overwrite them, just set them in the CI/CD settings
-    PUBLISH_SELF_CONTAINED: "true"
-    PUBLISH_SINGLE_FILE: "true"
-    PUBLISH_TRIMMED: "false"
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  NUKE_TELEMETRY_OPTOUT: "1" # Disable
+  IGNORE_NORMALISATION_GIT_HEAD_MOVE: "1"
+  # To overwrite them, just set them in the CI/CD settings
+  PUBLISH_SELF_CONTAINED: "true"
+  PUBLISH_SINGLE_FILE: "true"
+  PUBLISH_TRIMMED: "true"
 
 .container_template:
-    services:
-        - docker:dind
-    before_script:
-        - apt-get update -yqq
-        - apt-get install -yqq --no-install-recommends apt-transport-https ca-certificates curl gnupg
-        - apt-get install -yqq docker.io
+  services:
+    - docker:dind
+  before_script:
+    - apt-get update -yqq
+    - apt-get install -yqq --no-install-recommends apt-transport-https ca-certificates curl gnupg
+    - apt-get install -yqq docker.io
 
 # build the project on every commit
 test:
-    extends:
-        - .container_template
-    stage: build-test
-    except:
-        - tags
-        - schedules
-    script:
-        - |
-            ./build.sh Restore Compile TestReport Publish CreateContainer \
-              --configuration "Debug" \
-              --publish-directory "./publish"
-        - set +e; bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage/coverage.xml
-    coverage: '/^  Line coverage: (\d*.\d*)%/'
-    artifacts:
-        paths:
-            - coverage/report/*
-            - publish/*
-        reports:
-            coverage_report:
-                coverage_format: cobertura
-                path: coverage/coverage.xml
+  extends:
+    - .container_template
+  stage: build-test
+  except:
+    - tags
+    - schedules
+  script:
+    - |
+      ./build.sh Restore Compile TestReport Publish CreateContainer \
+        --configuration "Debug" \
+        --publish-directory "./publish"
+    - set +e; bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage/coverage.xml
+  coverage: '/^  Line coverage: (\d*.\d*)%/'
+  artifacts:
+    paths:
+      - coverage/report/*
+      - publish/*
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/coverage.xml
 
 # check if there is new commits, if so, create a tag and a release
 # this will trigger the publishing stage "publish"
 check-and-create-release:
-    stage: check-and-create-release
-    only:
-        - schedules
-        - web
-    script:
-        - |
-            ./build.sh GitLabCreateRelease \
-              --is-scheduled $CI_PIPELINE_SCHEDULED \
-              --gitlab-private-token $GITLAB_PRIVATE_TOKEN
+  stage: check-and-create-release
+  only:
+    - schedules
+    - web
+  script:
+    - |
+      ./build.sh GitLabCreateRelease \
+        --is-scheduled $CI_PIPELINE_SCHEDULED \
+        --gitlab-private-token $GITLAB_PRIVATE_TOKEN
 
 # publish the project on every tag
 # build for multiple runtimes
 publish:
-    extends:
-        - .container_template
-    stage: publish
-    only:
-        - tags
-    except:
-        - branches
-    script:
-        - |
-            ./build.sh Restore Publish GitLabUploadPackage GitLabPushContainer \
-              --runtime-identifier $RID \
-              --publish-directory "./publish/SuCoS-$RID" \
-              --publish-self-contained $PUBLISH_SELF_CONTAINED \
-              --publish-single-file $PUBLISH_SINGLE_FILE \
-              --publish-trimmed $PUBLISH_TRIMMED \
-              --container-registry-image $CI_REGISTRY_IMAGE \
-              --gitlab-private-token $GITLAB_PRIVATE_TOKEN
-    parallel:
-        matrix:
-            -   RID: "win-x64"
-            -   RID: "linux-x64"
-            -   RID: "linux-musl-x64"
+  extends:
+    - .container_template
+  stage: publish
+  only:
+    - tags
+  except:
+    - branches
+  script:
+    - |
+      ./build.sh Restore Publish GitLabUploadPackage GitLabPushContainer \
+        --runtime-identifier $RID \
+        --publish-directory "./publish/SuCoS-$RID" \
+        --publish-self-contained $PUBLISH_SELF_CONTAINED \
+        --publish-single-file $PUBLISH_SINGLE_FILE \
+        --publish-trimmed $PUBLISH_TRIMMED \
+        --container-registry-image $CI_REGISTRY_IMAGE \
+        --gitlab-private-token $GITLAB_PRIVATE_TOKEN
+  parallel:
+    matrix:
+      - RID: "win-x64"
+      - RID: "linux-x64"
+      - RID: "linux-musl-x64"
 
 # FIXME: publish the Debian package, temporarily as an separate step
 publish-debian:
-    stage: publish
-    only:
-        - tags
-    except:
-        - branches
-    script:
-        - |
-            ./build.sh Restore Publish GitLabPushDebianPackage \
-              --runtime-identifier $RID \
-              --publish-directory "./publish/SuCoS-$RID" \
-              --publish-self-contained $PUBLISH_SELF_CONTAINED \
-              --publish-single-file $PUBLISH_SINGLE_FILE \
-              --publish-trimmed $PUBLISH_TRIMMED \
-              --container-registry-image $CI_REGISTRY_IMAGE \
-              --gitlab-private-token $GITLAB_PRIVATE_TOKEN
-    parallel:
-        matrix:
-            -   RID: "linux-x64"
+  stage: publish
+  only:
+    - tags
+  except:
+    - branches
+  script:
+    - |
+      ./build.sh Restore Publish GitLabPushDebianPackage \
+        --runtime-identifier $RID \
+        --publish-directory "./publish/SuCoS-$RID" \
+        --publish-self-contained $PUBLISH_SELF_CONTAINED \
+        --publish-single-file $PUBLISH_SINGLE_FILE \
+        --publish-trimmed $PUBLISH_TRIMMED \
+        --container-registry-image $CI_REGISTRY_IMAGE \
+        --gitlab-private-token $GITLAB_PRIVATE_TOKEN
+  parallel:
+    matrix:
+      - RID: "linux-x64"
