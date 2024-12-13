@@ -43,7 +43,8 @@ public class FluidTemplateEngine : ITemplateEngine
     {
         ArgumentNullException.ThrowIfNull(site);
 
-        TemplateOptions.FileProvider = new PhysicalFileProvider(Path.GetFullPath(site.SourceThemePath));
+        TemplateOptions.FileProvider = new PhysicalFileProvider(
+            Path.GetFullPath(site.SourceThemePath));
     }
 
     /// <inheritdoc/>

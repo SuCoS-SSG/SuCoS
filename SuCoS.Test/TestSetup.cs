@@ -25,14 +25,11 @@ public class TestSetup
     protected const string TestSitePathConst09 = ".TestSites/09-cascade";
 
     protected readonly IFrontMatterParser FrontMatterParser = new YamlParser();
+    protected readonly IFrontMatterParser FrontMatterParserMock = Substitute.For<IFrontMatterParser>();
     protected readonly IGenerateOptions GenerateOptionsMock = Substitute.For<IGenerateOptions>();
-    private readonly SiteSettings _siteSettingsMock = Substitute.For<SiteSettings>();
+    protected readonly SiteSettings SiteSettingsMock = Substitute.For<SiteSettings>();
     protected readonly ILogger LoggerMock = Substitute.For<ILogger>();
     protected readonly ISystemClock SystemClockMock = Substitute.For<ISystemClock>();
-    protected readonly IFrontMatter FrontMatterMock = new FrontMatter
-    {
-        Title = TitleConst,
-    };
     protected readonly ContentSource ContentSourceMock = new(SourcePathConst, new FrontMatter
     {
         Title = TitleConst,
@@ -47,7 +44,7 @@ public class TestSetup
     protected TestSetup()
     {
         _ = SystemClockMock.Now.Returns(TodayDate);
-        Site = new Site(GenerateOptionsMock, _siteSettingsMock, FrontMatterParser, LoggerMock, SystemClockMock);
+        Site = new Site(GenerateOptionsMock, SiteSettingsMock, FrontMatterParser, LoggerMock, SystemClockMock);
     }
 
     public TestSetup(SiteSettings siteSettings)

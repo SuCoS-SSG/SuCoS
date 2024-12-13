@@ -104,7 +104,7 @@ public static class SiteHelper
 
         var fileContent = fs.FileReadAllText(filePath);
         var siteSettings = parser.Parse<SiteSettings>(fileContent)
-            ?? throw new FormatException($"Error reading app config {configFile}");
+            ?? throw new FormatException($"Error reading app config {configFile} at {filePath}");
         return siteSettings;
     }
 }

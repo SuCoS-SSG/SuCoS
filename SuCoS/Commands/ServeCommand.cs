@@ -11,8 +11,25 @@ namespace SuCoS.Commands;
 /// </summary>
 public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
 {
-    private const string BaseUrlDefault = "http://localhost";
-    private const int PortDefault = 1122;
+    /// <summary>
+    /// Default values for the ServeCommand
+    /// </summary>
+    public const string BaseUrlDefault = "http://localhost";
+
+    /// <summary>
+    /// Default values for the ServeCommand
+    /// </summary>
+    public const int PortDefault = 2341;
+
+    /// <summary>
+    /// Default values for the ServeCommand
+    /// </summary>
+    public const int MaxPortTries = 10;
+
+    /// <summary>
+    /// The actual port being used after potential port selection
+    /// </summary>
+    public int PortUsed { get; private set; }
 
     /// <summary>
     /// The ServeOptions object containing the configuration parameters for the server.
@@ -29,6 +46,8 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// at construction and starts watching immediately.
     /// </summary>
     private readonly IFileWatcher _fileWatcher;
+
+    private readonly IPortSelector _portSelector;
 
     /// <summary>
     /// A Timer that helps to manage the frequency of server restarts.
@@ -62,13 +81,19 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <param name="logger">The logger instance. Injectable for testing</param>
     /// <param name="fileWatcher"></param>
     /// <param name="fs"></param>
-    public ServeCommand(ServeOptions options, ILogger logger, IFileWatcher fileWatcher, IFileSystem fs)
+    /// <param name="portSelector"></param>
+    public ServeCommand(
+        ServeOptions options,
+        ILogger logger,
+        IFileWatcher fileWatcher,
+        IFileSystem fs,
+        IPortSelector portSelector)
         : base(options, logger, fs)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _fileWatcher = fileWatcher ?? throw new ArgumentNullException(nameof(fileWatcher));
+        _portSelector = portSelector ?? throw new ArgumentNullException(nameof(portSelector));
 
-        // Watch for file changes in the specified path
         var sourceAbsolutePath = Path.GetFullPath(options.Source);
         logger.Information("Watching for file changes in {SourceAbsolutePath}", sourceAbsolutePath);
         fileWatcher.Start(sourceAbsolutePath, OnSourceFileChanged);
@@ -77,19 +102,19 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     }
 
     /// <summary>
-    /// Starts the server asynchronously.
+    /// Starts the server with intelligent port selection
     /// </summary>
     /// <param name="baseUrl">The base URL for the server.</param>
-    /// <param name="port">The port number for the server.</param>
+    /// <param name="requestedPort">The port number for the server.</param>
     /// <returns>A Task representing the asynchronous operation.</returns>
-    public void StartServer(string baseUrl = BaseUrlDefault, int port = PortDefault)
+    public void StartServer(string baseUrl = BaseUrlDefault, int requestedPort = PortDefault)
     {
         Logger.Information("Starting server...");
 
-        // Generate the build report
         Stopwatch.LogReport(Site.Title);
-
         _serverStartTime = DateTime.UtcNow;
+
+        PortUsed = _portSelector.SelectAvailablePort(baseUrl, requestedPort, MaxPortTries);
 
         _handlers = [
             new PingRequests(),
@@ -98,11 +123,12 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
             new RegisteredPageRequest(Site),
             new RegisteredPageResourceRequest(Site)
         ];
+
         _listener = new HttpListener();
-        _listener.Prefixes.Add($"{baseUrl}:{port}/");
+        _listener.Prefixes.Add($"{baseUrl}:{PortUsed}/");
         _listener.Start();
 
-        Logger.Information("You site is live: {baseURL}:{port}", baseUrl, port);
+        Logger.Information("Your site is live: {baseURL}:{port}", baseUrl, PortUsed);
 
         _loop = Task.Run(async () =>
         {
@@ -113,20 +139,14 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
                     var context = await _listener.GetContextAsync().ConfigureAwait(false);
                     await HandleRequest(context).ConfigureAwait(false);
                 }
-                catch (HttpListenerException ex)
+                catch (HttpListenerException ex) when (_listener.IsListening)
                 {
-                    if (_listener.IsListening)
-                    {
-                        Logger.Error(ex, "Unexpected listener error.");
-                    }
+                    Logger.Error(ex, "Unexpected listener error.");
                     break;
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (_listener.IsListening)
                 {
-                    if (_listener.IsListening)
-                    {
-                        Logger.Error(ex, "Error processing request.");
-                    }
+                    Logger.Error(ex, "Error processing request.");
                     break;
                 }
             }

@@ -74,6 +74,9 @@ public interface IPage : IOutput, IFrontMatter, IFile
     /// </summary>
     int WordCount => Plain.Split(NonWords, StringSplitOptions.RemoveEmptyEntries).Length;
 
+    /// <summary>
+    /// Characters that are not considered as words
+    /// </summary>
     protected static readonly char[] NonWords = [' ', ',', ';', '.', '!', '"', '(', ')', '?', '\n', '\r'];
 
     /// <summary>

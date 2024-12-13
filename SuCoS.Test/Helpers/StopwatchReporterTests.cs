@@ -76,5 +76,4 @@ public class StopwatchReporterTests
         var exception = Assert.Throws<ArgumentException>(() => stopwatchReporter.Stop(stepName, 1));
         Assert.Equal($"Step '{stepName}' has not been started.", exception.Message);
     }
-
 }

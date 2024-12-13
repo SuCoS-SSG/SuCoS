@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 using CommandLine;
@@ -93,7 +93,7 @@ public class Program(ILogger loggerInitial)
         try
         {
             using var sourceFileWatcher = new SourceFileWatcher();
-            using var serveCommand = new ServeCommand(options, _logger, sourceFileWatcher, new FileSystem());
+            using var serveCommand = new ServeCommand(options, _logger, sourceFileWatcher, new FileSystem(), new DefaultPortSelector(_logger));
             serveCommand.StartServer();
             await Task.Delay(-1).ConfigureAwait(false);  // Wait forever.
         }
