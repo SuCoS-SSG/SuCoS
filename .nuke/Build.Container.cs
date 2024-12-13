@@ -28,12 +28,12 @@ internal sealed partial class Build
     /// </summary>
     private Target CreateContainer => td => td
         .OnlyWhenStatic(() => ContainerRuntimeIdentifier is not null)
-        .After(Publish, Restore)
+        .After(Restore)
         .Executes(() =>
         {
             var tags = " \"" + string.Join(";", ContainerTags()) + "\" ";
 
-            // Build the Container image
+            // Build the Container image (do not reuse the compiled version from Publish)
             DotNetTasks.DotNetPublish(s => s
                 .SetProject(Solution.SuCoS)
                 .SetConfiguration(ConfigurationSet)
@@ -47,7 +47,6 @@ internal sealed partial class Build
                 .SetAssemblyVersion(CurrentVersion)
                 .SetInformationalVersion(CurrentVersion)
 
-                .SetNoBuild(true)
                 .AddProperty("EnableSdkContainerSupport", true)
                 .AddProperty("ContainerAppCommandInstruction", "None")
                 .AddProperty("ContainerWorkingDirectory", "/bin")
@@ -76,10 +75,13 @@ internal sealed partial class Build
     private List<string> ContainerTags()
     {
         var cri = ContainerRuntimeIdentifier!.Value;
-        var localTag = IsLocalBuild ? "local_" : string.Empty;
+        var localTag = IsLocalBuild ? "local" : string.Empty;
 
         var tagsDefault = new List<string> { VersionFull, VersionMajorMinor, VersionMajor, string.Empty }
-            .Select(tag => $"{localTag}{tag}").ToList();
+            .Select(tag => string.IsNullOrEmpty(localTag) || string.IsNullOrEmpty(tag)
+                ? $"{localTag}{tag}"
+                : $"{localTag}-{tag}")
+            .ToList();
 
         var tags = tagsDefault
             .Select(tag => string.IsNullOrEmpty(tag)
@@ -92,7 +94,7 @@ internal sealed partial class Build
             return tags.Where(t => !string.IsNullOrEmpty(t)).ToList();
         }
 
-        tagsDefault.Add($"{localTag}latest");
+        tagsDefault.Add(localTag + (string.IsNullOrEmpty(localTag) ? "" : "-") + cri.identifier);
         tags.AddRange(tagsDefault);
 
         return tags.Where(t => !string.IsNullOrEmpty(t)).ToList();

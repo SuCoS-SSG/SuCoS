@@ -214,6 +214,7 @@ internal sealed partial class Build
             {
                 await using var fileStream = File.OpenRead(DebianPackage);
                 using var httpClient = HttpClientGitLabToken();
+                // https://docs.gitlab.com/ee/user/packages/debian_repository/#upload-a-package-with-explicit-distribution-and-component
                 var response = await httpClient.PutAsync(
                     GitLabApiUrl($"packages/debian/SuCoS.deb?distribution={DebianDistribution}&component={DebianComponent}"),
                     new StreamContent(fileStream)).ConfigureAwait(false);

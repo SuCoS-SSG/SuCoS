@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+- Fixed: GitLab CI/CD container image build
+- Changed: remove Debian package build due of GitLab registry issues
+
 ## v[5.0.0] 2024-12-12
 
 - Added: output formats allow creating other files than HTML, like RSS

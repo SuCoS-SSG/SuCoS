@@ -85,24 +85,23 @@ publish:
       - RID: "win-x64"
       - RID: "linux-x64"
       - RID: "linux-musl-x64"
-
 # FIXME: publish the Debian package, temporarily as an separate step
-publish-debian:
-  stage: publish
-  only:
-    - tags
-  except:
-    - branches
-  script:
-    - |
-      ./build.sh Restore Publish GitLabPushDebianPackage \
-        --runtime-identifier $RID \
-        --publish-directory "./publish/SuCoS-$RID" \
-        --publish-self-contained $PUBLISH_SELF_CONTAINED \
-        --publish-single-file $PUBLISH_SINGLE_FILE \
-        --publish-trimmed $PUBLISH_TRIMMED \
-        --container-registry-image $CI_REGISTRY_IMAGE \
-        --gitlab-private-token $GITLAB_PRIVATE_TOKEN
-  parallel:
-    matrix:
-      - RID: "linux-x64"
+# publish-debian:
+#   stage: publish
+#   only:
+#     - tags
+#   except:
+#     - branches
+#   script:
+#     - |
+#       ./build.sh Restore Publish GitLabPushDebianPackage \
+#         --runtime-identifier $RID \
+#         --publish-directory "./publish/SuCoS-$RID" \
+#         --publish-self-contained $PUBLISH_SELF_CONTAINED \
+#         --publish-single-file $PUBLISH_SINGLE_FILE \
+#         --publish-trimmed $PUBLISH_TRIMMED \
+#         --container-registry-image $CI_REGISTRY_IMAGE \
+#         --gitlab-private-token $GITLAB_PRIVATE_TOKEN
+#   parallel:
+#     matrix:
+#       - RID: "linux-x64"
