@@ -287,7 +287,7 @@ public class Site : ISite
         string title,
         bool isTaxonomy = false)
     {
-        relativePath = Urlizer.Path(relativePath);
+        relativePath = Urlizer.UnixPath(relativePath);
 
         if (!CacheManager.AutomaticContentCache.TryGetValue(relativePath,
                 out var contentSource))
@@ -322,7 +322,7 @@ public class Site : ISite
 
     private static string AddIndexAtPath(string? relativePath, bool useBranch = true)
     {
-        return Urlizer.Path(Path.Combine(relativePath ?? "",
+        return Urlizer.UnixPath(Path.Combine(relativePath ?? "",
             useBranch ? IndexBranchFileConst : IndexLeafFileConst));
     }
 
@@ -431,17 +431,14 @@ public class Site : ISite
         }
         else
         {
-            switch (level)
+            if (level == 0)
             {
-                case 0:
-                    contentSource = CreateSystemContentSource(String.Empty, Title);
-                    break;
-                case 1:
-                    {
-                        var section = new DirectoryInfo(directory!).Name;
-                        contentSource = CreateSystemContentSource(section, section);
-                        break;
-                    }
+                contentSource = CreateSystemContentSource(String.Empty, Title);
+            }
+            else if (level == 1)
+            {
+                var section = new DirectoryInfo(directory!).Name;
+                contentSource = CreateSystemContentSource(section, section);
             }
         }
 
@@ -491,10 +488,6 @@ public class Site : ISite
         {
             LinkContent(contentSource, section, false);
         }
-        else
-        {
-            Console.WriteLine(sectionPath1);
-        }
 
         GenerateTags(contentSource);
         return contentSource;
@@ -509,9 +502,6 @@ public class Site : ISite
             var fileContent = File.ReadAllText(fileFullPath);
             var (frontMatter, rawContent) =
                 FrontMatter.Parse(fileFullPath, fileRelativePath, Parser, fileContent);
-
-            // throw new FormatException(
-            // $"Error parsing front matter for {fileFullPath}");
 
             return (cascade is not null
                 ? cascade.Merge(frontMatter)

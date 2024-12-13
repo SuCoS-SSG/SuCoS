@@ -16,7 +16,7 @@ public interface IFile
     /// <summary>
     /// The source directory of the file, without the file name.
     /// </summary>
-    string? SourceRelativePathDirectory => Urlizer.Path(Path.GetDirectoryName(SourceRelativePath));
+    string? SourceRelativePathDirectory => Urlizer.UnixPath(Path.GetDirectoryName(SourceRelativePath));
 
     /// <summary>
     /// The source filename, without the extension. ;)
@@ -48,5 +48,5 @@ public interface IFile
     /// The full source directory of the file, without the file name.
     /// </summary>
     string? SourceFullPathDirectory(string basePath) =>
-        Urlizer.Path(Path.GetDirectoryName(SourceFullPath(basePath)));
+        Urlizer.UnixPath(Path.GetDirectoryName(SourceFullPath(basePath)));
 }

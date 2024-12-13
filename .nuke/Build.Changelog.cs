@@ -19,7 +19,7 @@ internal sealed partial class Build
     [Parameter("Changelog file")]
     public string ChangelogFile { get; set; } = "CHANGELOG.md";
 
-    private const string UnreleasedSection = "## [Unreleased]";
+    private const string UnreleasedSection = "## [Unreleased][]";
 
     [GeneratedRegex(@"## v\[(\d+\.\d+\.\d+)\]")]
     private static partial Regex VersionRegex();
@@ -47,7 +47,7 @@ internal sealed partial class Build
                 throw new InvalidOperationException($"Version {VersionFull} is the current one");
             }
 
-            var newVersionSection = $@"{Environment.NewLine}## v[{VersionFull}] {DateTime.UtcNow:yyyy-MM-dd}{Environment.NewLine}";
+            var newVersionSection = $@"{Environment.NewLine}## v[{VersionFull}][] {DateTime.UtcNow:yyyy-MM-dd}{Environment.NewLine}";
             var linkReference = $@"[{VersionFull}]: {GetVersionLink($"v{previousVersion}", $"v{VersionFull}")}{Environment.NewLine}";
             var unreleasedLink = $@"[Unreleased]: {GetVersionLink($"v{VersionFull}", "HEAD")}";
 

@@ -14,8 +14,6 @@ namespace SuCoS.NUKE;
 /// </summary>
 internal sealed partial class Build
 {
-    // private  AbsolutePath TestDllDirectory => Solution.SuCoS_Test.Directory;// / "bin" / "Debug" / "net9.0";
-    // private  AbsolutePath TestAssembly => TestDllDirectory / Solution.SuCoS_Test.Name + ".dll";
     private static AbsolutePath CoverageDirectory => RootDirectory / "coverage";
     private static AbsolutePath CoverageResultFile => CoverageDirectory / "coverage.xml";
     private static AbsolutePath CoverageReportDirectory => CoverageDirectory / "report";

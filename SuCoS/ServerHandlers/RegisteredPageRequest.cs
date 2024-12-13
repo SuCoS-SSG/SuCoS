@@ -22,7 +22,7 @@ public class RegisteredPageRequest : IServerHandlers
     /// <inheritdoc />
     public bool Check(string requestPath)
     {
-        requestPath = RequestPath(requestPath);
+        requestPath = CorrectRequestPath(requestPath);
 
         return _site.OutputReferences.TryGetValue(requestPath, out var item) && item is IPage;
     }
@@ -32,7 +32,7 @@ public class RegisteredPageRequest : IServerHandlers
     {
         ArgumentNullException.ThrowIfNull(response);
 
-        requestPath = RequestPath(requestPath);
+        requestPath = CorrectRequestPath(requestPath);
 
         if (!_site.OutputReferences.TryGetValue(requestPath, out var output) ||
             output is not IPage page)
@@ -46,7 +46,7 @@ public class RegisteredPageRequest : IServerHandlers
         return "dict";
     }
 
-    private static string RequestPath(string requestPath)
+    private static string CorrectRequestPath(string requestPath)
     {
         if (string.IsNullOrEmpty(requestPath))
         {

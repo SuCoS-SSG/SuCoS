@@ -365,7 +365,6 @@ public class SiteTests : TestSetup
 
         // Assert
         Assert.Equal(12, Site.OutputReferences.Values.Count(output => output is IPage { OutputFormat: "html" }));
-        // Assert.Equal(20, Site.OutputReferences.Count);
         Assert.True(Site.OutputReferences.ContainsKey("/pages/page-01/index.html"));
         Assert.True(Site.OutputReferences.ContainsKey("/blog/blog-01/index.html"));
         Assert.True(Site.OutputReferences.ContainsKey("/pages/page-01/page-01/index.html"));

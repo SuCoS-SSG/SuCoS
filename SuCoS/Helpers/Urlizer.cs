@@ -66,7 +66,7 @@ public static partial class Urlizer
     /// </summary>
     /// <param name="path"></param>
     /// <returns></returns>
-    public static string Path(string? path) => (path ?? string.Empty).Replace('\\', '/');
+    public static string UnixPath(string? path) => (path ?? string.Empty).Replace('\\', '/');
 }
 
 /// <summary>

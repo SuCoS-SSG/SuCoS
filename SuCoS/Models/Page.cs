@@ -157,7 +157,6 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
             permalink = $"/{permalink}";
         }
 
-        // return Urlizer.UrlizePath(permalink);
         if ((this as IFile).SourceFullPathDirectory(Site.SourceContentPath) == "/")
         {
             permalink = "/";

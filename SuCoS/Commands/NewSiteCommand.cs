@@ -31,7 +31,12 @@ public sealed class NewSiteCommand(NewSiteOptions options, ILogger logger, IFile
             BaseUrl = options.BaseUrl
         };
 
-        var site = new Site(new GenerateOptions() { SourceOption = options.Output }, _siteSettings, new YamlParser(), null!, null);
+        var site = new Site(
+        new GenerateOptions()
+        {
+            SourceOption = options.Output
+        },
+        _siteSettings, new YamlParser(), null!, null);
         return new NewSiteCommand(options, logger, fileSystem, site);
     }
 

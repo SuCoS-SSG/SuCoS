@@ -4,7 +4,7 @@
 
 🎉 Welcome to **SuCoS** (**J**ui**C**e**S**, in Brazilian Portuguese), is a fast and powerful Static Site Generator! 🚀
 
-Official site: https://sucos.brunomassa.com
+Official site: <https://sucos.brunomassa.com>
 
 [![Latest release](https://gitlab.com/sucos/sucos/-/badges/release.svg)](https://gitlab.com/sucos/sucos)
 ![Pipeline](https://gitlab.com/sucos/sucos/badges/main/pipeline.svg?ignore_skipped=true)

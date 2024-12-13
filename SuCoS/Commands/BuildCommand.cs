@@ -62,8 +62,7 @@ public class BuildCommand : BaseGeneratorCommand
 
             if (output is IPage page)
             {
-                // var path = url.TrimStart('/');
-                var path = (url + (Site.UglyUrLs ? string.Empty : "/index.html")).TrimStart('/');
+                var path = (url + (Site.UglyUrLs ? string.Empty : "/index" + (page as Page).OutputFormatObj.Extension)).TrimStart('/');
 
                 // Generate the output path
                 var outputAbsolutePath = Path.Combine(_options.Output, path);
