@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## v[5.0.1] 2024-12-13
+
 - Fixed: GitLab CI/CD container image build
 - Changed: remove Debian package build due of GitLab registry issues
 
@@ -142,7 +144,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added First Commit!
 
-[Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v5.0.0...HEAD
+[Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v5.0.1...HEAD
+[5.0.1]: https://gitlab.com/sucos/sucos/-/compare/v5.0.0...v5.0.1
 [5.0.0]: https://gitlab.com/sucos/sucos/-/compare/v4.4.0...v5.0.0
 [4.4.0]: https://gitlab.com/sucos/sucos/-/compare/v4.3.0...v4.4.0
 [4.3.0]: https://gitlab.com/sucos/sucos/-/compare/v4.2.1...v4.3.0
