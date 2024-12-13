@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased][]
 
+## v[5.0.2][] 2024-12-13
+
 - Fixed build command that was generating html files, independently of the output format
 
 ## v[5.0.1][] 2024-12-13
@@ -146,7 +148,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added First Commit!
 
-[Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v5.0.1...HEAD
+[Unreleased]: https://gitlab.com/sucos/sucos/-/compare/v5.0.2...HEAD
+[5.0.2]: https://gitlab.com/sucos/sucos/-/compare/v5.0.1...v5.0.2
 [5.0.1]: https://gitlab.com/sucos/sucos/-/compare/v5.0.0...v5.0.1
 [5.0.0]: https://gitlab.com/sucos/sucos/-/compare/v4.4.0...v5.0.0
 [4.4.0]: https://gitlab.com/sucos/sucos/-/compare/v4.3.0...v4.4.0
