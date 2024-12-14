@@ -475,7 +475,7 @@ endif
                 {
                     Title = title,
                     FileName = filename,
-                    Permalink = Path.Combine(Permalink!, filename),
+                    Permalink = Path.Combine(Path.GetDirectoryName(Permalink?? "./")!, filename),
                     Params = resourceParams,
                     SourceRelativePath = resourceFilename
                 };

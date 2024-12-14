@@ -256,11 +256,10 @@ public class Site : ISite
                                  pageOutput.Value)))
                 {
                     Logger.Error(
-                        "Duplicate permalink '{permalink}' from `{file}`. Was from '{from}'.",
+                        "Duplicate permalink '{permalink}' from `{file}`. It is already from '{from}'.",
                         pageOutput.Key,
-                        (pageOutput.Value as Page)!.SourceRelativePath,
-                        (OutputReferences[pageOutput.Key] as Page)!
-                        .SourceRelativePath
+                        (page as IFile).SourceRelativePath,
+                        (OutputReferences[pageOutput.Key!] as IFile)!.SourceRelativePath
                     );
                 }
             }

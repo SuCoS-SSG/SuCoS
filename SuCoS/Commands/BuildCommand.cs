@@ -58,14 +58,12 @@ public class BuildCommand : BaseGeneratorCommand
         var pagesCreated = 0; // counter to keep track of the number of pages created
         _ = Parallel.ForEach(Site.OutputReferences, pair =>
         {
-            var (url, output) = pair;
+            var (path, output) = pair;
 
             if (output is IPage page)
             {
-                var path = (url + (Site.UglyUrLs ? string.Empty : "/index" + (page as Page).OutputFormatObj.Extension)).TrimStart('/');
-
                 // Generate the output path
-                var outputAbsolutePath = Path.Combine(_options.Output, path);
+                var outputAbsolutePath = Path.Combine(_options.Output, path.TrimStart('/'));
 
                 var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
                 Fs.DirectoryCreateDirectory(outputDirectory!);
