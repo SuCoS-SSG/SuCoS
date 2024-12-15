@@ -9,37 +9,41 @@ namespace test.Models;
 
 public class PageTests : TestSetup
 {
-    private const string Markdown1Const = """
-                                          # word01 word02
+    private const string Markdown1Const =
+        """
+        # word01 word02
 
-                                          word03 word04 word05 6 7 eight
+        word03 word04 word05 6 7 eight
 
-                                          ## nine
+        ## nine
 
-                                          ```cs
-                                          console.WriteLine('hello word')
-                                          ```
-                                          """;
+        ```cs
+        console.WriteLine('hello word')
+        ```
+        """;
 
-    private const string Markdown2Const = """
-                                          # word01 word02
+    private const string Markdown2Const =
+        """
+        # word01 word02
 
-                                          word03 word04 word05 6 7 [eight](https://example.com)
-                                          """;
+        word03 word04 word05 6 7 [eight](https://example.com)
+        """;
 
-    private const string MarkdownPlain1Const = """
-                                               word01 word02
-                                               word03 word04 word05 6 7 eight
-                                               nine
-                                               console.WriteLine('hello word')
+    private const string MarkdownPlain1Const =
+        """
+        word01 word02
+        word03 word04 word05 6 7 eight
+        nine
+        console.WriteLine('hello word')
 
-                                               """;
+        """;
 
-    private const string MarkdownPlain2Const = """
-                                               word01 word02
-                                               word03 word04 word05 6 7 eight
+    private const string MarkdownPlain2Const =
+        """
+        word01 word02
+        word03 word04 word05 6 7 eight
 
-                                               """;
+        """;
 
     [Theory]
     [InlineData(TitleConst, SourcePathConst, "file", "/path/to")]
@@ -75,7 +79,7 @@ public class PageTests : TestSetup
         Assert.Null(page.PublishDate);
         Assert.Null(page.ExpiryDate);
         Assert.Null(page.AliasesProcessed);
-        Assert.Null(page.Permalink);
+        Assert.Empty(page.RelPermalink);
         Assert.Empty(page.AllOutputUrLs);
         Assert.Equal(string.Empty, page.RawContent);
         Assert.Empty(page.TagsReference);
@@ -265,13 +269,13 @@ public class PageTests : TestSetup
         Kind kind, bool isExpectedPage)
     {
         var page = new Page(new(SourcePathConst)
-        {
-            FrontMatter = new()
             {
-                Title = TitleConst,
-            },
-            Kind = kind
-        }
+                FrontMatter = new()
+                {
+                    Title = TitleConst,
+                },
+                Kind = kind
+            }
             , Site, "html", []);
 
         // Act
@@ -380,7 +384,8 @@ public class PageTests : TestSetup
     [InlineData("page", "blog", Kind.single, 12)]
     [InlineData("post", "", Kind.home, 30)]
     [InlineData("post", "blog", Kind.section, 36)]
-    public void TemplateLookup_ShouldGenerateAllCombinations(string type, string section, Kind kind, int expectedCount)
+    public void TemplateLookup_ShouldGenerateAllCombinations(string type,
+        string section, Kind kind, int expectedCount)
     {
         FrontMatter frontMatter = new()
         {
@@ -406,5 +411,124 @@ public class PageTests : TestSetup
             Assert.Contains($"{type}/{kind}.liquid", paths);
             Assert.Contains($"{type}/{kind}.html.liquid", paths);
         }
+    }
+
+    [Fact]
+    public void Permalink_ShouldReturnFullUrlWithBaseUrl()
+    {
+        // Arrange
+        Site.BaseUrl = "https://example.com";
+        var page = new Page(new(SourcePathConst, new FrontMatter
+        {
+            Title = TitleConst,
+        }), Site, "html", [])
+        {
+            RelPermalink = "/test-title/index.html"
+        };
+
+        // Act
+        var permalink = (page as IOutput).Permalink;
+
+        // Assert
+        Assert.Equal("https://example.com/test-title/index.html", permalink);
+    }
+
+    [Theory]
+    [InlineData("https://example.com/", "/test-title/index.html",
+        "https://example.com/test-title/")]
+    [InlineData("https://example.com:8908/", "/blog/post/index.html",
+        "https://example.com:8908/blog/post/")]
+    [InlineData("http://example.com/", "/index.html", "http://example.com/")]
+    public void PermalinkDir_ShouldReturnCorrectDirectory(string baseUrl,
+        string relPermalink, string expectedDir)
+    {
+        // Arrange
+        Site = new Site(GenerateOptionsMock, new()
+        {
+            BaseUrl = baseUrl,
+        }, FrontMatterParser, LoggerMock, SystemClockMock);
+        var page = new Page(new(SourcePathConst, new FrontMatter
+        {
+            Title = TitleConst,
+        }), Site, "html", [])
+        {
+            RelPermalink = relPermalink
+        };
+
+        // Act
+        var permalinkDir = (page as IOutput).PermalinkDir;
+
+        // Assert
+        Assert.Equal(expectedDir, permalinkDir);
+    }
+
+    [Theory]
+    [InlineData("/test-title/index.html", "index.html")]
+    [InlineData("/blog/post/article.html", "article.html")]
+    public void PermalinkFilename_ShouldReturnCorrectFilename(
+        string relPermalink, string expectedFilename)
+    {
+        // Arrange
+        Site = new Site(GenerateOptionsMock, new()
+        {
+            BaseUrl = "http://example.com/",
+        }, FrontMatterParser, LoggerMock, SystemClockMock);
+        var page = new Page(new(SourcePathConst, new FrontMatter
+        {
+            Title = TitleConst,
+        }), Site, "html", [])
+        {
+            RelPermalink = relPermalink
+        };
+
+        // Act
+        var permalinkFilename = (page as IOutput).PermalinkFilename;
+
+        // Assert
+        Assert.Equal(expectedFilename, permalinkFilename);
+    }
+
+    [Theory]
+    [InlineData("/test-title/index.html", "/test-title")]
+    [InlineData("/blog/post/index.html", "/blog/post")]
+    [InlineData("/index.html", "/")]
+    public void RelPermalinkDir_ShouldReturnCorrectDirectory(
+        string relPermalink, string expectedDir)
+    {
+        // Arrange
+        var page = new Page(new(SourcePathConst, new FrontMatter
+        {
+            Title = TitleConst,
+        }), Site, "html", [])
+        {
+            RelPermalink = relPermalink
+        };
+
+        // Act
+        var relPermalinkDir = (page as IOutput).RelPermalinkDir;
+
+        // Assert
+        Assert.Equal(expectedDir, relPermalinkDir);
+    }
+
+    [Theory]
+    [InlineData("/test-title/index.html", "index.html")]
+    [InlineData("/blog/post/article.html", "article.html")]
+    public void RelPermalinkFilename_ShouldReturnCorrectFilename(
+        string relPermalink, string expectedFilename)
+    {
+        var page = new Page(new(SourcePathConst, new FrontMatter
+        {
+            Title = TitleConst,
+        }), Site, "html", []);
+
+        // Arrange
+        page.RelPermalink = relPermalink;
+
+        // Act
+        var relPermalinkFilename = (page as IOutput).RelPermalinkFilename;
+
+        // Assert
+        Assert.Equal(expectedFilename, relPermalinkFilename);
     }
 }

@@ -35,7 +35,11 @@ public class Site : ISite
     public string? Copyright => _settings.Copyright;
 
     /// <inheritdoc/>
-    public string BaseUrl => _settings.BaseUrl;
+    public string BaseUrl
+    {
+        get => _settings.BaseUrl;
+        set => _settings.BaseUrl = value;
+    }
 
     /// <inheritdoc/>
     public bool UglyUrLs => _settings.UglyUrLs;
@@ -95,7 +99,7 @@ public class Site : ISite
                     {
                         IsPage: true
                     } page &&
-                    pair.Key == page.Permalink)
+                    pair.Key == page.RelPermalink)
                 .Select(pair => (pair.Value as IPage)!)
                 .OrderBy(page => -page.Weight);
             return _regularPagesCache;
@@ -232,10 +236,10 @@ public class Site : ISite
     {
         ArgumentNullException.ThrowIfNull(page);
 
-        page.Permalink = page.CreatePermalink();
+        page.RelPermalink = page.CreatePermalink();
         lock (_syncLockPostProcess)
         {
-            if (!OutputReferences.TryGetValue(page.Permalink,
+            if (!OutputReferences.TryGetValue(page.RelPermalink,
                     out var oldOutput) || overwrite)
             {
                 page.PostProcess();
@@ -271,7 +275,7 @@ public class Site : ISite
             && page.Kind != Kind.section
             && page.Kind != Kind.taxonomy)
         {
-            section.PagesReferences.Add(page.Permalink!);
+            section.PagesReferences.Add(page.RelPermalink!);
         }
     }
 

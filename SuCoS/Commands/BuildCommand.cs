@@ -80,7 +80,7 @@ public class BuildCommand : BaseGeneratorCommand
             }
             else if (output is IResource resource)
             {
-                var outputAbsolutePath = Path.Combine(_options.Output, resource.Permalink!.TrimStart('/'));
+                var outputAbsolutePath = Path.Combine(_options.Output, resource.RelPermalink!.TrimStart('/'));
 
                 var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
                 Fs.DirectoryCreateDirectory(outputDirectory!);

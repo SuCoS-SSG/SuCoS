@@ -30,6 +30,7 @@ public class FluidTemplateEngine : ITemplateEngine
         TemplateOptions.MemberAccessStrategy.Register<Sucos>();
         TemplateOptions.MemberAccessStrategy.Register<Site>();
         TemplateOptions.MemberAccessStrategy.Register<Page>();
+        TemplateOptions.MemberAccessStrategy.Register<IOutput>();
         TemplateOptions.MemberAccessStrategy.Register<Resource>();
         TemplateOptions.MemberAccessStrategy.Register<Theme>();
 

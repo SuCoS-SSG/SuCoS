@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased][]
 
+- Changed: (BREAKING CHANGE) Permalink now includes the BaseURL. For the previous behavior, use RelPermalink
+
 ## v[5.0.2][] 2024-12-13
 
 - Fixed build command that was generating html files, independently of the output format
@@ -47,7 +49,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added CHANGELOG.md automatically updated when creating a new release
 - Changed internal folder structure, by a lot
 
-## v[4.1.0][]
+## v[4.1.0][] 2024-05-16
 
 - Added `term.liquid` and `taxonomy.liquid` are now available for theming
 - Added YAML front matter and site settings are now case-insensitive

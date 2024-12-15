@@ -32,7 +32,7 @@ public sealed class NewSiteCommand(NewSiteOptions options, ILogger logger, IFile
         };
 
         var site = new Site(
-        new GenerateOptions()
+        new GenerateOptions
         {
             SourceOption = options.Output
         },

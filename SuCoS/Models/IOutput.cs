@@ -8,15 +8,35 @@ public interface IOutput
     /// <summary>
     /// The URL for the content.
     /// </summary>
-    public string? Permalink { get; set; }
+    string Permalink => new Uri(new Uri(Site.BaseUrl), RelPermalink).ToString();
 
     /// <summary>
     /// The relative permalink's "path"
     /// </summary>
-    public string? RelPermalinkDir { get; }
+    string PermalinkDir => new Uri(new Uri(Permalink), ".").ToString();
 
     /// <summary>
     /// The relative permalink's filename
     /// </summary>
-    public string? RelPermalinkFilename { get; }
+    string PermalinkFilename => Path.GetFileName(Permalink);
+
+    /// <summary>
+    /// The URL for the content.
+    /// </summary>
+    string RelPermalink { get; set; }
+
+    /// <summary>
+    /// The relative permalink's "path"
+    /// </summary>
+    string RelPermalinkDir => Path.GetDirectoryName(RelPermalink) ?? "/";
+
+    /// <summary>
+    /// The relative permalink's filename
+    /// </summary>
+    string RelPermalinkFilename => Path.GetFileName(RelPermalink);
+
+    /// <summary>
+    /// Point to the site configuration.
+    /// </summary>
+    ISite Site { get; }
 }

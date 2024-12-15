@@ -17,6 +17,14 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
     public ContentSource ContentSource { get; init; }
 
     /// <inheritdoc/>
+    public string? SourcePathLastDirectory =>
+        string.IsNullOrEmpty(SourceRelativePathDirectory)
+            ? null
+            : Path.GetFileName(Path.GetFullPath(
+                SourceRelativePathDirectory.TrimEnd(Path.DirectorySeparatorChar,
+                    Path.AltDirectorySeparatorChar)));
+
+    /// <inheritdoc/>
     public ISite Site { get; }
 
     /// <inheritdoc/>
@@ -33,6 +41,23 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
     /// <inheritdoc/>
     public string Plain =>
         Markdown.ToPlainText(RawContent, SiteHelper.MarkdownPipeline);
+
+    /// <inheritdoc/>
+    // TODO:
+    public List<IPage> TagsReference
+    {
+        get
+        {
+            List<IPage> tagsReferences = [];
+            foreach (var tag in ContentSourceTags)
+            {
+                tagsReferences.AddRange(tag.ContentSourceToPages
+                    .Where(page => page.OutputFormat == OutputFormat));
+            }
+
+            return tagsReferences;
+        }
+    }
 
     /// <inheritdoc/>
     public bool IsHome => Site.Home == this;
@@ -82,7 +107,7 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
         get
         {
             _regularPages ??= Pages
-                                   .Where(page => page.IsPage);
+                .Where(page => page.IsPage);
             return _regularPages;
         }
     }
@@ -94,9 +119,9 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
         {
             var urls = new Dictionary<string, IOutput>();
 
-            if (Permalink is not null)
+            if (!string.IsNullOrEmpty(RelPermalink))
             {
-                urls.Add(Permalink, this);
+                urls.Add(RelPermalink, this);
             }
 
             if (AliasesProcessed is not null)
@@ -117,9 +142,9 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
 
             foreach (var resource in Resources)
             {
-                if (resource.Permalink is not null)
+                if (resource.RelPermalink is not null)
                 {
-                    urls.TryAdd(resource.Permalink, resource);
+                    urls.TryAdd(resource.RelPermalink, resource);
                 }
             }
 
@@ -127,13 +152,7 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
         }
     }
 
-    /// <summary>
-    /// Gets the Permalink path for the file.
-    /// </summary>
-    /// <param name="urlForce">The URL to consider. If null use the predefined URL</param>
-    /// <returns>The output path.</returns>
-    /// <see cref="UrlForIndex"/>
-    /// <see cref="UrlForNonIndex"/>
+    /// <inheritdoc/>
     public string CreatePermalink(string? urlForce = null)
     {
         var isIndex = SourceFileNameWithoutExtension == "index";
@@ -157,23 +176,26 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
             permalink = $"/{permalink}";
         }
 
-        if ((this as IFile).SourceFullPathDirectory(Site.SourceContentPath) == "/")
+        if ((this as IFile).SourceFullPathDirectory(Site.SourceContentPath) ==
+            "/")
         {
             permalink = "/";
         }
 
-        RelPermalinkDir = Urlizer.UrlizePath(permalink);
-
         var useUgly = (!OutputFormatObj.NoUgly &&
                        (OutputFormatObj.Ugly || Site.UglyUrLs));
-        RelPermalinkFilename = Urlizer.UrlizePath(
+
+        var relPermalinkDir = Urlizer.UrlizePath(permalink);
+        relPermalinkDir = (relPermalinkDir.EndsWith('/')
+            ? relPermalinkDir
+            : relPermalinkDir + "/");
+        var relPermalinkFilename = Urlizer.UrlizePath(
             useUgly
                 ? $"{SourceFileNameWithoutExtension}.{OutputFormatObj.Extension}"
                 : $"{OutputFormatObj.BaseName}.{OutputFormatObj.Extension}");
 
-        var urlFinal = RelPermalinkDir
-              + (RelPermalinkDir.EndsWith('/') ? string.Empty : "/")
-              + RelPermalinkFilename;
+        var urlFinal = relPermalinkDir + relPermalinkFilename;
+
         return urlFinal;
     }
 
@@ -241,10 +263,12 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
     public string RawContent => ContentSource.RawContent;
 
     /// <inheritdoc/>
-    public List<IPage> ContentSourceToPages => ContentSource.ContentSourceToPages;
+    public List<IPage> ContentSourceToPages =>
+        ContentSource.ContentSourceToPages;
 
     /// <inheritdoc/>
-    public ContentSource? ContentSourceParent => ContentSource.ContentSourceParent;
+    public ContentSource? ContentSourceParent =>
+        ContentSource.ContentSourceParent;
 
     /// <inheritdoc/>
     public string SourceRelativePath => ContentSource.SourceRelativePath;
@@ -277,60 +301,33 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
     #endregion IContentSource
 
     #region IParams
+
     /// <inheritdoc/>
     public Dictionary<string, object> Params
     {
         get => ContentSource.Params;
         set => ContentSource.Params = value;
     }
+
     #endregion IParams
 
     #region IOutput
 
     /// <inheritdoc/>
-    public string? Permalink { get; set; }
-
-    /// <inheritdoc/>
-    public string? RelPermalinkDir { get; set; }
-
-    /// <inheritdoc/>
-    public string? RelPermalinkFilename { get; set; }
+    public string RelPermalink { get; set; } = string.Empty;
 
     #endregion IOutput
 
     /// <summary>
-    /// The source directory of the file.
+    /// List of attached resources
     /// </summary>
-    public string? SourcePathLastDirectory =>
-        string.IsNullOrEmpty(SourceRelativePathDirectory)
-            ? null
-            : Path.GetFileName(Path.GetFullPath(
-                SourceRelativePathDirectory.TrimEnd(Path.DirectorySeparatorChar,
-                    Path.AltDirectorySeparatorChar)));
-
-
-    /// <inheritdoc/>
+    // TODO: why is this public?
     public Collection<Resource>? Resources { get; set; }
-
-    /// <inheritdoc/>
-    // TODO:
-    public List<IPage> TagsReference
-    {
-        get
-        {
-            List<IPage> tagsReferences = [];
-            foreach (var tag in ContentSourceTags)
-            {
-                tagsReferences.AddRange(tag.ContentSourceToPages
-                .Where(page => page.OutputFormat == OutputFormat));
-            }
-            return tagsReferences;
-        }
-    }
 
     /// <summary>
     /// The actual object with OutputFormat data
     /// </summary>
+    // TODO: why is this public?
     public OutputFormat OutputFormatObj { get; }
 
     /// <summary>
@@ -374,18 +371,22 @@ endif
     /// <summary>
     /// Constructor
     /// </summary>
-    public Page(in ContentSource contentSource, in ISite site, string outputFormat, List<string> outputFormats)
+    public Page(in ContentSource contentSource, in ISite site,
+        string outputFormat, List<string> outputFormats)
     {
         ContentSource = contentSource;
         Site = site;
         OutputFormat = outputFormat;
         OutputFormats = outputFormats;
 
-        FileUtils.OutputFormats.TryGetValue(OutputFormat, out var outputFormatObj);
+        FileUtils.OutputFormats.TryGetValue(OutputFormat,
+            out var outputFormatObj);
         if (outputFormatObj is null)
         {
-            throw new ArgumentException("No output format for {OutputFormat}", OutputFormat);
+            throw new ArgumentException("No output format for {OutputFormat}",
+                OutputFormat);
         }
+
         OutputFormatObj = outputFormatObj;
     }
 
@@ -404,7 +405,9 @@ endif
 
     private void ScanForResources()
     {
-        if (string.IsNullOrEmpty((ContentSource as IFile).SourceFullPathDirectory(Site.SourceContentPath)))
+        if (string.IsNullOrEmpty(
+                (ContentSource as IFile).SourceFullPathDirectory(
+                    Site.SourceContentPath)))
         {
             return;
         }
@@ -414,7 +417,9 @@ endif
             return;
         }
 
-        if (!Directory.Exists((ContentSource as IFile).SourceFullPathDirectory(Site.SourceContentPath)))
+        if (!Directory.Exists(
+                (ContentSource as IFile).SourceFullPathDirectory(
+                    Site.SourceContentPath)))
         {
             return;
         }
@@ -422,13 +427,12 @@ endif
         try
         {
             var resourceFiles = Directory.GetFiles(Site.SourceContentPath)
-                                         .Where(file =>
-                                             file != (ContentSource as IFile).SourceFullPath(Site.SourceContentPath) &&
-                                             (BundleType == BundleType.Leaf ||
-                                              !file.EndsWith(".md",
-                                                  StringComparison
-                                                      .OrdinalIgnoreCase))
-                                         );
+                .Where(file =>
+                    file != (ContentSource as IFile).SourceFullPath(
+                        Site.SourceContentPath) &&
+                    (BundleType == BundleType.Leaf ||
+                     !file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+                );
 
             foreach (var resourceFilename in resourceFiles)
             {
@@ -455,7 +459,7 @@ endif
                         var file = new InMemoryDirectoryInfo("./",
                             new[] { filenameOriginal });
                         if (resourceDefinition.GlobMatcher.Execute(file)
-                                              .HasMatches)
+                            .HasMatches)
                         {
                             filename =
                                 Site.TemplateEngine.ParseResource(
@@ -475,9 +479,12 @@ endif
                 {
                     Title = title,
                     FileName = filename,
-                    Permalink = Path.Combine(Path.GetDirectoryName(Permalink?? "./")!, filename),
+                    RelPermalink =
+                        Path.Combine((this as IOutput).RelPermalinkDir,
+                            filename),
                     Params = resourceParams,
-                    SourceRelativePath = resourceFilename
+                    SourceRelativePath = resourceFilename,
+                    Site = Site
                 };
                 Resources.Add(resource);
             }

@@ -6,6 +6,9 @@ namespace SuCoS.Models;
 public class Resource : IResource
 {
     /// <inheritdoc/>
+    public required ISite Site { get; init; }
+
+    /// <inheritdoc/>
     public string? Title { get; set; }
 
     /// <inheritdoc/>
@@ -17,13 +20,7 @@ public class Resource : IResource
     #region IOutput
 
     /// <inheritdoc/>
-    public string? Permalink { get; set; }
-
-    /// <inheritdoc/>
-    public string? RelPermalinkDir { get; set; }
-
-    /// <inheritdoc/>
-    public string? RelPermalinkFilename { get; set; }
+    public string RelPermalink { get; set; } = string.Empty;
 
     #endregion IOutput
 

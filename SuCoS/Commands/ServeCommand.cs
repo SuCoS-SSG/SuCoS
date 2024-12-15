@@ -107,8 +107,11 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <param name="baseUrl">The base URL for the server.</param>
     /// <param name="requestedPort">The port number for the server.</param>
     /// <returns>A Task representing the asynchronous operation.</returns>
-    public void StartServer(string baseUrl = BaseUrlDefault, int requestedPort = PortDefault)
+    public void StartServer(string baseUrl = "", int requestedPort = 0)
     {
+        // TODO: baseUrl and requestedPort should be configurable
+        baseUrl = BaseUrlDefault;
+        requestedPort = PortDefault;
         Logger.Information("Starting server...");
 
         Stopwatch.LogReport(Site.Title);
