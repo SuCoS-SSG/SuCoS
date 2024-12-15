@@ -69,6 +69,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     private IServerHandlers[]? _handlers;
 
     private DateTime _serverStartTime;
+    private DateTime _serverChangeTime;
 
     private Task? _loop;
 
@@ -109,24 +110,18 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// <returns>A Task representing the asynchronous operation.</returns>
     public void StartServer(string baseUrl = "", int requestedPort = 0)
     {
-        // TODO: baseUrl and requestedPort should be configurable
-        baseUrl = BaseUrlDefault;
-        requestedPort = PortDefault;
-        Logger.Information("Starting server...");
+        baseUrl = string.IsNullOrEmpty(baseUrl) ? BaseUrlDefault : baseUrl;
+        requestedPort = requestedPort == 0 ? PortDefault : requestedPort;
 
+        Logger.Information("Starting server...");
         Stopwatch.LogReport(Site.Title);
         _serverStartTime = DateTime.UtcNow;
+        _serverChangeTime = DateTime.UtcNow;
 
         PortUsed = _portSelector.SelectAvailablePort(baseUrl, requestedPort, MaxPortTries);
         var fullBaseUrl = $"{baseUrl}:{PortUsed}/";
 
-        _handlers = [
-            new PingRequests(),
-            new StaticFileRequest(Site.SourceStaticPath, false),
-            new StaticFileRequest(Site.Theme?.StaticFolder, true),
-            new RegisteredPageRequest(Site),
-            new RegisteredPageResourceRequest(Site)
-        ];
+        InitializeHandlers();
 
         _listener = new HttpListener();
         _listener.Prefixes.Add(fullBaseUrl);
@@ -175,30 +170,30 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     {
         _ = await _lastRestartTask.ContinueWith(async _ =>
         {
-            Logger.Information("Restarting server...");
-
-            if (_listener is { IsListening: true })
-            {
-                _listener.Stop();
-                _listener.Close();
-
-                if (_loop is not null)
-                {
-                    // Wait for the loop to finish processing any ongoing requests.
-                    await _loop.ConfigureAwait(false);
-                    _loop.Dispose();
-                }
-            }
+            Logger.Information("Recreating site and updating handlers...");
 
             // Reinitialize the site
             Site = SiteHelper.Init(ConfigFile, _options, Parser, Logger, Stopwatch, Fs);
 
-            StartServer();
+            InitializeHandlers();
         }).ConfigureAwait(false);
 
         _lastRestartTask = _lastRestartTask.ContinueWith(t => t.Exception != null
             ? throw t.Exception
             : Task.CompletedTask);
+    }
+
+    private void InitializeHandlers()
+    {
+        _handlers = [
+            new PingRequests(),
+            new StaticFileRequest(Site.SourceStaticPath, false),
+            new StaticFileRequest(Site.Theme?.StaticFolder, true),
+            new RegisteredPageRequest(Site),
+            new RegisteredPageResourceRequest(Site)
+        ];
+
+        Logger.Information("Site updated.");
     }
 
     /// <summary>
@@ -222,7 +217,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
 
                 try
                 {
-                    resultType = await item.Handle(response, requestPath, _serverStartTime).ConfigureAwait(false);
+                    resultType = await item.Handle(response, requestPath, _serverChangeTime).ConfigureAwait(false);
                     break;
                 }
                 catch (Exception ex)
@@ -256,7 +251,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// </summary>
     /// <param name="sender">The object that triggered the event.</param>
     /// <param name="e">The FileSystemEventArgs containing information about the file change.</param>
-    private void OnSourceFileChanged(object sender, FileSystemEventArgs e)
+    private async void OnSourceFileChanged(object sender, FileSystemEventArgs e)
     {
         if (e.FullPath.Contains(@".git", StringComparison.InvariantCulture))
         {
@@ -265,21 +260,14 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
 
         if (_lastFileChanged.fullPath == e.FullPath
             && e.ChangeType == _lastFileChanged.changeType
-            && (DateTime.Now - _lastFileChanged.dateTime).TotalMilliseconds < 150)
+            && (DateTime.UtcNow - _lastFileChanged.dateTime).TotalMilliseconds < 50)
         {
             return;
         }
 
-        _lastFileChanged = (e.ChangeType, e.FullPath, DateTime.Now);
+        _lastFileChanged = (e.ChangeType, e.FullPath, DateTime.UtcNow);
+        _serverChangeTime = DateTime.UtcNow;
 
-        // File changes are firing multiple events in a short time.
-        // Debounce the event handler to prevent multiple events from firing in a short time
-        _debounceTimer?.Dispose();
-        _debounceTimer = new Timer(DebounceCallback, e, TimeSpan.FromMilliseconds(1), Timeout.InfiniteTimeSpan);
-    }
-
-    private async void DebounceCallback(object? _)
-    {
         await RestartServer().ConfigureAwait(false);
     }
 }
