@@ -118,6 +118,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
         _serverStartTime = DateTime.UtcNow;
 
         PortUsed = _portSelector.SelectAvailablePort(baseUrl, requestedPort, MaxPortTries);
+        var fullBaseUrl = $"{baseUrl}:{PortUsed}/";
 
         _handlers = [
             new PingRequests(),
@@ -128,10 +129,12 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
         ];
 
         _listener = new HttpListener();
-        _listener.Prefixes.Add($"{baseUrl}:{PortUsed}/");
+        _listener.Prefixes.Add(fullBaseUrl);
         _listener.Start();
 
-        Logger.Information("Your site is live: {baseURL}:{port}", baseUrl, PortUsed);
+        Site.BaseUrl = fullBaseUrl;
+
+        Logger.Information("Your site is live: {fullBaseUrl}", fullBaseUrl);
 
         _loop = Task.Run(async () =>
         {
