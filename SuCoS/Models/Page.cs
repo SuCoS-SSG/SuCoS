@@ -200,6 +200,7 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
     }
 
     /// <inheritdoc/>
+    /// <inheritdoc/>
     public void PostProcess()
     {
         // Create all the aliases
@@ -212,8 +213,9 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
             }
         }
 
-        ScanForResources();
+        PostProcessResources();
     }
+
 
     #endregion IPage
 
@@ -253,11 +255,8 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
     public List<string>? Tags => ContentSource.Tags;
 
     /// <inheritdoc/>
-    public List<FrontMatterResources>? ResourceDefinitions
-    {
-        get => ContentSource.ResourceDefinitions;
-        set => ContentSource.ResourceDefinitions = value;
-    }
+    public List<FrontMatterResources>? ResourceDefinitions =>
+        ContentSource.ResourceDefinitions;
 
     /// <inheritdoc/>
     public string RawContent => ContentSource.RawContent;
@@ -322,7 +321,7 @@ public class Page : IPage, IContentSource, IFrontMatter, IOutput
     /// List of attached resources
     /// </summary>
     // TODO: why is this public?
-    public Collection<Resource>? Resources { get; set; }
+    public List<Resource>? Resources { get; set; }
 
     /// <summary>
     /// The actual object with OutputFormat data
@@ -364,10 +363,6 @@ endif
 
     private List<IPage>? _pages;
 
-    private int _counterInternal;
-
-    private bool _counterInternalLock;
-
     /// <summary>
     /// Constructor
     /// </summary>
@@ -390,111 +385,6 @@ endif
         OutputFormatObj = outputFormatObj;
     }
 
-    private int Counter
-    {
-        get
-        {
-            if (!_counterInternalLock)
-            {
-                _counterInternalLock = true;
-            }
-
-            return _counterInternal;
-        }
-    }
-
-    private void ScanForResources()
-    {
-        if (string.IsNullOrEmpty(
-                (ContentSource as IFile).SourceFullPathDirectory(
-                    Site.SourceContentPath)))
-        {
-            return;
-        }
-
-        if (BundleType == BundleType.None)
-        {
-            return;
-        }
-
-        if (!Directory.Exists(
-                (ContentSource as IFile).SourceFullPathDirectory(
-                    Site.SourceContentPath)))
-        {
-            return;
-        }
-
-        try
-        {
-            var resourceFiles = Directory.GetFiles(Site.SourceContentPath)
-                .Where(file =>
-                    file != (ContentSource as IFile).SourceFullPath(
-                        Site.SourceContentPath) &&
-                    (BundleType == BundleType.Leaf ||
-                     !file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
-                );
-
-            foreach (var resourceFilename in resourceFiles)
-            {
-                Resources ??= [];
-                var filenameOriginal = Path.GetFileName(resourceFilename);
-                var filename = filenameOriginal;
-                var extension = Path.GetExtension(resourceFilename);
-                var title = filename;
-                Dictionary<string, object> resourceParams = [];
-
-                if (ResourceDefinitions is not null)
-                {
-                    if (_counterInternalLock)
-                    {
-                        _counterInternalLock = false;
-                        ++_counterInternal;
-                    }
-
-                    foreach (var resourceDefinition in ResourceDefinitions)
-                    {
-                        resourceDefinition.GlobMatcher ??= new();
-                        _ = resourceDefinition.GlobMatcher.AddInclude(
-                            resourceDefinition.Src);
-                        var file = new InMemoryDirectoryInfo("./",
-                            new[] { filenameOriginal });
-                        if (resourceDefinition.GlobMatcher.Execute(file)
-                            .HasMatches)
-                        {
-                            filename =
-                                Site.TemplateEngine.ParseResource(
-                                    resourceDefinition.Name, Site, this,
-                                    Counter) ?? filename;
-                            title = Site.TemplateEngine.ParseResource(
-                                resourceDefinition.Title, Site, this,
-                                Counter) ?? filename;
-                            resourceParams = resourceDefinition.Params;
-                        }
-                    }
-                }
-
-                filename = Path.GetFileNameWithoutExtension(filename) +
-                           extension;
-                var resource = new Resource
-                {
-                    Title = title,
-                    FileName = filename,
-                    RelPermalink =
-                        Path.Combine((this as IOutput).RelPermalinkDir,
-                            filename),
-                    Params = resourceParams,
-                    SourceRelativePath = resourceFilename,
-                    Site = Site
-                };
-                Resources.Add(resource);
-            }
-        }
-        catch
-        {
-            // ignored
-        }
-    }
-
     private string ParseAndRenderTemplate(bool isBaseTemplate)
     {
         var fileContents = this.GetTemplate(Site.SourceThemePath,
@@ -515,5 +405,86 @@ endif
                 fileContents);
             return string.Empty;
         }
+    }
+
+    /// <summary>
+    /// Process resources for this page, generating permalinks
+    /// </summary>
+    private void PostProcessResources()
+    {
+        if (ContentSource.RawResources?.Any() != true)
+        {
+            return;
+        }
+
+        Resources = ProcessResourcesWithDefinitions().ToList();
+    }
+
+    private IEnumerable<Resource> ProcessResourcesWithDefinitions()
+    {
+        var counter = 0;
+        return ContentSource.RawResources!
+            .Where(resource => resource.Resource == null)
+            .Select(sourceResource => CreateResourceWithCustomization(sourceResource, ref counter))
+            .Where(resource => resource != null)!;
+    }
+
+    private Resource? CreateResourceWithCustomization(ContentSourceResource sourceResource, ref int counter)
+    {
+        var filenameOriginal = Path.GetFileName(sourceResource.SourceRelativePath);
+        var extension = Path.GetExtension(sourceResource.SourceRelativePath);
+
+        var resourceCustomization = GetResourceCustomization(filenameOriginal, ref counter);
+
+        var filename = resourceCustomization.Filename ?? filenameOriginal;
+        filename = Path.GetFileNameWithoutExtension(filename) + extension;
+
+        var resource = new Resource
+        {
+            Title = resourceCustomization.Title ?? filenameOriginal,
+            Params = resourceCustomization.Params ?? sourceResource.Params,
+            SourceRelativePath = sourceResource.SourceRelativePath,
+            Site = Site,
+            RelPermalink = Path.Combine((this as IOutput).RelPermalinkDir, filename)
+        };
+        sourceResource.Resource = resource;
+        return resource;
+    }
+
+    private (string? Filename, string? Title, Dictionary<string, object>? Params) GetResourceCustomization(string filenameOriginal, ref int counter)
+    {
+        // Early return if no resource definitions
+        if (ResourceDefinitions == null)
+        {
+            return (null, null, null);
+        }
+
+        // Find first matching resource definition
+        var matchedDefinition = ResourceDefinitions
+            .FirstOrDefault(resourceDefinition =>
+            {
+                resourceDefinition.GlobMatcher ??= new();
+                _ = resourceDefinition.GlobMatcher.AddInclude(resourceDefinition.Src);
+
+                var file = new InMemoryDirectoryInfo("./", new[] { filenameOriginal });
+                return resourceDefinition.GlobMatcher.Execute(file).HasMatches;
+            });
+
+        // If no match found, return null
+        if (matchedDefinition == null)
+        {
+            return (null, null, null);
+        }
+
+        // Process matched definition
+        var filename = Site.TemplateEngine.ParseResource(
+            matchedDefinition.Name, Site, this, counter) ?? filenameOriginal;
+
+        var title = Site.TemplateEngine.ParseResource(
+            matchedDefinition.Title, Site, this, counter) ?? filenameOriginal;
+
+        counter++;
+
+        return (filename, title, matchedDefinition.Params);
     }
 }

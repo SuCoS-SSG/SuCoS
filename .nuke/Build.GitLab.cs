@@ -20,7 +20,7 @@ namespace SuCoS.NUKE;
 /// This is the main build file for the project.
 /// This partial is responsible integrating the GitLab CI/CD.
 /// </summary>
-internal sealed partial class Build
+partial class Build
 {
     /// <summary>
     /// The GitLab CI/CD variables are injected by Nuke.

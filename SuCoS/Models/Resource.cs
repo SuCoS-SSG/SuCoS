@@ -12,9 +12,6 @@ public class Resource : IResource
     public string? Title { get; set; }
 
     /// <inheritdoc/>
-    public string? FileName { get; set; }
-
-    /// <inheritdoc/>
     public required string SourceRelativePath { get; init; }
 
     #region IOutput

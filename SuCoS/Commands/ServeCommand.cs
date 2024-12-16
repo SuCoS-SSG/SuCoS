@@ -50,14 +50,6 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     private readonly IPortSelector _portSelector;
 
     /// <summary>
-    /// A Timer that helps to manage the frequency of server restarts.
-    /// When a file change is detected, the timer is reset. The action (server restart) only occurs
-    /// when the timer expires, helping to ensure that rapid consecutive file changes result
-    /// in a single server restart, not multiple.
-    /// </summary>
-    private Timer? _debounceTimer;
-
-    /// <summary>
     /// A SemaphoreSlim used to ensure that server restarts due to file changes occur sequentially,
     /// not concurrently. This is necessary because a restart involves stopping the current server
     /// and starting a new one, which would not be thread-safe without some form of synchronization.
@@ -68,7 +60,6 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
 
     private IServerHandlers[]? _handlers;
 
-    private DateTime _serverStartTime;
     private DateTime _serverChangeTime;
 
     private Task? _loop;
@@ -115,7 +106,6 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
 
         Logger.Information("Starting server...");
         Stopwatch.LogReport(Site.Title);
-        _serverStartTime = DateTime.UtcNow;
         _serverChangeTime = DateTime.UtcNow;
 
         PortUsed = _portSelector.SelectAvailablePort(baseUrl, requestedPort, MaxPortTries);
@@ -160,7 +150,6 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
         _listener?.Stop();
         _listener?.Close();
         _fileWatcher.Stop();
-        _debounceTimer?.Dispose();
     }
 
     /// <summary>
@@ -168,7 +157,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// </summary>
     private async Task RestartServer()
     {
-        _ = await _lastRestartTask.ContinueWith(async _ =>
+        await _lastRestartTask.ContinueWith(_ =>
         {
             Logger.Information("Recreating site and updating handlers...");
 
@@ -251,7 +240,7 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
     /// </summary>
     /// <param name="sender">The object that triggered the event.</param>
     /// <param name="e">The FileSystemEventArgs containing information about the file change.</param>
-    private async void OnSourceFileChanged(object sender, FileSystemEventArgs e)
+    private void OnSourceFileChanged(object sender, FileSystemEventArgs e)
     {
         if (e.FullPath.Contains(@".git", StringComparison.InvariantCulture))
         {
@@ -268,6 +257,6 @@ public sealed class ServeCommand : BaseGeneratorCommand, IDisposable
         _lastFileChanged = (e.ChangeType, e.FullPath, DateTime.UtcNow);
         _serverChangeTime = DateTime.UtcNow;
 
-        await RestartServer().ConfigureAwait(false);
+        RestartServer().ConfigureAwait(false);
     }
 }

@@ -97,5 +97,5 @@ public interface IFrontMatter : IParams
     /// <summary>
     /// List of resource definitions.
     /// </summary>
-    List<FrontMatterResources>? ResourceDefinitions { get; set; }
+    List<FrontMatterResources>? ResourceDefinitions { get; }
 }

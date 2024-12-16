@@ -85,7 +85,7 @@ public static class FileUtils
         string[] types = page.Type is null
             ? [string.Empty, "_default"]
             : [page.Type, string.Empty, "_default"];
-        string[] outputFormats = ["." + page.OutputFormatObj!.Extension, string.Empty];
+        string[] outputFormats = ["." + page.OutputFormatObj.Extension, string.Empty];
 
         // Get all the kinds including the "sub-values"
         var kinds = isBaseTemplate ? GetAllKindsBase(page.Kind) : GetAllKinds(page.Kind);
@@ -107,12 +107,12 @@ public static class FileUtils
         Enum.GetValues(typeof(Kind))
             .Cast<Kind>()
             .Where(k => kind.HasFlag(k))
-            .OrderByDescending(kind => kind)
-            .Select(kind => kind.ToString());
+            .OrderByDescending(kindSelected => kindSelected)
+            .Select(kindSelected => kindSelected.ToString());
 
     private static IEnumerable<string> GetAllKindsBase(Kind kind) =>
         GetAllKinds(kind)
-            .Select(kind => kind + "-baseof")
+            .Select(kindSelected => kindSelected + "-baseof")
             .Append("baseof");
 
     /// <summary>

@@ -9,7 +9,7 @@ namespace SuCoS.NUKE;
 /// This is the main build file for the project.
 /// This partial is responsible for the publish debian package.
 /// </summary>
-internal sealed partial class Build
+partial class Build
 {
     private AbsolutePath DebianPackage => PublishDir / "SuCoS.deb";
     private readonly string DebianDistribution = "bookworm";

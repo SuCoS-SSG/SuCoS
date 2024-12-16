@@ -11,7 +11,7 @@ namespace SuCoS.NUKE;
 /// This is the main build file for the project.
 /// This partial is responsible for create the Container (Docker) image.
 /// </summary>
-internal sealed partial class Build
+partial class Build
 {
     [Parameter("GitLab Project CI_REGISTRY_IMAGE")]
     public readonly string ContainerRegistryImage;

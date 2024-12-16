@@ -191,7 +191,7 @@ public class YamlParserTests : TestSetup
     {
         // Arrange
         (var frontMatter, _) = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
-        ContentSource contentSource = new(string.Empty, frontMatter);
+        ContentSource contentSource = new(string.Empty, frontMatter,String.Empty);
         var page = new Page(contentSource, Site, "html", []);
 
         // Assert
@@ -205,7 +205,7 @@ public class YamlParserTests : TestSetup
         // Arrange
         var date = DateTime.Parse("2023-01-01", CultureInfo.InvariantCulture);
         (var frontMatter, _) = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
-        ContentSource contentSource = new(string.Empty, frontMatter);
+        ContentSource contentSource = new(string.Empty, frontMatter,String.Empty);
         var page = new Page(contentSource, Site, "html", []);
 
         // Act
@@ -220,7 +220,7 @@ public class YamlParserTests : TestSetup
     {
         // Arrange
         var (frontMatter, _) = FrontMatter.Parse(string.Empty, string.Empty, _parser, PageContent);
-        ContentSource contentSource = new(string.Empty, frontMatter)
+        ContentSource contentSource = new(string.Empty, frontMatter,String.Empty)
         {
             Kind = Kind.single
         };

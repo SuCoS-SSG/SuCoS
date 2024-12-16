@@ -11,7 +11,7 @@ namespace SuCoS.NUKE;
 /// This is the main build file for the project.
 /// This partial is responsible for the updating the Changelog.
 /// </summary>
-internal sealed partial class Build
+partial class Build
 {
     [Parameter("Container image full name")]
     public string RepositoryCompareLink = "https://gitlab.com/sucos/sucos/-/compare/";

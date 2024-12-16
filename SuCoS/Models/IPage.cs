@@ -25,7 +25,7 @@ public interface IPage : IOutput, IFrontMatter, IFile
     /// <summary>
     /// Point to the site configuration.
     /// </summary>
-    ISite Site { get; }
+    new ISite Site { get; }
 
     /// <summary>
     /// Secondary URL patterns to be used to create the url.

@@ -8,10 +8,10 @@ public interface IResource : IFile, IOutput, IParams
     /// <summary>
     /// Resource name.
     /// </summary>
-    public string? Title { get; set; }
+    string? Title { get; set; }
 
     /// <summary>
     /// Resource file name.
     /// </summary>
-    public string? FileName { get; set; }
+    string FileName => Path.GetFileName(SourceRelativePath);
 }

@@ -12,7 +12,7 @@ namespace SuCoS.NUKE;
 /// This is the main build file for the project.
 /// This partial is responsible for the build process.
 /// </summary>
-internal sealed partial class Build
+partial class Build
 {
     private static AbsolutePath CoverageDirectory => RootDirectory / "coverage";
     private static AbsolutePath CoverageResultFile => CoverageDirectory / "coverage.xml";

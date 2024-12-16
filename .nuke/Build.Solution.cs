@@ -7,7 +7,7 @@ namespace SuCoS.NUKE;
 /// This is the main build file for the project.
 /// This partial is responsible for the solution-wide variables.
 /// </summary>
-internal sealed partial class Build
+partial class Build
 {
     [Parameter(
         "Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]

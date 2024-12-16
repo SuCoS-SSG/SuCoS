@@ -10,7 +10,7 @@ namespace SuCoS.NUKE;
 /// This is the main build file for the project.
 /// This partial is responsible for the build process.
 /// </summary>
-internal sealed partial class Build
+partial class Build
 {
     private Target Clean => s => s
         .Executes(() =>

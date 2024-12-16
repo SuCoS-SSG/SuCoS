@@ -15,7 +15,7 @@ namespace SuCoS.NUKE;
 /// This is the main build file for the project.
 /// This partial is responsible for the versioning using GitVersion.
 /// </summary>
-internal sealed partial class Build
+partial class Build
 {
     [GitRepository] private readonly GitRepository Repository;
 

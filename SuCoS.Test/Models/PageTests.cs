@@ -98,7 +98,7 @@ public class PageTests : TestSetup
         {
             Title = TitleConst,
             Aliases = ["v123", "{{ page.Title }}", "{{ page.Title }}-2"]
-        }), Site, "html", []);
+        }, String.Empty), Site, "html", []);
 
         // Act
         Site.PostProcessPage(page);
@@ -120,7 +120,7 @@ public class PageTests : TestSetup
         {
             Title = TitleConst,
             ExpiryDate = SystemClockMock.Now.AddDays(days)
-        }), Site, "html", []);
+        }, String.Empty), Site, "html", []);
 
         // Assert
         Assert.Equal(expected, Site.IsDateExpired(page));
@@ -136,15 +136,16 @@ public class PageTests : TestSetup
         string? date, bool expectedValue)
     {
         var page = new Page(new(SourcePathConst, new FrontMatter
-        {
-            Title = TitleConst,
-            PublishDate = publishDate is null
-                ? null
-                : DateTime.Parse(publishDate, CultureInfo.InvariantCulture),
-            Date = date is null
-                ? null
-                : DateTime.Parse(date, CultureInfo.InvariantCulture)
-        }), Site, "html", []);
+            {
+                Title = TitleConst,
+                PublishDate = publishDate is null
+                    ? null
+                    : DateTime.Parse(publishDate, CultureInfo.InvariantCulture),
+                Date = date is null
+                    ? null
+                    : DateTime.Parse(date, CultureInfo.InvariantCulture)
+            }, String.Empty),
+            Site, "html", []);
 
         // Assert
         Assert.Equal(expectedValue, Site.IsDatePublishable(page));
@@ -191,16 +192,17 @@ public class PageTests : TestSetup
         string? date, bool? draft, bool draftOption, bool expectedValue)
     {
         var page = new Page(new(SourcePathConst, new FrontMatter
-        {
-            Title = TitleConst,
-            PublishDate = publishDate is null
-                ? null
-                : DateTime.Parse(publishDate, CultureInfo.InvariantCulture),
-            Date = date is null
-                ? null
-                : DateTime.Parse(date, CultureInfo.InvariantCulture),
-            Draft = draft
-        }), Site, "html", []);
+            {
+                Title = TitleConst,
+                PublishDate = publishDate is null
+                    ? null
+                    : DateTime.Parse(publishDate, CultureInfo.InvariantCulture),
+                Date = date is null
+                    ? null
+                    : DateTime.Parse(date, CultureInfo.InvariantCulture),
+                Draft = draft
+            }, String.Empty),
+            Site, "html", []);
 
         var options = Substitute.For<IGenerateOptions>();
         _ = options.Draft.Returns(draftOption);
@@ -219,7 +221,7 @@ public class PageTests : TestSetup
         {
             Title = TitleConst,
             Date = SystemClockMock.Now.AddDays(1)
-        }), Site, "html", []);
+        }, String.Empty), Site, "html", []);
 
         // Act
         var options = Substitute.For<IGenerateOptions>();
@@ -238,7 +240,7 @@ public class PageTests : TestSetup
         var page = new Page(new(sourcePath, new FrontMatter
         {
             Title = TitleConst,
-        }), Site, "html", []);
+        }, String.Empty), Site, "html", []);
 
         // Assert
         Assert.Equal(expectedUrl, page.CreatePermalink());
@@ -255,7 +257,7 @@ public class PageTests : TestSetup
         {
             Title = TitleConst,
             Url = urlTemplate
-        }), Site, "html", []);
+        }, String.Empty), Site, "html", []);
         var actualPermalink = page.CreatePermalink();
 
         // Assert
@@ -268,12 +270,11 @@ public class PageTests : TestSetup
     public void RegularPages_ShouldReturnCorrectPages_WhenKindIsSingle(
         Kind kind, bool isExpectedPage)
     {
-        var page = new Page(new(SourcePathConst)
+        var page = new Page(new(SourcePathConst, new()
             {
-                FrontMatter = new()
-                {
-                    Title = TitleConst,
-                },
+                Title = TitleConst,
+            }, String.Empty)
+            {
                 Kind = kind
             }
             , Site, "html", []);
@@ -368,7 +369,8 @@ public class PageTests : TestSetup
     [Fact]
     public void TemplateLookup_ShouldDefaultGenerateAllCombinations()
     {
-        var page = new Page(new(string.Empty), Site, "html", []);
+        var page = new Page(new(string.Empty, new(), String.Empty), Site,
+            "html", []);
 
         // Act
         var paths = page.GetTemplateLookupOrder(false);
@@ -392,7 +394,7 @@ public class PageTests : TestSetup
             Type = type,
             Section = section
         };
-        ContentSource content = new(string.Empty)
+        ContentSource content = new(string.Empty, new(), String.Empty)
         {
             FrontMatter = frontMatter,
             Kind = kind
@@ -421,7 +423,7 @@ public class PageTests : TestSetup
         var page = new Page(new(SourcePathConst, new FrontMatter
         {
             Title = TitleConst,
-        }), Site, "html", [])
+        }, String.Empty), Site, "html", [])
         {
             RelPermalink = "/test-title/index.html"
         };
@@ -450,7 +452,7 @@ public class PageTests : TestSetup
         var page = new Page(new(SourcePathConst, new FrontMatter
         {
             Title = TitleConst,
-        }), Site, "html", [])
+        }, String.Empty), Site, "html", [])
         {
             RelPermalink = relPermalink
         };
@@ -476,7 +478,7 @@ public class PageTests : TestSetup
         var page = new Page(new(SourcePathConst, new FrontMatter
         {
             Title = TitleConst,
-        }), Site, "html", [])
+        }, String.Empty), Site, "html", [])
         {
             RelPermalink = relPermalink
         };
@@ -499,7 +501,7 @@ public class PageTests : TestSetup
         var page = new Page(new(SourcePathConst, new FrontMatter
         {
             Title = TitleConst,
-        }), Site, "html", [])
+        }, String.Empty), Site, "html", [])
         {
             RelPermalink = relPermalink
         };
@@ -520,7 +522,7 @@ public class PageTests : TestSetup
         var page = new Page(new(SourcePathConst, new FrontMatter
         {
             Title = TitleConst,
-        }), Site, "html", []);
+        }, String.Empty), Site, "html", []);
 
         // Arrange
         page.RelPermalink = relPermalink;

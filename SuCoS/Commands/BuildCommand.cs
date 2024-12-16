@@ -80,13 +80,14 @@ public class BuildCommand : BaseGeneratorCommand
             }
             else if (output is IResource resource)
             {
-                var outputAbsolutePath = Path.Combine(_options.Output, resource.RelPermalink!.TrimStart('/'));
+                var inputAbsolutePath = Path.Combine(Site.SourceContentPath, resource.SourceRelativePath);
+                var outputAbsolutePath = Path.Combine(_options.Output, resource.RelPermalink.TrimStart('/'));
 
                 var outputDirectory = Path.GetDirectoryName(outputAbsolutePath);
                 Fs.DirectoryCreateDirectory(outputDirectory!);
 
                 // Copy the file to the output folder
-                Fs.FileCopy((resource as IFile).SourceRelativePath, outputAbsolutePath, overwrite: true);
+                Fs.FileCopy(inputAbsolutePath, outputAbsolutePath, overwrite: true);
             }
         });
 

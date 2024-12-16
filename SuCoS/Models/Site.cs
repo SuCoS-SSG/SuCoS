@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using Serilog;
 using SuCoS.Helpers;
 using SuCoS.Models.CommandLineOptions;
@@ -160,9 +161,6 @@ public class Site : ISite
 
     private readonly SiteSettings _settings;
 
-    /// <summary>
-    /// Datetime wrapper
-    /// </summary>
     private readonly ISystemClock _clock;
 
     private readonly ConcurrentDictionary<string, ContentSource> _contentSources = [];
@@ -215,7 +213,8 @@ public class Site : ISite
                     return;
                 }
 
-                ContentSource contentSource = new(Path.GetRelativePath(SourceContentPath, filePath), frontMatter, rawContent);
+                var contentSource = new ContentSource(Path.GetRelativePath(SourceContentPath, filePath), frontMatter, rawContent)
+                    .ScanForResources(this);
                 contentSource.ContentSourceParent = parent;
 
                 ContentSourceAdd(contentSource);
@@ -260,10 +259,10 @@ public class Site : ISite
                                  pageOutput.Value)))
                 {
                     Logger.Error(
-                        "Duplicate permalink '{permalink}' from `{file}`. It is already from '{from}'.",
+                        "Duplicate RelPermalink '{permalink}' from `{file}`. It is already from '{from}'.",
                         pageOutput.Key,
                         (page as IFile).SourceRelativePath,
-                        (OutputReferences[pageOutput.Key!] as IFile)!.SourceRelativePath
+                        (OutputReferences[pageOutput.Key] as IFile)!.SourceRelativePath
                     );
                 }
             }
@@ -275,7 +274,7 @@ public class Site : ISite
             && page.Kind != Kind.section
             && page.Kind != Kind.taxonomy)
         {
-            section.PagesReferences.Add(page.RelPermalink!);
+            section.PagesReferences.Add(page.RelPermalink);
         }
     }
 
@@ -311,11 +310,12 @@ public class Site : ISite
                 Type = kind == Kind.home ? "index" : sectionName,
                 Url = relativePath
             };
-            contentSource = new ContentSource(AddIndexAtPath(relativePath), frontMatter)
+            contentSource = new ContentSource(AddIndexAtPath(relativePath), frontMatter, String.Empty)
             {
-                BundleType = BundleType.Branch,
+                BundleType = BundleType.branch,
                 Kind = kind
-            };
+            }
+                .ScanForResources(this);
             CacheManager.AutomaticContentCache.TryAdd(relativePath,
                 contentSource);
         }
@@ -419,11 +419,11 @@ public class Site : ISite
             {
                 return;
             }
-            contentSource = new(fileRelativePath!, frontMatter, rawContent)
+            contentSource = new(fileRelativePath, frontMatter, rawContent)
             {
                 BundleType = selectedFile == indexLeafBundlePage
-                        ? BundleType.Leaf
-                        : BundleType.Branch
+                        ? BundleType.leaf
+                        : BundleType.branch
             };
 
             // Use interlocked to safely increment the counter in a multithreaded environment
@@ -466,6 +466,8 @@ public class Site : ISite
                 break;
         }
 
+        contentSource.ScanForResources(this);
+
         ContentSourceAdd(contentSource);
     }
 
@@ -477,7 +479,7 @@ public class Site : ISite
             return null;
         }
 
-        if (!_contentSources.TryAdd(contentSource.SourceRelativePath!, contentSource))
+        if (!_contentSources.TryAdd(contentSource.SourceRelativePath, contentSource))
         {
             Logger.Error("Duplicate front matter found : {filepath}",
                 contentSource.SourceRelativePath);
@@ -533,7 +535,7 @@ public class Site : ISite
         {
             tagSection = CreateSystemContentSource(basePath, "Tags");
             if (!_contentSources.TryAdd(
-                    tagSection.SourceRelativePath!,
+                    tagSection.SourceRelativePath,
                     tagSection))
             {
                 Log.Error("already exist!");
@@ -569,12 +571,12 @@ public class Site : ISite
     }
 
     /// <inheritdoc/>
-    public List<Page> PageCreate(ContentSource contentSource)
+    public List<Page> PageCreate([NotNull] ContentSource contentSource)
     {
         List<Page> pages = [];
 
         // Create the parent if it does not exist
-        if (contentSource.ContentSourceParent is ContentSource
+        if (contentSource.ContentSourceParent is
             {
                 ContentSourceToPages.Count: 0
             })
@@ -617,7 +619,7 @@ public class Site : ISite
         _contentSources
             .Where(cs => cs.Value.ContentSourceToPages.Count == 0)
             .OrderBy(cs =>
-                !cs.Value.SourceRelativePath!.EndsWith("index.md",
+                !cs.Value.SourceRelativePath.EndsWith("index.md",
                     StringComparison.OrdinalIgnoreCase))
             .ThenBy(cs => cs.Value.SourceRelativePathDirectory)
             .Select(cs => cs.Value)

@@ -1,9 +1,12 @@
+using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
+
 namespace SuCoS.Models;
 
 /// <summary>
 /// Content Source = front matter + raw content
 /// </summary>
-public class ContentSource : IContentSource, IFrontMatter, IFile
+public class ContentSource : IContentSource, IFile
 {
     /// <summary>
     /// Internal front matter
@@ -64,7 +67,7 @@ public class ContentSource : IContentSource, IFrontMatter, IFile
     #region IContentSource
 
     /// <inheritdoc />
-    public string RawContent { get; set; } = string.Empty;
+    public string RawContent { get; set; }
 
     /// <inheritdoc />
     public BundleType BundleType { get; set; }
@@ -106,31 +109,9 @@ public class ContentSource : IContentSource, IFrontMatter, IFile
     #endregion IFile
 
     /// <summary>
-    /// List of tags.
+    /// List of children content.
     /// </summary>
     public HashSet<ContentSource> Children { get; set; } = [];
-
-    /// <summary>
-    /// ctr
-    /// </summary>
-    /// <param name="sourceRelativePath"></param>
-    public ContentSource(string sourceRelativePath)
-    {
-        SourceRelativePath = sourceRelativePath;
-        this.FrontMatter = new();
-        this.RawContent = string.Empty;
-    }
-
-    /// <summary>
-    /// ctr
-    /// </summary>
-    /// <param name="sourceRelativePath"></param>
-    /// <param name="frontMatter"></param>
-    public ContentSource(string sourceRelativePath, FrontMatter frontMatter)
-    {
-        SourceRelativePath = sourceRelativePath;
-        this.FrontMatter = frontMatter;
-    }
 
     /// <summary>
     /// ctr
@@ -141,7 +122,53 @@ public class ContentSource : IContentSource, IFrontMatter, IFile
     public ContentSource(string sourceRelativePath, FrontMatter frontMatter, string rawContent)
     {
         SourceRelativePath = sourceRelativePath;
-        this.FrontMatter = frontMatter;
-        this.RawContent = rawContent;
+        FrontMatter = frontMatter;
+        RawContent = rawContent;
+    }
+
+    /// <summary>
+    /// List of attached resources
+    /// </summary>
+    public Collection<ContentSourceResource>? RawResources { get; private set; }
+
+    /// <summary>
+    /// Scan and collect resources for this content source
+    /// </summary>
+    public ContentSource ScanForResources([NotNull] ISite site)
+    {
+        if (BundleType == BundleType.none)
+        {
+            return this;
+        }
+
+        var sourceFullDir = (this as IFile)
+            .SourceFullPathDirectory(site.SourceContentPath);
+        var sourceFullPath = (this as IFile)
+            .SourceFullPath(site.SourceContentPath);
+
+        if (string.IsNullOrEmpty(sourceFullDir) || !Directory.Exists(sourceFullDir))
+        {
+            return this;
+        }
+
+        var resourceFiles = Directory.GetFiles(sourceFullDir)
+            .Where(file =>
+                file != sourceFullPath &&
+                (BundleType == BundleType.leaf ||
+                 !file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+            )
+            .Select(file => Path.GetRelativePath(site.SourceContentPath, file));
+
+        foreach (var resourceRelativePath in resourceFiles)
+        {
+            RawResources ??= [];
+            var resource = new ContentSourceResource
+            {
+                SourceRelativePath = resourceRelativePath
+            };
+            RawResources.Add(resource);
+        }
+
+        return this;
     }
 }

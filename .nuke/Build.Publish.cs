@@ -8,7 +8,7 @@ namespace SuCoS.NUKE;
 /// This is the main build file for the project.
 /// This partial is responsible for the publish process.
 /// </summary>
-internal sealed partial class Build
+partial class Build
 {
     [Parameter("Runtime identifier for the build (e.g., win-x64, linux-x64, osx-x64) (default: linux-x64)")]
     public readonly string RuntimeIdentifier = "linux-x64";

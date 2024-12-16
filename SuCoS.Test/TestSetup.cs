@@ -33,7 +33,7 @@ public class TestSetup
     protected readonly ContentSource ContentSourceMock = new(SourcePathConst, new FrontMatter
     {
         Title = TitleConst,
-    });
+    },String.Empty);
 
     protected ISite Site;
 
